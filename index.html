@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quran Display</title>
+    <link rel="icon" type="image/x-icon" href="/img/Quran.png">
+    <link rel="stylesheet" href="css/Styles.css">
+</head>
+<body>
+    <div id="introduction">
+        <img class="Bismileh" src="/img/Besmeleh4.png" alt="INtroduction">
+    </div>
+    <div id="introductionTitle"> أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا <span></span></div>
+
+    <div id="controlsElements">
+        <div id="language"> 
+        <div id="firstLanguage">
+            <label for="language" class="SelectLanguage">
+            Quran language:
+            </label>
+            <select id="language-selector">
+                <option value="arabic">Arabic</option>
+                <option value="french">Français</option>
+                <option value="english">English</option>
+                <option value="spanish">Espagnol</option>
+            </select>
+        </div>
+        <div id="secondLanguage">
+        <label for="language" class="SelectLanguage">
+            Add a language:
+        </label>
+        <select id="Surah-language-selector">
+            <!-- <option value="">Add a language</option> -->
+            <option value="arabic">Arabic</option>
+            <option value="french">Français</option>
+            <option value="english">English</option>
+            <option value="spanish">Espagnol</option>
+        </select>
+        </div>
+    </div>
+        <div id="searchControls">
+            <input type="text" id="search-input" placeholder="Enter word to search">
+            <div id="searDetails">
+                <div id="arabic-options" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="ignore-diacritics">
+                            تجاهل علامات التشكيل
+                    </label>
+                </div>
+                <div id="searchButtons">
+                    <button id="search-button">Quran Search</button>
+                    <button id="search-button-Sourat">Sourah Search</button>
+                </div>
+            </div>
+        </div>
+        <div id="toggleButtons"> 
+            <button id="toggleOrder">Revelation Order</button>
+            <button id="context">Surah Context</button>
+        </div>
+    </div>
+    <div id="hijriMonth"> </div>
+    
+    <div id="content-wrapper">
+        <div class="eraseDiv" id="resultsContainerID"> 
+            <div id="search-results" class="eraseDiv">
+            </div>
+            <button id="reset-button" class="eraseDiv">
+            </button>
+        </div>
+        <div id="quran-container" class="textContainer">
+        </div>
+        <div id="sura-content"  class="eraseDiv" >
+        </div>
+        <div id="toc-container" class="sidenav">
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>

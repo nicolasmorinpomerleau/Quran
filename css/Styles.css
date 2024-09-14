@@ -14,7 +14,7 @@
         align-items: center; /* Center elements horizontally */
         justify-content: flex-start; /* Align elements vertically to the top */
         padding: 0;
-        background-image: url('/img/Frame.png'); /* Replace 'your-image.jpg' with the path to your image */
+        background-image: url('img/Frame.png'); /* Replace 'your-image.jpg' with the path to your image */
         background-size: cover; /* Cover the entire page */
         background-position: center; /* Center the background image */
         background-repeat: no-repeat; /* Prevent the image from repeating */
@@ -187,7 +187,7 @@
     height: 20%;
     margin: 5px;
     border-block-color: revert;
-    background-image: url('/img/find.png'); /* Replace with your icon path */
+    background-image: url('img/find.png'); /* Replace with your icon path */
     background-size: 10%;
     background-repeat: no-repeat;
     background-position: 90%;

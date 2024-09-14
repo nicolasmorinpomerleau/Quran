@@ -198,8 +198,8 @@ function generateTOC() {
 
      // Define the icon mapping for cities
     const iconMapping = {
-    Makkah: '/img/makkah-icon.png',
-    Madinah: '/img/madinah-icon.png',
+    Makkah: 'img/makkah-icon.png',
+    Madinah: 'img/madinah-icon.png',
     };
   
     quranData.forEach((sura, index) => {
@@ -240,8 +240,8 @@ function generateRevelationTOC() {
 
      // Define the icon mapping for cities
     const iconMapping = {
-    Makkah: '/img/makkah-icon.png',
-    Madinah: '/img/madinah-icon.png',
+    Makkah: 'img/makkah-icon.png',
+    Madinah: 'img/madinah-icon.png',
     };
   
     // New order (you can use your own order here)

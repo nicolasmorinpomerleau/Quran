@@ -1,25 +1,69 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic&display=swap');
+/* @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic&display=swap'); */
 @import url('https://fonts.googleapis.com/css2?family=Amiri&display=swap');
 
+@import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,300;0,400;0,700;0,900;1,600&display=swap');
     * {
+        margin: 0;
+        padding: 0;
+        font-family: 'Nunito', sans-serif;
         box-sizing: border-box;
     }
 
     body {
-        margin: 0;
         font-family: Arial, Helvetica, sans-serif;
         font-size: 8px;
         display: flex;
+        min-height: 100vh;
         flex-direction: column;
-        align-items: center; /* Center elements horizontally */
-        justify-content: flex-start; /* Align elements vertically to the top */
-        padding: 0;
-        background-image: url('img/Frame.png'); /* Replace 'your-image.jpg' with the path to your image */
-        background-size: cover; /* Cover the entire page */
-        background-position: center; /* Center the background image */
-        background-repeat: no-repeat; /* Prevent the image from repeating */
-        background-attachment: fixed; /* Keeps the background fixed when scrolling */
+        background-image: url(/img/Banner2.jpg);
+        background-size: cover;
+        background-repeat: no-repeat;
     }
+    
+
+    header {
+        /* background-color: #ccc; */
+        font-size: 0.5rem;
+        align-self: center;
+    }
+    
+    footer {
+        background-color: #8fd486;
+    }
+
+    main {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    
+    article.main {
+        /* background-color: #00C9F2; */
+        flex: 1;
+    }
+    
+    aside {
+        /* background-color: #f5c622; */
+    }
+
+
+    @media (min-width: 768px) {
+        main {
+            width: 97%;
+            margin: 0 auto;
+            flex-direction: row;
+        }
+    
+        aside {
+            flex: 0 0 10%;
+        }
+    
+        .sidebar1 {
+            order: -1;
+        }
+    
+    }
+    
 
     #introductionTitle{
         font-size: 4em;
@@ -27,12 +71,12 @@
     }
 
     #introductionTitle::before {
-        content: '\26EF'; /* Unicode for star character */
+        content: '\26EF'; 
         margin-right: 5px;
     }
 
     #introductionTitle::after {
-        content: '\26EF'; /* Unicode for star character */
+        content: '\26EF'; 
         margin-left: 5px;
     }
 
@@ -46,7 +90,8 @@
     }
 
     #controlsElements {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
         width: 100%;
@@ -55,7 +100,6 @@
         padding: 10px;
     }
 
-    /* Additional styles */
     #searchControls,
     #searchButtons,
     #searDetails {
@@ -64,20 +108,20 @@
         margin: 10px 0;
     }
 
-    #search-button:hover{
+    #searchbutton:hover{
         background-color: #f5ecec;
         cursor:pointer;
     }
 
-    #search-button-Sourat:hover{
+    #searchButtonSourats:hover{
         background-color: #f5ecec;
         cursor:pointer;
     }
 
     #toggleOrder,
     #context,
-    #search-button,
-    #search-button-Sourat {
+    #searchbutton,
+    #searchButtonSourats {
         box-sizing: border-box;
     }
 
@@ -93,41 +137,24 @@
     }
 
 
-    #search-button-Sourat:hover{
+    #searchButtonSourats:hover{
     background-color: #f5ecec;
     cursor:pointer;
     }   
-    body {
-        margin: 0;
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 8px;
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Center elements horizontally */
-        justify-content: flex-start; /* Align elements vertically to the top */
-        padding: 0;
-    }
+
 
     #introduction {
-        width: 100%;
-        max-width: 900px;
-        text-align: center;
-        margin: 20px 0;
-        font-size: 1.2em;
-
-        /* border: none; */
         border-radius: 104px;
-
-        width: 30%;
+        width: 83%;
         height: 100%;
-        /* background-color: #fff; */
-        /* background-color: rgba(255, 255, 255, 0); */
+        margin-left: 10%;
         box-shadow: 20px 24px 137px 25px #6ddb71;
     }
 
 
     #controlsElements {
-        display: grid;
+        display: flex;
+        flex-direction: column;
         grid-template-columns: repeat(3, 1fr);
         gap: 10px;
         width: 100%;
@@ -147,8 +174,8 @@
 
     #toggleOrder,
     #context,
-    #search-button,
-    #search-button-Sourat {
+    #searchbutton,
+    #searchButtonSourats {
         width: 100%;
         margin: 5px 0;
         padding: 10px;
@@ -157,26 +184,26 @@
     }
 
     #content-wrapper {
-        margin-left: 7%;
+        margin-left: 2%;
         margin-right: 2%;
         margin-bottom: 1%;
         padding: 1%;
         display: flex;
-        height: 50vh;
-        width: 80%;
-        justify-content: space-between; /*flex-end Aligns children to the right */
-        border: 1px solid black; /* Optional, for visual reference */
-        border: 1px solid #6ddb71b5;
+        height: 100vh;
+        /* width: 80%; */
+        justify-content: space-between; 
+        border: 1px solid black; 
+        border: 1px solid #011201b5;
     }
 
-    #language-selector {
+    #languageSelector {
         height: 51%;
         width: 87%;
         margin: 8px;
         border-block-color: inherit;
     }
 
-    #Surah-language-selector {
+    #SurahLanguageSelector {
         width: 87%;
         height:51% ;
         margin: 12px;
@@ -187,7 +214,7 @@
     height: 20%;
     margin: 5px;
     border-block-color: revert;
-    background-image: url('img/find.png'); /* Replace with your icon path */
+    background-image: url('/img/find.png'); 
     background-size: 10%;
     background-repeat: no-repeat;
     background-position: 90%;
@@ -203,17 +230,18 @@
     #toggleButtons{
         height: 15%;
         width: 80%;
+        margin-left: 10%;
         border-block-color: inherit;
     }
 
     .resultsContainer{
-        display: flex; /* Enables Flexbox */
+        display: flex; 
         width: 17%;
-        flex-direction: column; /* Aligns children vertically */
-        height: 100%; /* Sets a fixed height for the container */
-        border: 1px solid #ddd; /* Optional: Adds a border around the container */
-        overflow: hidden; /* Hides overflow outside of the container */
-        position: relative; /* Creates a positioning context */
+        flex-direction: column; 
+        height: 100%; 
+        border: 1px solid #ddd; 
+        overflow: hidden; 
+        position: relative; 
         color: rgb(5, 5, 5);
         text-decoration: underline;
         background-color: #f4f4f4;
@@ -249,9 +277,8 @@
     }
 
     #hijriMonth{
-        /* font-weight: bold; */
-        font-size: 2.5em;
-        color: green;
+        font-size: 2.3em;
+        color: rgb(1, 17, 1);
     }
     .hijriSpan{
         font: bold;
@@ -269,12 +296,12 @@
         overflow-y: auto; 
         width: 100%;
         height: 100%;
-        /* box-shadow: 68px 26px 180px 40px #6ddb71; */
+
         border: 1px solid #00800078;
     }
 
-    #toc-container {
-        width: 16%; /* Adjust width as needed */
+    #tocContainer {
+        width: 16%; 
         padding: 10px;
         font-size: 2em;
         background-color: #f4f4f4d9;;
@@ -284,18 +311,16 @@
     }
 
     .sura-contexte {
-        width: 77%; /* Adjust width as needed */
+        width: 77%; 
         padding: 1%;
         height: 100%;
         font-size: 3em;
-        /* background-color: #f4f4f4; */
         background-color: #efe9e9ad;
         margin-left: 2%;
         border-left: 1px solid #ddd;
         overflow-y: auto;
     }
 
-    /* Header input and buttons */
     input, button {
         padding: 10px;
         margin: 5px;
@@ -307,45 +332,29 @@
         margin-top: 0;
     }
 
-    .sura h2 {
-        font-family: 'Amiri', serif;
-        text-align: center;
-        /* position: fixed; */
-    }
-
-
-    /* Remove border from the last verse */
-    .verse:last-of-type {
-    border-bottom: none; /* Avoids a border after the last verse */
-    }
-
-    CSS
-    css
-    Copy code
     .verse {
         padding: 10px 0;
-        border-bottom: 1px solid #0ce74f; /* Regular border for all verses */
+        border-bottom: 1px solid #03453f; 
         position: relative;
-        padding-bottom: 25px; /* Adjust this value based on the height of the icon */
-    }
-
-    .verse:last-of-type {
-        border-bottom: none; /* Remove regular border */
-        position: relative; /* Needed for positioning the pseudo-element */
-        padding-bottom: 20px; /* Extra space for the design line */
+        padding-bottom: 25px; 
     }
 
     .verse:last-of-type::after {
         content: "";
         display: block;
-        width: 50%; /* Adjust the width of the design line */
-        height: 2px; /* Height of the design line */
-        background-color: #4CAF50; /* Color of the design line (green) */
-        margin: 10px auto 0; /* Centered and spaced from the text */
-        border-radius: 5px; /* Rounded edges for the design line */
+        width: 50%; 
+        height: 2px; 
+        background-color: #4CAF50; 
+        margin: 10px auto 0; 
+        border-radius: 5px; 
     }
 
-    /* For clickable view of the search line */
+        #content-wrapper .verse::after {
+
+        background-color: #4CAF50; 
+
+    }
+
     .search-result-item {
         cursor: pointer;
         color: rgb(10, 10, 10);
@@ -356,7 +365,6 @@
         color: rgb(5, 5, 230);
         background-color: white;    }
 
-    /* Add Quranic icon for each Surah */
     .sura-icon {
         display: flex;
         justify-content: center;
@@ -373,30 +381,30 @@
         margin: 0 auto;
     }
 
-    /* Add green line after each Surah */
+ 
     .sura {
-        border-bottom: 4px solid green; /* Green line */
-        margin-bottom: 20px; /* Spacing between Surahs */
-        padding-bottom: 10px; /* Padding before the line */
-        flex: 1; /* Each child takes up equal space */
+        border-bottom: 4px solid green; 
+        margin-bottom: 20px; 
+        padding-bottom: 10px; 
+        flex: 1; 
         padding: 10px;
         border: 1px solid #000;
-        box-sizing: border-box; /* Ensures padding and borders are included in width */
+        box-sizing: border-box; 
         border: transparent;
     }
 
-    /* Style Surah title in green */
     .sura h2 {
-        color: green; /* Green color for Surah name */
-        margin-top: 0; /* Optional: adjust margin if needed */
+        color: green;
+        margin-top: 0; 
+        font-family: 'Amiri', serif;
+        text-align: center;
     }
 
     .icon-number {
-        font-family: 'Traditional Arabic', serif; /* Use a suitable Arabic-style font */
+        font-family: 'Traditional Arabic', serif; 
         color:#03453f; ;
     }
 
-    /* Add Ayah icon */
     .verse-icon {
         display: inline-flex;
         justify-content: center;
@@ -411,16 +419,14 @@
         border: 2px solid #03453f;
     } 
 
-    /* Highlight the search term in green */
     .highlight {
         color: rgb(228, 5, 5);
         padding: 0 2px;
         border-radius: 3px;
-        font-weight: bold; /* Makes the text bold */
-        font-size: 1.4em;  /* Increases the text size by 20% */
+        font-weight: bold; 
+        font-size: 1.4em;  
     }
 
-    /* Style for TOC items */
     .toc-item {
         padding: 10px;
         cursor: pointer;
@@ -434,13 +440,11 @@
         background-color: white;
     }
 
-    /* Style for total matches */
     .total-matches {
         font-weight: bold;
         margin-bottom: 10px;
     }
 
-    /* Style for Arabic options */
     #arabic-options {
         font-size: 2em;
         height: 10%;
@@ -452,7 +456,6 @@
         margin-bottom: 0px;
     }
 
-/* for the incons (Makah, Madinah)*/
     .city-icon {
         width: 24px;
         height: 24px;
@@ -464,7 +467,6 @@
         align-items: center;
     }
     
-  /* To display the context */
     .item {
         margin-bottom: 20px;
         padding: 10px;
@@ -482,7 +484,6 @@
         color: #666;
     }   
 
-    /* To align Arabic text in the right */
     .right-align {
         text-align: right;
     }
@@ -500,11 +501,11 @@
     .SearchResultSurah{
         color: rgb(5, 5, 5);
     }
-    
+     
 
     /* Mobile responsiveness */
 
-    @media (max-width: 1292px){
+    /* @media (max-width: 1292px){
         #introduction {
             max-width: 900px;
             text-align: center;
@@ -520,12 +521,12 @@
             width: 92%;
             height: 100%;
         }
-        #search-button:hover{
+        #searchbutton:hover{
             background-color: #f5ecec;
             cursor:pointer;
         }
     
-       #search-button-Sourat:hover{
+       #searchButtonSourats:hover{
         background-color: #f5ecec;
         cursor:pointer;
         }   
@@ -539,13 +540,13 @@
             display: block;
             font-size: 1em;
         }
-        #language-selector {
+        #languageSelector {
             height: 15%;
             width: 87%;
             margin: 8px;
             border-block-color: inherit;
         }
-        #Surah-language-selector {
+        #SurahLanguageSelector {
             width: 87%;
             height: 34%;
             margin: 12px;
@@ -565,17 +566,294 @@
             width: 92%;
             height: 100%;
         }
-        #search-button:hover{
+        #searchbutton:hover{
             background-color: #f5ecec;
             cursor:pointer;
         }
-    #search-button-Sourat:hover{
+    #searchButtonSourats:hover{
         background-color: #f5ecec;
         cursor:pointer;
         }   
     }
 
     @media (max-width: 768px) {
+        #controlsElements {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        #languageSelector {
+            height: 15%;
+            width: 87%;
+            margin: 8px;
+            border-block-color: inherit;
+        }
+        #SurahLanguageSelector {
+            width: 87%;
+            height: 34%;
+            margin: 12px;
+            border-block-color: inherit;
+        }
+        #introduction {
+            max-width: 900px;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            border-radius: 104px;
+            width: 30%;
+            height: 100%;
+            box-shadow: 20px 24px 137px 25px #6ddb71;
+        }
+        .Bismileh{
+            width: 92%;
+            height: 100%;
+        }
+        #searchbutton:hover{
+            background-color: #f5ecec;
+            cursor:pointer;
+        }
+        #searchButtonSourats:hover{
+        background-color: #f5ecec;
+        cursor:pointer;
+        }   
+        #content-wrapper {
+            margin-left: 3%;
+            margin-right: 1%;
+            margin-bottom: 1%;
+            padding: 1%;
+            display: flex;
+            height: 50vh;
+            width: 95%;
+            justify-content: space-between;
+            border: 1px solid #6ddb71b5;
+        }
+        #hijriMonth{
+            font-size: 2.5em;
+            color: #141313;
+        }
+    }
+*/
+
+/* Burger menu */
+    .burger-menu {
+        font-size: 30px;
+        cursor: pointer;
+        display: none;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+    }
+
+    @media (max-width: 766px) {
+        .Bismileh{
+            width: 92%;
+            height: 100%;
+            /* margin-left: 88%; */
+        }
+        #introductionTitle {
+            font-size: 2.7em;
+            color: black;
+            background-color: #ffffff80;
+        }
+        .resultsClass {
+            width: 100%; 
+            height: 100%;
+            padding: 1%;
+            font-size: 1.5em;
+            background-color: #f9f9f9;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+        .resetButton{
+            width: 100%;
+            height: 10%;
+            margin-top: 5%;
+            font-size: 1.5em;
+        }
+        .resetButton:hover{
+            background-color: #f5ecec;
+            cursor:pointer;
+        }
+        #searchbutton:hover{
+            background-color: #f5ecec;
+            cursor:pointer;
+        }
+        #searchButtonSourats:hover{
+        background-color: #f5ecec;
+        cursor:pointer;
+        }   
+        #toggleOrder:hover{
+            background-color: #f5ecec;
+            cursor:pointer;
+        }
+        #context:hover{
+            background-color: #f5ecec;
+            cursor:pointer;
+        }
+        #content-wrapper {
+            margin-left: 3%;
+            margin-right: 1%;
+            margin-bottom: 1%;
+            padding: 1%;
+            display: flex;
+            height: 83vh;
+            width: 95%;
+            justify-content: space-between;
+
+            border: 1px solid #6ddb71b5;
+        }
+        #hijriMonth{
+            font-size: 2.5em;
+            padding-left: 15%;
+            margin-top: 2%;
+        }
+        #search-input {
+            height: 16%;
+            /* margin: 5px; */
+            margin-left: 3%;
+            width: 92%;
+            border-block-color: revert;
+            background-image: url(/img/find.png);
+            background-size: 4%;
+            background-repeat: no-repeat;
+            background-position: 95%;
+        }
+        #searchControls, #searchButtons, #searDetails {
+            display: flex;
+            flex-direction: column;
+            margin: 10px 0;
+            width: 93%;
+            margin-left: 3%;
+        }
+        #introduction {
+            max-width: 900px;
+            text-align: center;
+            margin: 20px 0px;
+            font-size: 1.2em;
+            border-radius: 104px;
+            width: 30%;
+            height: 100%;
+            box-shadow: rgb(109, 219, 113) 20px 24px 137px 25px;
+            background-color: white;
+            margin-left: 28%;
+        }
+        #toggleButtons {
+            height: 15%;
+            width: 80%;
+            border-block-color: inherit;
+            margin-left: 9%;
+        }
+        #language {
+            display: flex;
+            flex-direction: column;
+            font-size: 1.3em;
+            margin-left: 9%;
+        }
+        .main{
+        }
+        .burger-menu {
+            display: block;
+        }
+        .sidebar1 {
+            transform: translateX(-100%);
+            display: none;
+        }
+        .sidebar1.open {
+            transform: translateX(0);
+            display: block;
+        }
+    }
+
+    @media (max-width: 480px) {
+        #introductionTitle {
+        font-size: 2em;
+        color: black;
+        background-color: #ffffff80;
+        margin-left: 15%;
+        }
+        #controlsElements {
+            grid-template-columns: 1fr;
+        }
+        #languageSelector {
+            height: 60%;
+            width: 87%;
+            margin: 8px;
+            border-block-color: inherit;
+        }
+        #SurahLanguageSelector {
+            width: 87%;
+            height: 50%;
+            margin: 12px;
+            border-block-color: inherit;
+        }
+        #content-wrapper {
+            margin-left: 6%;
+            margin-right: 1%;
+            margin-bottom: 1%;
+            padding: 1%;
+            display: flex;
+            height: 83vh;
+            width: 100%;
+            justify-content: space-between;
+
+            border: 1px solid #6ddb71b5;
+        }
+        #tocContainer {
+            width: 20%; 
+            padding: 10px;
+            font-size: 1.9em;
+            padding: 0;
+            background-color: #f4f4f4;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+            height: 100%;
+        }
+        .resultsClass {
+            width: 100%; 
+            height: 100%;
+            padding: 1%;
+            font-size: 1.5em;
+            background-color: #f9f9f9;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+        .textContainer{
+            width: 77%; 
+            padding: 1%;
+            height: 100%;
+            font-size: 2em;
+            font-family: 'Noto Naskh Arabic', serif;
+            background-color:#efe9e9ad;
+            margin-left: 2%;
+            overflow-y: auto; 
+
+            border: transparent;
+        }
+        .resetButton{
+            width: 100%;
+            height: 10%;
+            margin-top: 5%;
+            font-size: 1.2em;
+        }
+        #searchbutton:hover{
+            background-color: #f5ecec;
+            cursor:pointer;
+        }
+        #searchButtonSourats:hover{
+        background-color: #f5ecec;
+        cursor:pointer;
+        }   
+        .city-icon{
+            width: 16px;
+            height: 13px;
+        }
+        #hijriMonth{
+            font-size: 2em;
+
+        }
+    }  
+
+
+
+    /* @media (max-width: 768px) {
         #controlsElements {
             grid-template-columns: repeat(2, 1fr);
         }
@@ -622,12 +900,10 @@
             height: 50vh;
             width: 95%;
             justify-content: space-between;
-            /* border: 1px solid black;
-            border: 1px solid green; */
+
             border: 1px solid #6ddb71b5;
         }
         #hijriMonth{
-            /* font-weight: bold; */
             font-size: 2.5em;
             color: #141313;
         }
@@ -678,8 +954,7 @@
             height: 50vh;
             width: 95%;
             justify-content: space-between;
-            /* border: 1px solid black;
-            border: 1px solid green; */
+
             border: 1px solid #6ddb71b5;
         }
 
@@ -726,12 +1001,11 @@
             height: 50vh;
             width: 100%;
             justify-content: space-between;
-            /* border: 1px solid black;
-            border: 1px solid green; */
+
             border: 1px solid #6ddb71b5;
         }
         #toc-container {
-            width: 20%; /* Adjust width as needed */
+            width: 20%;
             padding: 10px;
             font-size: 1.9em;
             padding: 0;
@@ -758,7 +1032,6 @@
             background-color:#efe9e9ad;
             margin-left: 2%;
             overflow-y: auto; 
-            /* border: 1px solid green; */
             border: transparent;
         }
         .resetButton{
@@ -780,10 +1053,9 @@
             height: 13px;
         }
         #hijriMonth{
-            /* font-weight: bold; */
+
             font-size: 2.5em;
             color: #f9f4f4;
             background-color: #79554899;
         }
-    }
-
+    } */

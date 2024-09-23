@@ -8,14 +8,89 @@ let contextSwitch = true;
 
 const HijryMonths = [ "Muḥarram (مُحَرَّم)", "Ṣafar (صَفَر)", "Rabīʿ al-Awwal ( رَبِيع ٱلْأَوَّل )", "Rabīʿ ath-Thānī ( رَبِيع ٱلثَّانِي )", "Jumādá al-Awwal ( جُمَادَىٰ ٱلْأَوَّل)", "Jumādá ath-Thānī ( جُمَادَىٰ ٱلثَّانِي)", "Rajab (رَجَب)", "Shaʿbān (شَعْبَان)", "Ramaḍān (رَمَضَان)", "Shawwāl (شَوَّال)", "Dhū al-Qaʿdah (  ذُو ٱلْقَعْدَة)", "Dhū al-Ḥijjah (  ذُو ٱلْحِجَّة)"];
 
-const suraId = document.getElementById('quran-container').firstChild.id;
+const suraId = document.getElementById('quranContainer').firstChild.id;
+
+    // Detect the browser language
+    // const userLang = navigator.language || navigator.userLanguage;
+
+    // Initialize labels based on user's browser language
+    // updateLabels(userLang.split('-')[0]); // Use only the language part, e.g., "en" from "en-US"
+
+
+    // Define translations for different languages
+    const translations = {
+        en: {
+            toggleOrder: "Revelation Order",
+            context: "Surah Context",
+            searchbutton: "Quran Search",
+            searchbuttonSourat:"Surat search",
+            language:"Quran language"
+        },
+        es: {
+            toggleOrder: "Orden de revelación",
+            context: "Contexto de la sura",
+            searchbutton: "Recherche dans le Coran ",
+            searchbuttonSourat:"Búsqueda de Surat",
+            language:"El idioma del Corán"
+        },
+        fr: {
+            toggleOrder: "Ordre de révélation",
+            context: "Contexte de la sourate",
+            searchbutton: "Investigación en el Corán",
+            searchbuttonSourat:"recherche dans la sourate ",
+            language:"Langue du Coran"
+        },
+        ar: {
+            toggleOrder: "ترتيب الوحي",
+            context: "سياق السورة",
+            searchbutton:"بحث في القرآن",
+            searchbuttonSourat:"البحث في السوره",
+            language:"لغة القرآن"
+        }
+        // Add more languages as needed
+      };
+
+             // Detect the browser's language setting
+        const browserLanguage = navigator.language || navigator.userLanguage;
+
+                     // Function to change the label text based on language
+        function changeLabelLanguage(language) {
+            const langCode = language.split('-')[0]; // Get the base language (e.g., "en" from "en-US")
+            const toggleOrder = document.getElementById('toggleOrder');
+            const context = document.getElementById('context');
+            const searchbutton = document.getElementById('searchbutton');
+
+            // Update label if translation exists
+            if (translations[langCode]) {
+                toggleOrder.textContent = translations[langCode].toggleOrder;
+                context.textContent = translations[langCode].context;
+                searchbutton.textContent = translations[langCode].searchbutton;
+
+            } else {
+                // Default to English if no translation
+                toggleOrder.textContent = translations['en'].toggleOrder; 
+                context.textContent = translations['en'].context; 
+                searchbutton.textContent = translations['en'].searchbutton; 
+            }
+        }
+
+               // Change the label when the page loads based on browser language
+               changeLabelLanguage(browserLanguage);
+
+        // Function to update labels based on the detected language
+// function updateLabels(lang) {
+//     const labels = translations[lang] || translations['en']; // Default to English if language not found
+//     document.getElementById('usernameLabel').textContent = labels.username;
+//     document.getElementById('passwordLabel').textContent = labels.password;
+//     };
+
 
 
 // Function to load Quran data
 function loadQuranData() {
 
     // erase context befor loading the sura
-    const suraContext = document.getElementById('sura-content');
+    const suraContext = document.getElementById('suraContent');
     suraContext.classList.replace("sura-contexte", "eraseDiv");
 
     const xmlFile = `data/quran-${currentLanguage}.xml`; // Adjust file path based on language
@@ -25,7 +100,7 @@ function loadQuranData() {
         Arabic = true;
     }
 
-    const currentDisplayedSura = document.getElementById('quran-container');
+    const currentDisplayedSura = document.getElementById('quranContainer');
 
     if(currentDisplayedSura.textContent.trim().length > 0){ //if a sura already exists, so display it with the selecetd currentLanguage, rather than display fatiha all the time
 
@@ -193,13 +268,13 @@ function removeDiacritics(text) {
 
 // Function to generate Table of Contents (TOC)
 function generateTOC() {
-    const tocContainer = document.getElementById('toc-container');
+    const tocContainer = document.getElementById('tocContainer');
     tocContainer.innerHTML = ''; // Clear any existing content
 
      // Define the icon mapping for cities
     const iconMapping = {
-    Makkah: 'img/makkah-icon.png',
-    Madinah: 'img/madinah-icon.png',
+    Makkah: '/img/makkah-icon.png',
+    Madinah: '/img/madinah-icon.png',
     };
   
     quranData.forEach((sura, index) => {
@@ -223,7 +298,7 @@ function generateTOC() {
 
         // Add click event to display the corresponding Surah
         tocItem.addEventListener('click', function() {
-            const suraContext = document.getElementById('sura-content');
+            const suraContext = document.getElementById('suraContent');
             suraContext.classList.replace("sura-contexte", "eraseDiv");
             displaySingleSura(this.dataset.target);
         });
@@ -235,13 +310,13 @@ function generateTOC() {
 
 // Function to generate the Revelation order of Table of Contents (TOC)
 function generateRevelationTOC() {
-    const tocContainer = document.getElementById('toc-container');
+    const tocContainer = document.getElementById('tocContainer');
     tocContainer.innerHTML = ''; // Clear any existing content
 
      // Define the icon mapping for cities
     const iconMapping = {
-    Makkah: 'img/makkah-icon.png',
-    Madinah: 'img/madinah-icon.png',
+    Makkah: '/img/makkah-icon.png',
+    Madinah: '/img/madinah-icon.png',
     };
   
     // New order (you can use your own order here)
@@ -282,7 +357,7 @@ function displaySingleSura(suraId) {
     const sura = quranData.find(sura => sura.id == suraId);
     if (!sura) return;
 
-    const quranContainer = document.getElementById("quran-container");
+    const quranContainer = document.getElementById("quranContainer");
 
     quranContainer.innerHTML = ""; // Clear existing content
 
@@ -316,7 +391,8 @@ function displaySingleSura(suraId) {
     });
     quranContainer.appendChild(suraContainer);
     quranContainer.classList.replace("eraseDiv", "textContainer");
-    const SuraContext = document.getElementById('sura-content');
+    quranContainer.scrollTop = 0;
+    const SuraContext = document.getElementById('suraContent');
     SuraContext.innerHTML='';
 }
 
@@ -325,7 +401,7 @@ function displaySingleRevelationSura(suraId) {
     const sura = quranData.find(sura => sura.id == (suraId-1));
     if (!sura) return;
 
-    const quranContainer = document.getElementById("quran-container");
+    const quranContainer = document.getElementById("quranContainer");
     quranContainer.innerHTML = ""; // Clear existing content
 
     const suraContainer = document.createElement("div");
@@ -356,7 +432,7 @@ function displaySingleRevelationSura(suraId) {
         suraContainer.appendChild(verseContainer);
     });
 
-    const contentDiv = document.getElementById('sura-content');
+    const contentDiv = document.getElementById('suraContent');
     contentDiv.classList.replace("sura-contexte","eraseDiv");
     contentDiv.innerHTML='';
 
@@ -379,7 +455,7 @@ function displaySecondLnleSura(suraId) {
     verses.forEach((line,index) => {
         if (secondQuranData[divId] !== undefined) {
             const secondVerse = document.createElement('p');
-            secondVerse.className = 'verse';
+            // secondVerse.className = 'verse2';
             secondVerse.textContent = secondQuranData[divId].verses[index].text;
             
             // Append array2 content below the existing array1 content
@@ -391,8 +467,8 @@ function displaySecondLnleSura(suraId) {
 // Function to search for a word within the displayed Sourah
 function searchSourat(word) {
     let matches = 0;
-    if(document.getElementById('quran-container').firstChild == null) return;
-    const suraId = document.getElementById('quran-container').firstChild.id;
+    if(document.getElementById('quranContainer').firstChild == null) return;
+    const suraId = document.getElementById('quranContainer').firstChild.id;
     const sura = quranData.find(sura => sura.id === suraId);
     if (!sura) return;
 
@@ -596,7 +672,7 @@ function highlightAndScrollToVerse(suraId, verseNumber) {
 function highlightAndScrollToVerse(suraId, verseNumber) {
 
     // Check if the correct Surah is displayed; if not, display it
-    const currentSuraContainer = document.getElementById('quran-container').firstChild;
+    const currentSuraContainer = document.getElementById('quranContainer').firstChild;
     if (!currentSuraContainer || currentSuraContainer.id !== suraId) {
         displaySingleSura(suraId); // Display the correct Surah
     }
@@ -635,8 +711,8 @@ function highlightAndScrollToVerse(suraId, verseNumber) {
         targetVerse.scrollIntoView({ behavior: 'smooth' });
     }
 
-    if(document.getElementById('sura-content')) {
-        const suraContext = document.getElementById('sura-content');
+    if(document.getElementById('suraContent')) {
+        const suraContext = document.getElementById('suraContent');
         suraContext.classList.replace("sura-contexte", "eraseDiv");
         suraContext.innerHTML ='';
     }
@@ -645,7 +721,7 @@ function highlightAndScrollToVerse(suraId, verseNumber) {
 // Reset search
 function resetSearch() {
     document.getElementById('search-input').value = ''; // Clear search input
-    const suraId = document.getElementById('quran-container').firstChild.id;
+    const suraId = document.getElementById('quranContainer').firstChild.id;
     displaySingleSura(suraId); // Re-display the current Surah without highlights
 
     const resultsText = document.getElementById("search-results");
@@ -661,7 +737,7 @@ function resetSearch() {
 }
 
 // Event listeners for Quran search and reset buttons
-document.getElementById('search-button').addEventListener('click', function() {
+document.getElementById('searchbutton').addEventListener('click', function() {
     const searchTerm = document.getElementById('search-input').value.trim();
     if (searchTerm) {
         searchQuran(searchTerm);
@@ -669,7 +745,7 @@ document.getElementById('search-button').addEventListener('click', function() {
 });
 
 // Event listeners for Sourat search and reset buttons
-document.getElementById('search-button-Sourat').addEventListener('click', function() {
+document.getElementById('searchButtonSourats').addEventListener('click', function() {
     const searchTerm = document.getElementById('search-input').value.trim();
     if (searchTerm) {
         searchSourat(searchTerm);
@@ -679,7 +755,7 @@ document.getElementById('search-button-Sourat').addEventListener('click', functi
 document.getElementById('reset-button').addEventListener('click', resetSearch);
 
 // Event listener for language change
-document.getElementById('language-selector').addEventListener('change', function() {
+document.getElementById('languageSelector').addEventListener('change', function() {
     currentLanguage = this.value;
     if(currentLanguage == 'arabic'){
         Arabic = true;
@@ -691,7 +767,7 @@ document.getElementById('language-selector').addEventListener('change', function
 });
 
 // Event listener for additionnal Surah language selector
-document.getElementById('Surah-language-selector').addEventListener('change', function() {
+document.getElementById('SurahLanguageSelector').addEventListener('change', function() {
     currentLanguageAdditionnal = this.value;
     loadSurahData();
 });
@@ -725,13 +801,13 @@ document.getElementById('context').addEventListener('click', () => {
     resultsButton.innerHTML = ""; 
     resultsButton.classList.replace("resetButton", "eraseDiv");
     // ====================
-    if(document.getElementById('quran-container').firstChild == null) return;
-    const suraId = document.getElementById('quran-container').firstChild.id;
+    if(document.getElementById('quranContainer').firstChild == null) return;
+    const suraId = document.getElementById('quranContainer').firstChild.id;
     const suraIndex = quranData.find(sura => sura.id === suraId);
     if (!suraIndex) return;
     contexttButon = document.getElementById('context');
 
-    const contentDiv = document.createElement('sura-content')
+    const contentDiv = document.createElement('suraContent')
 
     fetchAndDisplaySura(parseInt(suraIndex.id)+1);
 
@@ -797,7 +873,7 @@ document.getElementById('context').addEventListener('click', () => {
             if (foundSura) {
                 displaySuraContext(foundSura);
             } else {
-                document.createElement('sura-content').innerHTML = '<p>Sura not found.</p>';
+                document.createElement('suraContent').innerHTML = '<p>Sura not found.</p>';
             }
         })
         .catch(error => console.error('Error loading XML:', error));
@@ -806,7 +882,7 @@ document.getElementById('context').addEventListener('click', () => {
     // Function to display the sura content
     function displaySuraContext(sura) { 
 
-        const contentDiv = document.getElementById('sura-content');
+        const contentDiv = document.getElementById('suraContent');
         const sections = sura.getElementsByTagName('section');
         let Intro = true;
 
@@ -859,12 +935,14 @@ document.getElementById('context').addEventListener('click', () => {
             contentDiv.appendChild(sectionElem); 
             contentDiv.classList.replace("eraseDiv", "sura-contexte")
         });
-        const quranContainer = document.getElementById('quran-container');
+        
+        contentDiv.scrollTop = 0;
+        const quranContainer = document.getElementById('quranContainer');
         quranContainer.classList.replace("textContainer", "eraseDiv")
     }
 
     contextSwitch = false;
-    const quranContainer = document.getElementById('quran-container');
+    const quranContainer = document.getElementById('quranContainer');
     contentDiv.id = 'ContextID';
     quranContainer.innerHTML = '';
     contentDiv.classList.add('textContainer');
@@ -873,10 +951,6 @@ document.getElementById('context').addEventListener('click', () => {
   
 
 async function getHijriCalendarForMonth() {
-    // const daysInMonth = new Date(year, month, 0).getDate(); // Get number of days in the Gregorian month
-    // const hijriDates = [];
-  
-
     const currentDate = new Date();
 
     const month1 = String(currentDate.getMonth() + 1).padStart(2, '0'); // Get the month (0-based, so add 1)
@@ -894,151 +968,27 @@ async function getHijriCalendarForMonth() {
         // Check if response is OK
         if (!response.ok) {
           console.error(`Error fetching data for ${gregorianDate}: ${response.statusText}`);
-        //   continue; // Skip to the next day if there's an error
         }
   
         const data = await response.json();
   
         if (data.code === 200) {
           const hijriDate = data.data.hijri.date;
-        //   const hijriMonth = data.data.hijri.month;
           const hijriDay  = data.data.hijri.day;
           const hijriYear =  data.data.hijri.year ;
-
 
           const hijriMonthNumber = data.data.hijri.month.number - 1;
           const hijriMonth = HijryMonths[hijriMonthNumber];
           displayHijriMonth(hijriMonth, hijriYear, hijriDay, formattedDate);
 
-
-        //   hijriDates.push({ gregorian: gregorianDate, hijri: hijriDate });
         } else {
           console.error(`API Error: ${data.data}`);
         }
       } catch (error) {
         console.error("Network error or invalid response:", error);
       }
-
-
-    // for (let day = 1; day <= daysInMonth; day++) {
-
-    // const gregorianDate = `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}-${year}`;
-    //   const url = `https://api.aladhan.com/v1/gToH/${gregorianDate}`; // Correct API endpoint
-    // //   console.log('url: ', url)
-  
-    //   try {
-    //     const response = await fetch(url);
-  
-    //     // Check if response is OK
-    //     if (!response.ok) {
-    //       console.error(`Error fetching data for ${gregorianDate}: ${response.statusText}`);
-    //       continue; // Skip to the next day if there's an error
-    //     }
-  
-    //     const data = await response.json();
-  
-    //     if (data.code === 200) {
-    //       const hijriDate = data.data.hijri.date;
-
-    //       const hijriMonthNumber = data.data.hijri.month.number - 1;
-    //       const hijriMonth = HijryMonths[hijriMonthNumber];
-    //       displayHijriMonth(hijriMonth);
-
-
-    //       hijriDates.push({ gregorian: gregorianDate, hijri: hijriDate });
-    //     } else {
-    //       console.error(`API Error: ${data.data}`);
-    //     }
-    //   } catch (error) {
-    //     console.error("Network error or invalid response:", error);
-    //   }
-    // }
-  
-    // console.log("Hijri Calendar for the month:", hijriDates);
-    // return hijriDates;
   }
-//   async function getHijriCalendarForMonth(year, month) {
-//     const daysInMonth = new Date(year, month, 0).getDate(); // Get number of days in the Gregorian month
-//     const hijriDates = [];
-  
 
-//     const currentDate = new Date();
-
-//     const month1 = String(currentDate.getMonth() + 1).padStart(2, '0'); // Get the month (0-based, so add 1)
-//     const day1= String(currentDate.getDate()).padStart(2, '0');        // Get the day
-//     const year1 = currentDate.getFullYear();                            // Get the year
-
-//     const formattedDate = `${day1}-${month1}-${year1}`;                   // Format it as mm/dd/yyyy
-
-//     console.log(formattedDate);  // Output: "09/12/2024" (or whatever the current date is)
-//     const url = `https://api.aladhan.com/v1/gToH/${formattedDate}`;
-
-//     try {
-//         const response = await fetch(url);
-  
-//         // Check if response is OK
-//         if (!response.ok) {
-//           console.error(`Error fetching data for ${gregorianDate}: ${response.statusText}`);
-//         //   continue; // Skip to the next day if there's an error
-//         }
-  
-//         const data = await response.json();
-  
-//         if (data.code === 200) {
-//           const hijriDate = data.data.hijri.date;
-
-//           const hijriMonthNumber = data.data.hijri.month.number - 1;
-//           const hijriMonth = HijryMonths[hijriMonthNumber];
-//           displayHijriMonth(hijriMonth);
-
-
-//           hijriDates.push({ gregorian: gregorianDate, hijri: hijriDate });
-//         } else {
-//           console.error(`API Error: ${data.data}`);
-//         }
-//       } catch (error) {
-//         console.error("Network error or invalid response:", error);
-//       }
-
-
-//     for (let day = 1; day <= daysInMonth; day++) {
-
-//     const gregorianDate = `${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}-${year}`;
-//       const url = `https://api.aladhan.com/v1/gToH/${gregorianDate}`; // Correct API endpoint
-//     //   console.log('url: ', url)
-  
-//       try {
-//         const response = await fetch(url);
-  
-//         // Check if response is OK
-//         if (!response.ok) {
-//           console.error(`Error fetching data for ${gregorianDate}: ${response.statusText}`);
-//           continue; // Skip to the next day if there's an error
-//         }
-  
-//         const data = await response.json();
-  
-//         if (data.code === 200) {
-//           const hijriDate = data.data.hijri.date;
-
-//           const hijriMonthNumber = data.data.hijri.month.number - 1;
-//           const hijriMonth = HijryMonths[hijriMonthNumber];
-//           displayHijriMonth(hijriMonth);
-
-
-//           hijriDates.push({ gregorian: gregorianDate, hijri: hijriDate });
-//         } else {
-//           console.error(`API Error: ${data.data}`);
-//         }
-//       } catch (error) {
-//         console.error("Network error or invalid response:", error);
-//       }
-//     }
-  
-//     // console.log("Hijri Calendar for the month:", hijriDates);
-//     return hijriDates;
-//   }
-  // Example Usage: Get Hijri calendar for September 2024
  
   getHijriCalendarForMonth()
     .then((hijriCalendar) => {
@@ -1051,10 +1001,16 @@ async function getHijriCalendarForMonth() {
     // Function to display Hijri month in HTML
     function displayHijriMonth(hijriMonth, hijriYear, hijriDay, GeorgianDate) {
       const hijriMonthElement = document.getElementById('hijriMonth');
-    //   hijriMonthElement.textContent
       hijriMonthElement.innerHTML = `${GeorgianDate}  / <span class="hijriSpan">${hijriDay} - ${hijriMonth}, ${hijriYear}</span>`;
     }
 
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('open');
+    }
+
+    
 // Load Quran data on page load
 loadQuranData();
 

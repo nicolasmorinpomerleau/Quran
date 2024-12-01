@@ -304,6 +304,7 @@ function generateTOC() {
 
             // Reset Language labels
             // Abou
+            
             const language1 = document.getElementById('SurahLanguageSelector');
             const language2 = document.getElementById('languageSelector');
             language1.value = 'Choose';

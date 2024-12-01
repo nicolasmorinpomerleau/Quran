@@ -301,6 +301,13 @@ function generateTOC() {
             const suraContext = document.getElementById('suraContent');
             suraContext.classList.replace("sura-contexte", "eraseDiv");
             displaySingleSura(this.dataset.target);
+
+            // Reset Language labels
+            // Abou
+            const language1 = document.getElementById('SurahLanguageSelector');
+            const language2 = document.getElementById('languageSelector');
+            language1.value = 'Choose';
+            language2.value = 'Choose';            
         });
 
         tocContainer.appendChild(tocItem);

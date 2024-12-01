@@ -15,7 +15,7 @@
         display: flex;
         min-height: 100vh;
         flex-direction: column;
-        background-image: url(/img/Banner2.jpg);
+        background-image: url(img/Banner2.jpg);
         background-size: cover;
         background-repeat: no-repeat;
     }
@@ -214,7 +214,7 @@
     height: 20%;
     margin: 5px;
     border-block-color: revert;
-    background-image: url('/img/find.png'); 
+    background-image: url('img/find.png'); 
     background-size: 10%;
     background-repeat: no-repeat;
     background-position: 90%;
@@ -711,7 +711,7 @@
             margin-left: 3%;
             width: 92%;
             border-block-color: revert;
-            background-image: url(/img/find.png);
+            background-image: url(img/find.png);
             background-size: 4%;
             background-repeat: no-repeat;
             background-position: 95%;

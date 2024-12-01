@@ -273,9 +273,10 @@ function generateTOC() {
 
      // Define the icon mapping for cities
     const iconMapping = {
-    Makkah: '/img/makkah-icon.png',
-    Madinah: '/img/madinah-icon.png',
+    Makkah: 'img/makkah-icon.png',
+    Madinah: 'img/madinah-icon.png',
     };
+    // Abou
   
     quranData.forEach((sura, index) => {
         const tocItem = document.createElement('div');
@@ -765,6 +766,10 @@ document.getElementById('reset-button').addEventListener('click', resetSearch);
 // Event listener for language change
 document.getElementById('languageSelector').addEventListener('change', function() {
     currentLanguage = this.value;
+
+    const language1 = document.getElementById('SurahLanguageSelector');
+    language1.value = 'Choose';
+
     if(currentLanguage == 'arabic'){
         Arabic = true;
     }

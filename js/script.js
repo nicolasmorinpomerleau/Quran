@@ -1341,6 +1341,26 @@ function buildSheetJuz(body, title) {
     });
 }
 
+
+// ── Fix 1: Peek bar — shows navigation target without closing sheet ──────────
+function showMobileSearchPeek(verseLabel) {
+    var sheet = document.getElementById('mobileSheet');
+    if (!sheet) return;
+    // Remove existing peek
+    var existing = sheet.querySelector('.mob-search-peek');
+    if (existing) existing.remove();
+    // Create peek bar at bottom of sheet
+    var peek = document.createElement('div');
+    peek.className = 'mob-search-peek';
+    peek.innerHTML = '<span class="mob-peek-icon">↓</span><span class="mob-peek-text">Navigated to: ' + verseLabel + '</span><button class="mob-peek-close" onclick="closeMobileSheet()">Done ✓</button>';
+    sheet.appendChild(peek);
+    // Auto-remove after 4 seconds if user doesn't interact
+    clearTimeout(window._peekTimer);
+    window._peekTimer = setTimeout(function() {
+        if (peek.parentNode) peek.style.opacity = '0.4';
+    }, 3000);
+}
+
 // ── Search sheet ─────────────────────────────────────────────────
 // Called both from bottom nav AND after a search runs on mobile
 function buildSheetSearch(body, title) {
@@ -1377,10 +1397,14 @@ function buildSheetSearch(body, title) {
                 var arr = document.createElement('span'); arr.className = 'mob-results-arrow'; arr.textContent = '→';
                 row.appendChild(txt); row.appendChild(arr);
                 // Clone the click from the desktop item
-                row.addEventListener('click', function() {
-                    closeMobileSheet();
-                    item.click(); // trigger original desktop click (navigate + highlight)
-                });
+                row.addEventListener('click', (function(capturedItem) {
+                    return function() {
+                        // Navigate + highlight WITHOUT closing the sheet
+                        capturedItem.click();
+                        // Show peek bar so user knows where we navigated
+                        showMobileSearchPeek(capturedItem.textContent.trim());
+                    };
+                })(item));
                 body.appendChild(row);
             });
         });
@@ -1393,10 +1417,12 @@ function buildSheetSearch(body, title) {
             var txt = document.createElement('span'); txt.textContent = item.textContent;
             var arr = document.createElement('span'); arr.className = 'mob-results-arrow'; arr.textContent = '→';
             row.appendChild(txt); row.appendChild(arr);
-            row.addEventListener('click', function() {
-                closeMobileSheet();
-                item.click();
-            });
+            row.addEventListener('click', (function(capturedItem) {
+                return function() {
+                    capturedItem.click();
+                    showMobileSearchPeek(capturedItem.textContent.trim());
+                };
+            })(item));
             body.appendChild(row);
         });
     }
@@ -1488,8 +1514,18 @@ function buildSheetSettings(body, title) {
         var src = document.getElementById(cfg.id);
         if (src) inp.value = src.value;
         inp.addEventListener('input', function() {
-            if (src) { src.value = this.value; src.dispatchEvent(new Event('input')); }
-            val.textContent = parseFloat(this.value).toFixed(cfg.step < 0.1 ? 2 : 1);
+            var v = parseFloat(this.value);
+            // Directly update fontSizes and apply — no event chain needed
+            if (cfg.id === 'arabicFontSlider') {
+                fontSizes.arabic = v;
+            } else {
+                fontSizes.trans = v;
+            }
+            lsSet(FONT_KEY, fontSizes);
+            applyFontSizes();
+            // Keep desktop slider in sync
+            if (src) src.value = this.value;
+            val.textContent = v.toFixed(cfg.step < 0.1 ? 2 : 1);
         });
         var val = document.createElement('span'); val.className = 'mob-slider-val';
         val.textContent = src ? parseFloat(src.value).toFixed(cfg.step < 0.1 ? 2 : 1) : '';
@@ -1498,6 +1534,56 @@ function buildSheetSettings(body, title) {
     });
     body.appendChild(fontSection);
 
+    // Add translation language section
+    var transSection = document.createElement('div');
+    transSection.className = 'mob-settings-section';
+    var transLbl = document.createElement('div'); transLbl.className = 'mob-settings-lbl'; transLbl.textContent = 'Add a translation';
+    transSection.appendChild(transLbl);
+
+    // Show active language tags with remove button
+    var tagsWrap = document.createElement('div'); tagsWrap.id = 'mob-lang-tags-wrap';
+    function renderMobLangTags() {
+        tagsWrap.innerHTML = '';
+        additionalLanguages.forEach(function(code) {
+            var row = document.createElement('div'); row.className = 'mob-lang-tag-row';
+            var lbl = document.createElement('span'); lbl.className = 'mob-lang-tag-lbl';
+            lbl.textContent = langLabels[code] || code;
+            lbl.style.color = getLangColor(code);
+            var rmv = document.createElement('button'); rmv.className = 'mob-lang-tag-rm'; rmv.textContent = '✕';
+            rmv.addEventListener('click', function() {
+                removeSecondaryLanguage(code);
+                renderMobLangTags();
+                rebuildAddSel();
+            });
+            row.appendChild(lbl); row.appendChild(rmv);
+            tagsWrap.appendChild(row);
+        });
+    }
+    renderMobLangTags();
+    transSection.appendChild(tagsWrap);
+
+    // Add selector
+    var addSel = document.createElement('select'); addSel.className = 'mob-settings-select';
+    function rebuildAddSel() {
+        addSel.innerHTML = '';
+        var placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = '+ Add a language…'; addSel.appendChild(placeholder);
+        [['arabic','Arabic'],['french','Français'],['english','English'],['spanish','Español']].forEach(function(pair) {
+            if (pair[0] === currentLanguage) return;
+            if (additionalLanguages.indexOf(pair[0]) !== -1) return;
+            var opt = document.createElement('option'); opt.value = pair[0]; opt.textContent = pair[1]; addSel.appendChild(opt);
+        });
+    }
+    rebuildAddSel();
+    addSel.addEventListener('change', function() {
+        if (!this.value) return;
+        var code = this.value; this.value = '';
+        addSecondaryLanguage(code).then(function() {
+            renderMobLangTags(); rebuildAddSel();
+        });
+    });
+    transSection.appendChild(addSel);
+    body.appendChild(transSection);
+
     // Tools section
     var toolSection = document.createElement('div');
     toolSection.className = 'mob-settings-section';
@@ -1505,7 +1591,8 @@ function buildSheetSettings(body, title) {
     toolSection.appendChild(toolLbl);
     [
         { id:'toggleOrder', label: isOriginalOrder ? 'Revelation Order' : 'Classic Order' },
-        { id:'context',     label: 'Surah Context' }
+        { id:'context',     label: 'Surah Context' },
+        { id:'bookmarksBtn',label: '🔖 Bookmarks' }
     ].forEach(function(cfg) {
         var btn = document.createElement('button'); btn.className = 'mob-settings-btn';
         btn.textContent = cfg.label;
@@ -1516,6 +1603,21 @@ function buildSheetSettings(body, title) {
         toolSection.appendChild(btn);
     });
     body.appendChild(toolSection);
+
+    // Arabic options
+    var arabicSect = document.createElement('div');
+    arabicSect.className = 'mob-settings-section';
+    var arabicLbl = document.createElement('div'); arabicLbl.className = 'mob-settings-lbl'; arabicLbl.textContent = 'Arabic options';
+    var arabicLabel = document.createElement('label');
+    arabicLabel.style.cssText = 'font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;direction:rtl;cursor:pointer;';
+    var arabicChk = document.createElement('input'); arabicChk.type = 'checkbox'; arabicChk.style.cssText = 'accent-color:var(--accent);width:16px;height:16px;';
+    var desktopChk = document.getElementById('ignore-diacritics');
+    if (desktopChk) arabicChk.checked = desktopChk.checked;
+    arabicChk.addEventListener('change', function() { if (desktopChk) desktopChk.checked = this.checked; });
+    arabicLabel.appendChild(arabicChk);
+    arabicLabel.appendChild(document.createTextNode(' تجاهل علامات التشكيل'));
+    arabicSect.appendChild(arabicLbl); arabicSect.appendChild(arabicLabel);
+    body.appendChild(arabicSect);
 }
 
 // ── Sidebar open/close (desktop burger) ──────────────────────────

@@ -1572,3 +1572,226 @@ input[type="range"] {
     background: var(--accent-faint);
     color: var(--accent);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   MOBILE BOTTOM SHEET (desktop: hidden, mobile: all panels)
+   ════════════════════════════════════════════════════════════════════ */
+.mob-sheet-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #00000070;
+    z-index: 200;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.mob-sheet-overlay.active { display: block; }
+
+.mob-sheet {
+    display: none;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    background: var(--bg-sidebar);
+    border-top: 1px solid var(--border-mid);
+    border-radius: 18px 18px 0 0;
+    z-index: 210;
+    flex-direction: column;
+    max-height: 85vh;
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+}
+
+.mob-sheet.ready { display: flex; }
+.mob-sheet.open  { transform: translateY(0); }
+
+.mob-sheet-handle {
+    width: 40px; height: 4px;
+    background: var(--accent-faint);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+}
+
+.mob-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.mob-sheet-title {
+    font-size: 18px;
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-style: italic;
+    flex: 1;
+}
+
+.mob-sheet-close {
+    font-size: 16px;
+    color: var(--text-muted);
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 99px;
+    padding: 4px 12px;
+    cursor: pointer;
+    width: auto;
+    flex-shrink: 0;
+    color: var(--accent);
+}
+
+.mob-sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ── Surah list inside sheet ── */
+.mob-surah-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.mob-surah-item:hover,
+.mob-surah-item:active { background: var(--bg-toc-active); }
+
+.mob-surah-item.active-surah {
+    background: var(--bg-toc-active);
+    border-left: 3px solid var(--accent);
+}
+
+.mob-surah-city { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; opacity: 0.8; }
+.mob-city-makkah  { background: var(--city-makkah,  #c9a444); }
+.mob-city-madinah { background: var(--city-madinah, #5aaa80); }
+
+.mob-surah-name { font-size: 18px; color: var(--text-toc); flex: 1; line-height: 1.3; }
+.mob-surah-item.active-surah .mob-surah-name { color: var(--text-toc-active); }
+
+.mob-surah-num {
+    font-size: 13px; color: var(--accent-dim);
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 50%;
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-family: var(--font-ui);
+    font-weight: 600;
+}
+
+/* ── Juz list inside sheet ── */
+.mob-juz-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.mob-juz-item:hover,
+.mob-juz-item:active { background: var(--bg-toc-active); }
+
+.mob-juz-num {
+    font-size: 16px; font-weight: 600; color: var(--accent);
+    background: var(--accent-trace); border: 1px solid var(--accent-faint);
+    border-radius: 50%; width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-family: var(--font-ui);
+}
+
+.mob-juz-info { flex: 1; min-width: 0; }
+.mob-juz-ar { font-size: 16px; color: var(--text-primary); font-family: var(--font-heading); font-style: italic; }
+.mob-juz-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+
+/* ── Search results inside sheet ── */
+.mob-results-total {
+    font-size: 13px; color: var(--text-muted);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.mob-results-surah {
+    font-size: 16px; color: var(--accent);
+    font-family: var(--font-heading); font-style: italic;
+    padding: 10px 20px 4px;
+}
+
+.mob-results-verse {
+    font-size: 16px; color: var(--text-result);
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
+    transition: background 0.12s;
+}
+
+.mob-results-verse:hover,
+.mob-results-verse:active { background: var(--bg-toc-active); color: var(--text-result-h); }
+
+.mob-results-arrow { font-size: 14px; color: var(--accent-dim); flex-shrink: 0; }
+
+.mob-results-empty {
+    padding: 24px 20px;
+    font-size: 15px; color: var(--text-muted);
+    text-align: center; line-height: 1.7;
+}
+
+/* ── Bookmarks inside sheet ── */
+.mob-bm-item {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.12s;
+}
+.mob-bm-item:hover,
+.mob-bm-item:active { background: var(--bg-toc-active); }
+
+.mob-bm-surah { font-size: 15px; color: var(--accent); font-style: italic; margin-bottom: 3px; }
+.mob-bm-verse { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+/* ── Settings inside sheet ── */
+.mob-settings-section { padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.mob-settings-lbl { font-size: 16px; font-style: italic; color: var(--text-muted); margin-bottom: 8px; font-family: var(--font-heading); }
+.mob-settings-select {
+    width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);
+    border-radius: var(--radius); padding: 10px 12px;
+    font-size: 17px; color: var(--text-primary); font-family: var(--font-ui);
+    appearance: none;
+}
+.mob-settings-btn {
+    width: 100%; background: var(--bg-btn); border: 1px solid var(--border-btn);
+    border-radius: var(--radius); padding: 11px 12px;
+    font-size: 17px; color: var(--text-btn); text-align: left;
+    cursor: pointer; margin-bottom: 6px; font-family: var(--font-ui);
+}
+.mob-settings-btn:last-child { margin-bottom: 0; }
+.mob-theme-chips { display: flex; gap: 6px; }
+.mob-theme-chip {
+    flex: 1; padding: 9px 4px;
+    background: var(--bg-btn); border: 1px solid var(--border-btn);
+    border-radius: var(--radius); font-size: 12px;
+    color: var(--text-secondary); cursor: pointer; text-align: center;
+    font-family: var(--font-ui); transition: all 0.15s;
+}
+.mob-theme-chip.active { background: var(--accent); color: var(--bg-page); border-color: transparent; font-weight: 600; }
+
+/* ── Slider in settings sheet ── */
+.mob-slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.mob-slider-label { font-size: 20px; color: var(--accent); font-family: var(--font-arabic); width: 28px; text-align: center; }
+.mob-slider-val { font-size: 13px; color: var(--text-muted); width: 36px; text-align: right; }
+
+/* Only show sheet on mobile/tablet */
+@media (min-width: 901px) {
+    .mob-sheet, .mob-sheet-overlay { display: none !important; }
+    #bottomNav { display: none !important; }
+    .mobile-search-bar { display: none !important; }
+}

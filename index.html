@@ -192,6 +192,17 @@
         <button id="mobile-search-go">↵</button>
     </div>
 
+    <!-- Universal mobile bottom sheet -->
+    <div id="mobileSheetOverlay" class="mob-sheet-overlay" onclick="closeMobileSheet()"></div>
+    <div id="mobileSheet" class="mob-sheet">
+        <div class="mob-sheet-handle" id="mobileSheetHandle"></div>
+        <div class="mob-sheet-header">
+            <span class="mob-sheet-title" id="mobileSheetTitle"></span>
+            <button class="mob-sheet-close" onclick="closeMobileSheet()">✕</button>
+        </div>
+        <div class="mob-sheet-body" id="mobileSheetBody"></div>
+    </div>
+
     <footer>Quran Display v9 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
 </body>

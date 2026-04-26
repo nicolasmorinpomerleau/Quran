@@ -1221,10 +1221,304 @@ async function init() {
 init();
 
 // ═══════════════════════════════════════════════════════════════════
-// RESPONSIVE — Bottom nav, sidebar overlay, mobile search
+// MOBILE — Universal bottom sheet + bottom nav
+// All panels (Surahs, Juz, Search, Bookmarks, Settings) use the
+// same bottom sheet. Desktop is completely unaffected.
 // ═══════════════════════════════════════════════════════════════════
 
-// ── Sidebar open/close with overlay ───────────────────────────────
+var _sheetCurrentAction = null;
+
+function isMobile() { return window.innerWidth <= 900; }
+
+// ── Open / close the universal sheet ──────────────────────────────
+function openMobileSheet(action) {
+    if (!isMobile()) return;
+    _sheetCurrentAction = action;
+
+    var overlay = document.getElementById('mobileSheetOverlay');
+    var sheet   = document.getElementById('mobileSheet');
+    var title   = document.getElementById('mobileSheetTitle');
+    var body    = document.getElementById('mobileSheetBody');
+
+    // Mark active bottom nav button
+    document.querySelectorAll('.bnav-btn').forEach(function(btn) {
+        btn.classList.toggle('bnav-active', btn.getAttribute('data-action') === action);
+    });
+
+    // Build sheet content based on action
+    body.innerHTML = '';
+    if (action === 'surah')     buildSheetSurahs(body, title);
+    else if (action === 'juz')  buildSheetJuz(body, title);
+    else if (action === 'search')    buildSheetSearch(body, title);
+    else if (action === 'bookmarks') buildSheetBookmarks(body, title);
+    else if (action === 'settings')  buildSheetSettings(body, title);
+
+    // Animate in
+    sheet.classList.add('ready');
+    overlay.classList.add('active');
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+            sheet.classList.add('open');
+        });
+    });
+}
+
+function closeMobileSheet() {
+    var overlay = document.getElementById('mobileSheetOverlay');
+    var sheet   = document.getElementById('mobileSheet');
+    sheet.classList.remove('open');
+    overlay.classList.remove('active');
+    setTimeout(function() { sheet.classList.remove('ready'); }, 320);
+    _sheetCurrentAction = null;
+    // Reset bottom nav — no active item after close
+    document.querySelectorAll('.bnav-btn').forEach(function(btn) {
+        btn.classList.remove('bnav-active');
+    });
+}
+
+// ── Surahs sheet ─────────────────────────────────────────────────
+function buildSheetSurahs(body, title) {
+    title.textContent = '📖 114 Surahs';
+    var currentSuraEl = document.querySelector('.sura');
+    var currentId = currentSuraEl ? currentSuraEl.id : '0';
+    quranData.forEach(function(sura, index) {
+        var item = document.createElement('div');
+        item.className = 'mob-surah-item' + (sura.id === currentId ? ' active-surah' : '');
+        var dot = document.createElement('span');
+        dot.className = 'mob-surah-city mob-city-' + (sura.city === 'Makkah' ? 'makkah' : 'madinah');
+        var name = document.createElement('span');
+        name.className = 'mob-surah-name';
+        name.textContent = (index + 1) + '. ' + sura.name;
+        var num = document.createElement('span');
+        num.className = 'mob-surah-num';
+        num.textContent = index + 1;
+        item.appendChild(dot); item.appendChild(name); item.appendChild(num);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            clearAllSecondaryLanguages();
+            closeSearchResults();
+            displaySingleSura(index);
+            markSuraAsRead(index);
+        });
+        body.appendChild(item);
+    });
+    // Scroll to current surah
+    setTimeout(function() {
+        var active = body.querySelector('.active-surah');
+        if (active) active.scrollIntoView({ block: 'center' });
+    }, 50);
+}
+
+// ── Juz sheet ────────────────────────────────────────────────────
+function buildSheetJuz(body, title) {
+    title.textContent = '📚 30 Juz';
+    JUZ_DATA.forEach(function(juz) {
+        var item = document.createElement('div');
+        item.className = 'mob-juz-item';
+        var num = document.createElement('div');
+        num.className = 'mob-juz-num'; num.textContent = juz[0];
+        var info = document.createElement('div');
+        info.className = 'mob-juz-info';
+        var ar = document.createElement('div');
+        ar.className = 'mob-juz-ar'; ar.textContent = juz[1];
+        var sub = document.createElement('div');
+        sub.className = 'mob-juz-sub'; sub.textContent = 'Starts: ' + juz[4] + (juz[3] > 1 ? ' v.' + juz[3] : '');
+        info.appendChild(ar); info.appendChild(sub);
+        item.appendChild(num); item.appendChild(info);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            clearAllSecondaryLanguages();
+            closeSearchResults();
+            displaySingleSura(juz[2]);
+            if (juz[3] > 1) {
+                setTimeout(function() {
+                    var verses = document.querySelectorAll('.verse');
+                    if (verses[juz[3] - 1]) verses[juz[3] - 1].scrollIntoView({ behavior: 'smooth' });
+                }, 200);
+            }
+        });
+        body.appendChild(item);
+    });
+}
+
+// ── Search sheet ─────────────────────────────────────────────────
+// Called both from bottom nav AND after a search runs on mobile
+function buildSheetSearch(body, title) {
+    title.textContent = '🔍 Search results';
+    var resultEl = document.getElementById('search-results');
+    var isOpen   = resultEl && resultEl.classList.contains('resultsClass');
+
+    if (!isOpen || !resultEl.children.length) {
+        body.innerHTML = '<div class="mob-results-empty">Type in the search bar below and hit ↵<br>Results will appear here.</div>';
+        return;
+    }
+
+    // Mirror desktop results into mobile sheet
+    var total = document.getElementById('results-label').textContent;
+    var totalDiv = document.createElement('div');
+    totalDiv.className = 'mob-results-total'; totalDiv.textContent = total;
+    body.appendChild(totalDiv);
+
+    // Walk existing desktop result DOM and rebuild for mobile
+    var surahGroups = resultEl.querySelectorAll('.surah-results');
+    if (surahGroups.length) {
+        surahGroups.forEach(function(group) {
+            var surahName = group.querySelector('.SearchResultSurah');
+            var items     = group.querySelectorAll('.search-result-item');
+            if (surahName) {
+                var sh = document.createElement('div');
+                sh.className = 'mob-results-surah'; sh.textContent = surahName.textContent;
+                body.appendChild(sh);
+            }
+            items.forEach(function(item) {
+                var row = document.createElement('div');
+                row.className = 'mob-results-verse';
+                var txt = document.createElement('span'); txt.textContent = item.textContent;
+                var arr = document.createElement('span'); arr.className = 'mob-results-arrow'; arr.textContent = '→';
+                row.appendChild(txt); row.appendChild(arr);
+                // Clone the click from the desktop item
+                row.addEventListener('click', function() {
+                    closeMobileSheet();
+                    item.click(); // trigger original desktop click (navigate + highlight)
+                });
+                body.appendChild(row);
+            });
+        });
+    } else {
+        // Surah-scoped results (single surah search)
+        var singleItems = resultEl.querySelectorAll('.search-result-item');
+        singleItems.forEach(function(item) {
+            var row = document.createElement('div');
+            row.className = 'mob-results-verse';
+            var txt = document.createElement('span'); txt.textContent = item.textContent;
+            var arr = document.createElement('span'); arr.className = 'mob-results-arrow'; arr.textContent = '→';
+            row.appendChild(txt); row.appendChild(arr);
+            row.addEventListener('click', function() {
+                closeMobileSheet();
+                item.click();
+            });
+            body.appendChild(row);
+        });
+    }
+}
+
+// ── Bookmarks sheet ───────────────────────────────────────────────
+function buildSheetBookmarks(body, title) {
+    title.textContent = '🔖 Bookmarks';
+    var bms = getBookmarks();
+    if (!bms.length) {
+        body.innerHTML = '<div class="mob-results-empty">No bookmarks yet.<br>Hover a verse and tap 🔖 to save it.</div>';
+        return;
+    }
+    bms.forEach(function(b) {
+        var item = document.createElement('div');
+        item.className = 'mob-bm-item';
+        var surah = document.createElement('div'); surah.className = 'mob-bm-surah';
+        surah.textContent = b.suraName + ' · verse ' + (b.verseIdx + 1);
+        var verse = document.createElement('div'); verse.className = 'mob-bm-verse';
+        verse.textContent = b.text;
+        item.appendChild(surah); item.appendChild(verse);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            displaySingleSura(b.suraId);
+            setTimeout(function() {
+                var verses = document.querySelectorAll('.verse');
+                if (verses[b.verseIdx]) verses[b.verseIdx].scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+        });
+        body.appendChild(item);
+    });
+}
+
+// ── Settings sheet ────────────────────────────────────────────────
+function buildSheetSettings(body, title) {
+    title.textContent = '⚙️ Settings';
+
+    // Theme section
+    var themeSection = document.createElement('div');
+    themeSection.className = 'mob-settings-section';
+    var themeLbl = document.createElement('div'); themeLbl.className = 'mob-settings-lbl'; themeLbl.textContent = 'Theme';
+    var chips = document.createElement('div'); chips.className = 'mob-theme-chips';
+    var currentTheme = document.documentElement.getAttribute('data-theme') || 'manuscript';
+    [['manuscript','📜 Manuscript'],['minimal','🌿 Minimal'],['scholar','🌙 Scholar']].forEach(function(pair) {
+        var chip = document.createElement('button');
+        chip.className = 'mob-theme-chip' + (currentTheme === pair[0] ? ' active' : '');
+        chip.textContent = pair[1];
+        chip.addEventListener('click', function() {
+            applyTheme(pair[0]); saveState();
+            chips.querySelectorAll('.mob-theme-chip').forEach(function(c){ c.classList.remove('active'); });
+            chip.classList.add('active');
+        });
+        chips.appendChild(chip);
+    });
+    themeSection.appendChild(themeLbl); themeSection.appendChild(chips);
+    body.appendChild(themeSection);
+
+    // Language section
+    var langSection = document.createElement('div');
+    langSection.className = 'mob-settings-section';
+    var langLbl = document.createElement('div'); langLbl.className = 'mob-settings-lbl'; langLbl.textContent = 'Quran language';
+    var langSel = document.createElement('select'); langSel.className = 'mob-settings-select';
+    [['arabic','Arabic'],['french','Français'],['english','English'],['spanish','Español']].forEach(function(pair){
+        var opt = document.createElement('option'); opt.value = pair[0]; opt.textContent = pair[1];
+        if (pair[0] === currentLanguage) opt.selected = true;
+        langSel.appendChild(opt);
+    });
+    langSel.addEventListener('change', function() {
+        document.getElementById('languageSelector').value = this.value;
+        document.getElementById('languageSelector').dispatchEvent(new Event('change'));
+    });
+    langSection.appendChild(langLbl); langSection.appendChild(langSel);
+    body.appendChild(langSection);
+
+    // Font size section
+    var fontSection = document.createElement('div');
+    fontSection.className = 'mob-settings-section';
+    var fontLbl = document.createElement('div'); fontLbl.className = 'mob-settings-lbl'; fontLbl.textContent = 'Font size';
+    fontSection.appendChild(fontLbl);
+    [
+        { label:'أ', id:'arabicFontSlider', valId:'arabicFontVal', min:1.2, max:5, step:0.1 },
+        { label:'A', id:'transFontSlider',  valId:'transFontVal',  min:0.7, max:3, step:0.05 }
+    ].forEach(function(cfg) {
+        var row = document.createElement('div'); row.className = 'mob-slider-row';
+        var lbl = document.createElement('span'); lbl.className = 'mob-slider-label'; lbl.textContent = cfg.label;
+        var inp = document.createElement('input');
+        inp.type = 'range'; inp.min = cfg.min; inp.max = cfg.max; inp.step = cfg.step;
+        inp.style.flex = '1'; inp.style.accentColor = 'var(--accent)';
+        var src = document.getElementById(cfg.id);
+        if (src) inp.value = src.value;
+        inp.addEventListener('input', function() {
+            if (src) { src.value = this.value; src.dispatchEvent(new Event('input')); }
+            val.textContent = parseFloat(this.value).toFixed(cfg.step < 0.1 ? 2 : 1);
+        });
+        var val = document.createElement('span'); val.className = 'mob-slider-val';
+        val.textContent = src ? parseFloat(src.value).toFixed(cfg.step < 0.1 ? 2 : 1) : '';
+        row.appendChild(lbl); row.appendChild(inp); row.appendChild(val);
+        fontSection.appendChild(row);
+    });
+    body.appendChild(fontSection);
+
+    // Tools section
+    var toolSection = document.createElement('div');
+    toolSection.className = 'mob-settings-section';
+    var toolLbl = document.createElement('div'); toolLbl.className = 'mob-settings-lbl'; toolLbl.textContent = 'Tools';
+    toolSection.appendChild(toolLbl);
+    [
+        { id:'toggleOrder', label: isOriginalOrder ? 'Revelation Order' : 'Classic Order' },
+        { id:'context',     label: 'Surah Context' }
+    ].forEach(function(cfg) {
+        var btn = document.createElement('button'); btn.className = 'mob-settings-btn';
+        btn.textContent = cfg.label;
+        btn.addEventListener('click', function() {
+            closeMobileSheet();
+            document.getElementById(cfg.id).click();
+        });
+        toolSection.appendChild(btn);
+    });
+    body.appendChild(toolSection);
+}
+
+// ── Sidebar open/close (desktop burger) ──────────────────────────
 function openSidebar() {
     document.getElementById('sidebar').classList.add('open');
     document.getElementById('sidebarOverlay').classList.add('active');
@@ -1237,109 +1531,69 @@ function closeSidebar() {
     document.body.style.overflow = '';
 }
 
-// Override burger menu to use new open function
-document.getElementById('burgerMenu').removeEventListener('click', toggleSidebar);
 document.getElementById('burgerMenu').addEventListener('click', function() {
-    const sidebar = document.getElementById('sidebar');
-    if (sidebar.classList.contains('open')) closeSidebar();
-    else openSidebar();
+    if (isMobile()) {
+        openMobileSheet('settings');
+    } else {
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar.classList.contains('open')) closeSidebar();
+        else openSidebar();
+    }
 });
 
-// ── Mobile search bar ──────────────────────────────────────────────
+// ── Mobile search bar ─────────────────────────────────────────────
 var mobileSearchInput = document.getElementById('mobile-search-input');
 var mobileSearchGo    = document.getElementById('mobile-search-go');
 
+function runMobileSearch() {
+    var term = mobileSearchInput ? mobileSearchInput.value.trim() : '';
+    if (!term) return;
+    document.getElementById('search-input').value = term;
+    searchQuran(term);
+    // Open search sheet to show results
+    setTimeout(function() { openMobileSheet('search'); }, 80);
+}
+
 if (mobileSearchInput) {
     mobileSearchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            var term = e.target.value.trim();
-            if (term) {
-                document.getElementById('search-input').value = term;
-                searchQuran(term);
-            }
-        }
+        if (e.key === 'Enter') runMobileSearch();
     });
 }
-
 if (mobileSearchGo) {
-    mobileSearchGo.addEventListener('click', function() {
-        var term = mobileSearchInput.value.trim();
-        if (term) {
-            document.getElementById('search-input').value = term;
-            searchQuran(term);
-        }
-    });
+    mobileSearchGo.addEventListener('click', runMobileSearch);
 }
 
-// Keep mobile search in sync with desktop search input
+// Keep mobile search in sync with desktop
 document.getElementById('search-input').addEventListener('input', function() {
     if (mobileSearchInput) mobileSearchInput.value = this.value;
 });
 
-// ── Bottom nav ────────────────────────────────────────────────────
-var bnavButtons = document.querySelectorAll('.bnav-btn');
-
-function setBnavActive(action) {
-    bnavButtons.forEach(function(btn) {
-        btn.classList.toggle('bnav-active', btn.getAttribute('data-action') === action);
-    });
-}
-
-// Settings panel (theme switcher on mobile)
-var settingsPanelOpen = false;
-
-function toggleSettingsPanel() {
-    settingsPanelOpen = !settingsPanelOpen;
-    if (settingsPanelOpen) {
-        openSidebar(); // Open sidebar as settings on mobile
-    } else {
-        closeSidebar();
-    }
-}
-
-bnavButtons.forEach(function(btn) {
+// ── Bottom nav click handlers ────────────────────────────────────
+document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
-        var action = btn.getAttribute('data-action');
-        setBnavActive(action);
-
-        if (action === 'surah') {
-            closeSidebar();
-            generateTOC();
-            saveState();
-        } else if (action === 'juz') {
-            closeSidebar();
-            generateJuzTOC();
-            saveState();
-        } else if (action === 'search') {
-            closeSidebar();
-            // Focus mobile search bar if visible, else desktop
-            if (mobileSearchInput && window.innerWidth <= 600) {
-                mobileSearchInput.focus();
-            } else {
-                var desktopSearch = document.getElementById('search-input');
-                if (desktopSearch) desktopSearch.focus();
-            }
-        } else if (action === 'bookmarks') {
-            closeSidebar();
-            var panel = document.getElementById('bookmarksPanel');
-            var isOpen = panel.classList.contains('bookmarksContainer');
-            if (isOpen) {
-                panel.classList.replace('bookmarksContainer', 'eraseDiv');
-            } else {
-                renderBookmarksList();
-                panel.classList.replace('eraseDiv', 'bookmarksContainer');
-            }
-        } else if (action === 'settings') {
-            // Toggle sidebar as settings panel
-            var sidebar = document.getElementById('sidebar');
-            if (sidebar.classList.contains('open')) closeSidebar();
-            else openSidebar();
-        }
+        openMobileSheet(btn.getAttribute('data-action'));
     });
 });
 
-// ── Sync mobile search on search result restore ───────────────────
-(function syncMobileSearch() {
-    var savedTerm = (loadState() || {}).searchTerm;
-    if (savedTerm && mobileSearchInput) mobileSearchInput.value = savedTerm;
+// ── After desktop search runs on mobile, refresh the sheet ───────
+// Patch searchQuran and searchSourat to auto-open sheet on mobile
+var _origDisplaySearchResults = displaySearchResults;
+displaySearchResults = function(verses, word) {
+    _origDisplaySearchResults(verses, word);
+    // If on mobile and sheet is showing search, refresh it
+    if (isMobile() && _sheetCurrentAction === 'search') {
+        setTimeout(function() {
+            var body  = document.getElementById('mobileSheetBody');
+            var title = document.getElementById('mobileSheetTitle');
+            if (body && title) { body.innerHTML = ''; buildSheetSearch(body, title); }
+        }, 50);
+    }
+};
+
+// Sync mobile search input on restore
+(function() {
+    var saved = loadState();
+    if (saved && saved.searchTerm && mobileSearchInput) {
+        mobileSearchInput.value = saved.searchTerm;
+    }
 }());

@@ -1,0 +1,1345 @@
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════════
+// QURAN DISPLAY v9
+// Features: Juz nav · Search history · Bookmarks · Reading history
+//           Verse highlighting · Personal notes · Font size slider
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── App state ────────────────────────────────────────────────────
+let quranData           = [];
+let currentLanguage     = 'arabic';
+let isArabic            = false;
+let isOriginalOrder     = true;
+let additionalLanguages = [];
+let contextOpen         = false;
+let contextSuraIndex    = null;
+let activeTocTab        = 'surah';   // 'surah' | 'juz' | 'revelation'
+
+// ─── Persistent stores (localStorage keys) ────────────────────────
+const STATE_KEY      = 'quranAppState';
+const BOOKMARKS_KEY  = 'quranBookmarks';   // [{suraId, verseIdx, text, suraName}]
+const HIGHLIGHTS_KEY = 'quranHighlights';  // {suraId_verseIdx: true}
+const NOTES_KEY      = 'quranNotes';       // {suraId_verseIdx: 'note text'}
+const HISTORY_KEY    = 'quranReadHistory'; // {suraId: timestamp}
+const SEARCH_HX_KEY  = 'quranSearchHx';   // [term, term, ...]
+const FONT_KEY       = 'quranFontSizes';   // {arabic: 2.8, trans: 1.87}
+
+// ─── Load helpers ─────────────────────────────────────────────────
+function lsGet(key, fallback) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+    catch(e) { return fallback; }
+}
+function lsSet(key, val) {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+
+// ─── Main state save/load ─────────────────────────────────────────
+function saveState() {
+    const suraEl      = document.querySelector('.sura');
+    const container   = document.getElementById('quranContainer');
+    const searchTerm  = document.getElementById('search-input').value.trim();
+    const resultsOpen = !document.getElementById('resultsContainerID').classList.contains('eraseDiv');
+    lsSet(STATE_KEY, {
+        language:            currentLanguage,
+        additionalLanguages: additionalLanguages.slice(),
+        suraId:              suraEl ? suraEl.getAttribute('id') : '0',
+        isOriginalOrder:     isOriginalOrder,
+        scrollTop:           container ? container.scrollTop : 0,
+        theme:               document.documentElement.getAttribute('data-theme') || 'manuscript',
+        tocWidth:            document.getElementById('tocContainer').offsetWidth,
+        searchTerm:          searchTerm,
+        searchOpen:          resultsOpen,
+        contextOpen:         contextOpen,
+        contextSuraIndex:    contextSuraIndex,
+        activeTocTab:        activeTocTab
+    });
+}
+
+function loadState() { return lsGet(STATE_KEY, null); }
+
+// ─── XML cache ────────────────────────────────────────────────────
+const xmlCache = {};
+
+async function fetchAndParseQuran(language) {
+    if (xmlCache[language]) return xmlCache[language];
+    const response = await fetch('data/quran-' + language + '.xml');
+    if (!response.ok) throw new Error('HTTP error ' + response.status);
+    const xmlString = await response.text();
+    const parser    = new DOMParser();
+    const xmlDoc    = parser.parseFromString(xmlString, 'text/xml');
+    const data = Array.from(xmlDoc.getElementsByTagName('sura')).map(function(sura, index) {
+        return {
+            id:     String(index),
+            name:   sura.getAttribute('name'),
+            city:   sura.getAttribute('city'),
+            verses: Array.from(sura.getElementsByTagName('aya')).map(function(aya) {
+                return { number: aya.getAttribute('index'), text: aya.getAttribute('text') };
+            })
+        };
+    });
+    xmlCache[language] = data;
+    return data;
+}
+
+// ─── Hijri calendar ───────────────────────────────────────────────
+const HijriMonths = [
+    'Muharram','Safar','Rabi al-Awwal','Rabi ath-Thani',
+    'Jumada al-Awwal','Jumada ath-Thani','Rajab','Shaban',
+    'Ramadan','Shawwal','Dhu al-Qadah','Dhu al-Hijjah'
+];
+
+async function getHijriCalendarForMonth() {
+    const now   = new Date();
+    const day   = String(now.getDate()).padStart(2,'0');
+    const month = String(now.getMonth()+1).padStart(2,'0');
+    const el    = document.getElementById('hijriMonth');
+    el.querySelector('.date-gregorian').textContent =
+        now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    try {
+        const resp = await fetch('https://api.aladhan.com/v1/gToH/'+day+'-'+month+'-'+now.getFullYear());
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.code === 200) {
+            const h = data.data.hijri;
+            el.querySelector('.date-hijri').textContent =
+                h.day + ' ' + HijriMonths[h.month.number-1] + ' ' + h.year + ' هـ';
+        }
+    } catch(e) {}
+}
+
+// ─── UI label translations ─────────────────────────────────────────
+const uiTranslations = {
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'🔖 المرجعيات', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'🔖 Signets', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'🔖 Bookmarks', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'🔖 Marcadores', rtl:false }
+};
+
+function applyUILanguage(language) {
+    const t   = uiTranslations[language] || uiTranslations['english'];
+    const dir = t.rtl ? 'rtl' : 'ltr';
+    const aln = t.rtl ? 'right' : 'left';
+    [['toggleOrder',t.toggleOrder],['context',t.context],['searchbutton',t.searchbutton],
+     ['searchButtonSourats',t.surahSearch],['bookmarksBtn',t.bookmarks]]
+    .forEach(function(pair){
+        const el = document.getElementById(pair[0]);
+        if (!el) return;
+        el.textContent   = pair[1];
+        el.style.direction  = dir;
+        el.style.textAlign  = aln;
+    });
+    const inp = document.getElementById('search-input');
+    if (inp) { inp.style.direction = dir; if (t.rtl) inp.placeholder = 'ابحث في القرآن…'; }
+    if (!isOriginalOrder) {
+        const tog = document.getElementById('toggleOrder');
+        if (tog) {
+            const cl = t.rtl ? 'الترتيب الكلاسيكي' : (language==='french'?'Ordre classique':language==='spanish'?'Orden clásico':'Classic Order');
+            tog.textContent = cl; tog.style.direction = dir; tog.style.textAlign = aln;
+        }
+    }
+}
+
+// ─── Diacritics ───────────────────────────────────────────────────
+function removeDiacritics(text) { return text.replace(/[\u064B-\u0652]/g,''); }
+function normalize(text, ignoreDia) { return ignoreDia ? removeDiacritics(text) : text; }
+function getIgnoreDiacritics() {
+    return currentLanguage === 'arabic' && document.getElementById('ignore-diacritics').checked;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FONT SIZE SLIDER
+// ═══════════════════════════════════════════════════════════════════
+let fontSizes = lsGet(FONT_KEY, { arabic: 2.8, trans: 1.87 });
+
+function applyFontSizes() {
+    document.documentElement.style.setProperty('--verse-font-size', fontSizes.arabic + 'rem');
+    document.documentElement.style.setProperty('--trans-font-size', fontSizes.trans + 'rem');
+    document.getElementById('arabicFontVal').textContent = fontSizes.arabic.toFixed(1);
+    document.getElementById('transFontVal').textContent  = fontSizes.trans.toFixed(2);
+    document.getElementById('arabicFontSlider').value    = fontSizes.arabic;
+    document.getElementById('transFontSlider').value     = fontSizes.trans;
+}
+
+document.getElementById('arabicFontSlider').addEventListener('input', function() {
+    fontSizes.arabic = parseFloat(this.value);
+    lsSet(FONT_KEY, fontSizes);
+    applyFontSizes();
+});
+
+document.getElementById('transFontSlider').addEventListener('input', function() {
+    fontSizes.trans = parseFloat(this.value);
+    lsSet(FONT_KEY, fontSizes);
+    applyFontSizes();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SEARCH HISTORY
+// ═══════════════════════════════════════════════════════════════════
+function getSearchHistory() { return lsGet(SEARCH_HX_KEY, []); }
+
+function addToSearchHistory(term) {
+    if (!term) return;
+    let hx = getSearchHistory().filter(function(t){ return t !== term; });
+    hx.unshift(term);
+    if (hx.length > 10) hx = hx.slice(0, 10);
+    lsSet(SEARCH_HX_KEY, hx);
+    renderSearchHistory();
+}
+
+function renderSearchHistory() {
+    const row = document.getElementById('searchHistoryRow');
+    row.innerHTML = '';
+    const hx = getSearchHistory();
+    hx.forEach(function(term) {
+        const chip = document.createElement('span');
+        chip.className   = 'search-chip';
+        chip.textContent = term;
+        chip.title       = term;
+        chip.addEventListener('click', function() {
+            document.getElementById('search-input').value = term;
+            searchQuran(term);
+        });
+        row.appendChild(chip);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// READING HISTORY
+// ═══════════════════════════════════════════════════════════════════
+function markSuraAsRead(suraId) {
+    const hx = lsGet(HISTORY_KEY, {});
+    hx[String(suraId)] = Date.now();
+    lsSet(HISTORY_KEY, hx);
+}
+
+function hasSuraBeenRead(suraId) {
+    const hx = lsGet(HISTORY_KEY, {});
+    return !!hx[String(suraId)];
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// BOOKMARKS
+// ═══════════════════════════════════════════════════════════════════
+function getBookmarks() { return lsGet(BOOKMARKS_KEY, []); }
+
+function verseKey(suraId, verseIdx) { return suraId + '_' + verseIdx; }
+
+function isBookmarked(suraId, verseIdx) {
+    return getBookmarks().some(function(b){ return b.key === verseKey(suraId, verseIdx); });
+}
+
+function addBookmark(suraId, verseIdx, verseText, suraName) {
+    const bms = getBookmarks();
+    const key = verseKey(suraId, verseIdx);
+    if (bms.some(function(b){ return b.key === key; })) return;
+    bms.unshift({ key: key, suraId: suraId, verseIdx: verseIdx, text: verseText, suraName: suraName });
+    lsSet(BOOKMARKS_KEY, bms);
+    renderBookmarksList();
+}
+
+function removeBookmark(key) {
+    const bms = getBookmarks().filter(function(b){ return b.key !== key; });
+    lsSet(BOOKMARKS_KEY, bms);
+    renderBookmarksList();
+    // Update button state if visible
+    const suraEl = document.querySelector('.sura');
+    if (suraEl) reapplyVerseActions(suraEl.id);
+}
+
+function renderBookmarksList() {
+    const list = document.getElementById('bookmarks-list');
+    const bms  = getBookmarks();
+    list.innerHTML = '';
+    if (bms.length === 0) {
+        list.innerHTML = '<div class="bookmarks-empty">No bookmarks yet.<br>Hover a verse and click 🔖 to save it.</div>';
+        return;
+    }
+    bms.forEach(function(b) {
+        const item = document.createElement('div');
+        item.className = 'bookmark-item';
+        const removeBtn = document.createElement('button');
+        removeBtn.className   = 'bookmark-remove';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', function(e){ e.stopPropagation(); removeBookmark(b.key); });
+        const surahEl = document.createElement('div');
+        surahEl.className   = 'bookmark-surah';
+        surahEl.textContent = b.suraName + ' · v.' + (b.verseIdx + 1);
+        const verseEl = document.createElement('div');
+        verseEl.className   = 'bookmark-verse';
+        verseEl.textContent = b.text;
+        item.appendChild(removeBtn);
+        item.appendChild(surahEl);
+        item.appendChild(verseEl);
+        item.addEventListener('click', function() {
+            displaySingleSura(b.suraId);
+            setTimeout(function() {
+                const verses = document.querySelectorAll('.verse');
+                if (verses[b.verseIdx]) verses[b.verseIdx].scrollIntoView({ behavior:'smooth' });
+            }, 100);
+        });
+        list.appendChild(item);
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// VERSE HIGHLIGHTING
+// ═══════════════════════════════════════════════════════════════════
+function getHighlights() { return lsGet(HIGHLIGHTS_KEY, {}); }
+
+function isHighlighted(suraId, verseIdx) {
+    return !!getHighlights()[verseKey(suraId, verseIdx)];
+}
+
+function toggleHighlight(suraId, verseIdx, verseEl, btn) {
+    const hl  = getHighlights();
+    const key = verseKey(suraId, verseIdx);
+    if (hl[key]) {
+        delete hl[key];
+        verseEl.classList.remove('verse-highlighted');
+        btn.classList.remove('active');
+    } else {
+        hl[key] = true;
+        verseEl.classList.add('verse-highlighted');
+        btn.classList.add('active');
+    }
+    lsSet(HIGHLIGHTS_KEY, hl);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PERSONAL NOTES
+// ═══════════════════════════════════════════════════════════════════
+function getNotes() { return lsGet(NOTES_KEY, {}); }
+
+let noteModalTarget = null; // {suraId, verseIdx, noteBtn}
+
+function openNoteModal(suraId, verseIdx, noteBtn) {
+    noteModalTarget = { suraId: suraId, verseIdx: verseIdx, noteBtn: noteBtn };
+    const notes = getNotes();
+    const key   = verseKey(suraId, verseIdx);
+    document.getElementById('noteModalText').value  = notes[key] || '';
+    document.getElementById('noteModalTitle').textContent = 'Note — verse ' + (verseIdx + 1);
+    document.getElementById('noteModal').style.display = 'flex';
+    document.getElementById('noteModalText').focus();
+}
+
+function closeNoteModal() {
+    document.getElementById('noteModal').style.display = 'none';
+    noteModalTarget = null;
+}
+
+document.getElementById('noteModalClose').addEventListener('click', closeNoteModal);
+
+document.getElementById('noteModalSave').addEventListener('click', function() {
+    if (!noteModalTarget) return;
+    const notes = getNotes();
+    const key   = verseKey(noteModalTarget.suraId, noteModalTarget.verseIdx);
+    const text  = document.getElementById('noteModalText').value.trim();
+    if (text) {
+        notes[key] = text;
+        noteModalTarget.noteBtn.classList.add('active');
+        // Add/update dot
+        let dot = noteModalTarget.noteBtn.querySelector('.note-dot');
+        if (!dot) { dot = document.createElement('span'); dot.className = 'note-dot'; noteModalTarget.noteBtn.appendChild(dot); }
+    } else {
+        delete notes[key];
+        noteModalTarget.noteBtn.classList.remove('active');
+        const dot = noteModalTarget.noteBtn.querySelector('.note-dot');
+        if (dot) dot.remove();
+    }
+    lsSet(NOTES_KEY, notes);
+    closeNoteModal();
+});
+
+document.getElementById('noteModalDelete').addEventListener('click', function() {
+    if (!noteModalTarget) return;
+    const notes = getNotes();
+    const key   = verseKey(noteModalTarget.suraId, noteModalTarget.verseIdx);
+    delete notes[key];
+    lsSet(NOTES_KEY, notes);
+    noteModalTarget.noteBtn.classList.remove('active');
+    const dot = noteModalTarget.noteBtn.querySelector('.note-dot');
+    if (dot) dot.remove();
+    closeNoteModal();
+});
+
+// Close on overlay click
+document.getElementById('noteModal').addEventListener('click', function(e) {
+    if (e.target === this) closeNoteModal();
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// MULTI-LANGUAGE
+// ═══════════════════════════════════════════════════════════════════
+const langLabels = { arabic:'Arabic', french:'Français', english:'English', spanish:'Español' };
+const langColors  = ['#7ab8d4','#a0c878','#d4a07a','#c87aab','#a07ad4'];
+
+function getLangColor(code) {
+    const idx = additionalLanguages.indexOf(code);
+    return langColors[Math.max(0,idx) % langColors.length];
+}
+
+function applyLanguageToVerses(langCode) {
+    const data   = xmlCache[langCode]; if (!data) return;
+    const suraEl = document.querySelector('.sura'); if (!suraEl) return;
+    const sura   = data[parseInt(suraEl.id)]; if (!sura) return;
+    const color  = getLangColor(langCode);
+    document.querySelectorAll('.verse').forEach(function(verseEl, i) {
+        if (sura.verses[i]) {
+            const p = document.createElement('p');
+            p.className = 'secondary-verse'; p.dataset.lang = langCode;
+            p.textContent = sura.verses[i].text; p.style.color = color;
+            // Insert before verse-actions if present
+            const actions = verseEl.querySelector('.verse-actions');
+            if (actions) verseEl.insertBefore(p, actions);
+            else verseEl.appendChild(p);
+        }
+    });
+}
+
+function removeLanguageFromVerses(langCode) {
+    document.querySelectorAll('[data-lang="'+langCode+'"]').forEach(function(el){ el.remove(); });
+}
+
+function removeAllSecondaryVerses() {
+    document.querySelectorAll('.secondary-verse').forEach(function(el){ el.remove(); });
+}
+
+async function addSecondaryLanguage(langCode) {
+    if (additionalLanguages.indexOf(langCode) !== -1) return;
+    additionalLanguages.push(langCode);
+    if (!xmlCache[langCode]) {
+        try { await fetchAndParseQuran(langCode); } catch(e) { console.error('Error', langCode, e); return; }
+    }
+    applyLanguageToVerses(langCode); addLangTagToUI(langCode); saveState();
+}
+
+function removeSecondaryLanguage(langCode) {
+    additionalLanguages = additionalLanguages.filter(function(c){ return c !== langCode; });
+    removeLanguageFromVerses(langCode); removeLangTagFromUI(langCode); restoreLangOption(langCode); saveState();
+}
+
+function clearAllSecondaryLanguages() {
+    additionalLanguages.slice().forEach(restoreLangOption);
+    additionalLanguages = []; removeAllSecondaryVerses();
+    document.getElementById('langTagsContainer').innerHTML = '';
+}
+
+function addLangTagToUI(langCode) {
+    const container = document.getElementById('langTagsContainer');
+    const row = document.createElement('div');
+    row.className = 'lang-tag-row'; row.id = 'lang-tag-' + langCode;
+    const color = getLangColor(langCode); row.style.borderColor = color + '40';
+    const label = document.createElement('span');
+    label.className = 'lang-tag-label'; label.textContent = langLabels[langCode]||langCode; label.style.color = color;
+    const btn = document.createElement('button');
+    btn.className = 'lang-tag-remove'; btn.textContent = '✕';
+    btn.addEventListener('click', function(){ removeSecondaryLanguage(langCode); });
+    row.appendChild(label); row.appendChild(btn); container.appendChild(row);
+    removeLangOption(langCode);
+}
+
+function removeLangTagFromUI(langCode) { const t = document.getElementById('lang-tag-'+langCode); if (t) t.remove(); }
+
+function removeLangOption(langCode) {
+    const sel = document.getElementById('SurahLanguageSelector');
+    const opt = sel.querySelector('option[value="'+langCode+'"]'); if (opt) opt.remove();
+}
+
+function restoreLangOption(langCode) {
+    const sel = document.getElementById('SurahLanguageSelector');
+    if (langCode === currentLanguage) return;
+    if (sel.querySelector('option[value="'+langCode+'"]')) return;
+    const opt = document.createElement('option'); opt.value = langCode;
+    opt.textContent = langLabels[langCode]||langCode; sel.appendChild(opt);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOAD QURAN DATA
+// ═══════════════════════════════════════════════════════════════════
+async function loadQuranData(targetSuraId) {
+    clearSuraContext(); isArabic = (currentLanguage === 'arabic');
+    const suraEl = document.querySelector('.sura');
+    const suraToShow = (targetSuraId !== undefined && targetSuraId !== null)
+        ? targetSuraId : (suraEl ? +suraEl.getAttribute('id') : 0);
+    try {
+        quranData = await fetchAndParseQuran(currentLanguage);
+        renderCurrentTOC();
+        displaySingleSura(suraToShow);
+        document.getElementById('arabic-options').style.display = isArabic ? 'block' : 'none';
+        saveState();
+    } catch(e) { console.error('Error loading:', e); }
+}
+
+async function loadRevelationOrderQuranData() {
+    isArabic = (currentLanguage === 'arabic');
+    try {
+        quranData = await fetchAndParseQuran(currentLanguage);
+        generateRevelationTOC();
+        document.getElementById('arabic-options').style.display = isArabic ? 'block' : 'none';
+        saveState();
+    } catch(e) { console.error('Error loading:', e); }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// JUZ DATA
+// Each entry: [juzNumber, arabicName, suraIndex(0-based), ayahNumber(1-based), startSuraName]
+// ═══════════════════════════════════════════════════════════════════
+const JUZ_DATA = [
+    [1,  'الجزء الأول',    0,  1,  'Al-Fatiha'],
+    [2,  'الجزء الثاني',   1,  142,'Al-Baqara'],
+    [3,  'الجزء الثالث',   1,  253,'Al-Baqara'],
+    [4,  'الجزء الرابع',   2,  92, 'Al-Imran'],
+    [5,  'الجزء الخامس',   3,  24, 'An-Nisa'],
+    [6,  'الجزء السادس',   3,  148,'An-Nisa'],
+    [7,  'الجزء السابع',   4,  82, 'Al-Maidah'],
+    [8,  'الجزء الثامن',   5,  111,'Al-An\'am'],
+    [9,  'الجزء التاسع',   6,  88, 'Al-A\'raf'],
+    [10, 'الجزء العاشر',   7,  41, 'Al-Anfal'],
+    [11, 'الجزء الحادي عشر', 8, 93, 'At-Tawbah'],
+    [12, 'الجزء الثاني عشر',10,  6, 'Hud'],
+    [13, 'الجزء الثالث عشر',11, 53, 'Yusuf'],
+    [14, 'الجزء الرابع عشر',14,  1, 'Al-Hijr'],
+    [15, 'الجزء الخامس عشر',16,  1, 'Al-Isra'],
+    [16, 'الجزء السادس عشر',17, 75, 'Al-Kahf'],
+    [17, 'الجزء السابع عشر',20,  1, 'Al-Anbiya'],
+    [18, 'الجزء الثامن عشر',22,  1, 'Al-Muminun'],
+    [19, 'الجزء التاسع عشر',24, 21, 'Al-Furqan'],
+    [20, 'الجزء العشرون',  26, 56, 'An-Naml'],
+    [21, 'الجزء الحادي والعشرون',28,46,'Al-Ankabut'],
+    [22, 'الجزء الثاني والعشرون',32,31,'Al-Ahzab'],
+    [23, 'الجزء الثالث والعشرون',35,28,'Ya-Sin'],
+    [24, 'الجزء الرابع والعشرون',38,32,'Az-Zumar'],
+    [25, 'الجزء الخامس والعشرون',40,47,'Fussilat'],
+    [26, 'الجزء السادس والعشرون',45, 1,'Al-Ahqaf'],
+    [27, 'الجزء السابع والعشرون',50,31,'Adh-Dhariyat'],
+    [28, 'الجزء الثامن والعشرون',57, 1,'Al-Mujadila'],
+    [29, 'الجزء التاسع والعشرون',66, 1,'Al-Mulk'],
+    [30, 'الجزء الثلاثون',  77, 1,'An-Naba']
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// TOC BUILDERS
+// ═══════════════════════════════════════════════════════════════════
+function makeCityIcon(city) {
+    const img = document.createElement('img');
+    img.src   = city === 'Makkah' ? 'img/makkah-icon.png' : 'img/madinah-icon.png';
+    img.alt   = city; img.title = city; img.classList.add('city-icon');
+    return img;
+}
+
+function buildTocItem(name, city, displayIndex, clickHandler, suraId) {
+    const item  = document.createElement('div');
+    item.classList.add('toc-item');
+    const left  = document.createElement('span');
+    left.classList.add('toc-item-left');
+    left.appendChild(makeCityIcon(city));
+    const nameSpan = document.createElement('span');
+    nameSpan.classList.add('toc-item-name');
+    nameSpan.textContent = (displayIndex + 1) + '. ' + name;
+    // Reading history dot
+    if (suraId !== undefined && hasSuraBeenRead(suraId)) {
+        const dot = document.createElement('span');
+        dot.className = 'history-dot'; dot.title = 'Previously read';
+        nameSpan.appendChild(dot);
+    }
+    left.appendChild(nameSpan);
+    const right = document.createElement('span');
+    right.classList.add('toc-item-right');
+    const num = document.createElement('span');
+    num.classList.add('toc-num'); num.textContent = displayIndex + 1;
+    right.appendChild(num);
+    item.appendChild(left); item.appendChild(right);
+    item.addEventListener('click', clickHandler);
+    return item;
+}
+
+function setActiveTocItem(el) {
+    document.querySelectorAll('.toc-item, .juz-item').forEach(function(i){ i.classList.remove('toc-active'); });
+    if (el) el.classList.add('toc-active');
+}
+
+function getScrollWrap() {
+    const sw = document.getElementById('toc-scroll');
+    if (sw) { sw.innerHTML = ''; return sw; }
+    // Fallback: create fresh scroll area in tocContainer
+    const container = document.getElementById('tocContainer');
+    const scrollWrap = document.createElement('div');
+    scrollWrap.className = 'toc-scroll'; scrollWrap.id = 'toc-scroll';
+    container.appendChild(scrollWrap);
+    return scrollWrap;
+}
+
+function setTocLabel(text) {
+    const lbl = document.getElementById('toc-section-label');
+    if (lbl) lbl.textContent = text;
+}
+
+function generateTOC() {
+    activeTocTab = 'surah';
+    setTocTabActive('surah');
+    setTocLabel('📖 114 Surahs');
+    const sw = getScrollWrap();
+    quranData.forEach(function(sura, index) {
+        const item = buildTocItem(sura.name, sura.city, index, function() {
+            clearSuraContext(); clearAllSecondaryLanguages(); closeSearchResults();
+            displaySingleSura(index); setActiveTocItem(item);
+        }, index);
+        sw.appendChild(item);
+    });
+    applyTocWidth();
+}
+
+const RevelationOrder = [96,68,73,74,1,111,81,87,92,89,93,94,103,100,108,102,107,109,105,113,114,112,53,80,97,91,85,95,106,101,75,104,77,50,90,86,54,38,7,72,36,25,35,19,20,56,26,27,28,17,10,11,12,15,6,37,31,34,39,40,41,42,43,44,45,46,51,88,18,16,71,14,21,23,32,52,67,69,70,78,79,82,84,30,29,83,2,8,3,33,60,4,99,57,47,13,55,76,65,98,59,24,22,63,58,49,66,64,61,62,48,5,9,110];
+
+function generateRevelationTOC() {
+    activeTocTab = 'revelation';
+    setTocTabActive('revelation');
+    setTocLabel('📖 Revelation Order');
+    const sw = getScrollWrap();
+    RevelationOrder.forEach(function(suraNum, index) {
+        const source = quranData[suraNum - 1]; if (!source) return;
+        const item = buildTocItem(source.name, source.city, index, function() {
+            clearAllSecondaryLanguages(); closeSearchResults();
+            displaySingleRevelationSura(suraNum); setActiveTocItem(item);
+        }, suraNum - 1);
+        sw.appendChild(item);
+    });
+    applyTocWidth();
+}
+
+function generateJuzTOC() {
+    activeTocTab = 'juz';
+    setTocTabActive('juz');
+    setTocLabel('📚 30 Juz (أجزاء)');
+    const sw = getScrollWrap();
+    JUZ_DATA.forEach(function(juz) {
+        const juzNum    = juz[0];
+        const juzAr     = juz[1];
+        const suraIdx   = juz[2];
+        const ayahNum   = juz[3];
+        const startName = juz[4];
+        const item = document.createElement('div');
+        item.classList.add('juz-item');
+        const numEl = document.createElement('span');
+        numEl.classList.add('juz-num'); numEl.textContent = juzNum;
+        const info = document.createElement('span');
+        info.classList.add('juz-info');
+        const nameEl = document.createElement('span');
+        nameEl.classList.add('juz-name'); nameEl.textContent = juzAr;
+        const subEl = document.createElement('span');
+        subEl.classList.add('juz-sub'); subEl.textContent = 'Starts: ' + startName + (ayahNum > 1 ? ' v.' + ayahNum : '');
+        info.appendChild(nameEl); info.appendChild(subEl);
+        item.appendChild(numEl); item.appendChild(info);
+        item.addEventListener('click', function() {
+            clearAllSecondaryLanguages(); closeSearchResults(); clearSuraContext();
+            displaySingleSura(suraIdx);
+            setActiveTocItem(item);
+            // Scroll to correct ayah after render
+            if (ayahNum > 1) {
+                setTimeout(function() {
+                    const verses = document.querySelectorAll('.verse');
+                    const target = verses[ayahNum - 1];
+                    if (target) target.scrollIntoView({ behavior:'smooth' });
+                }, 150);
+            }
+        });
+        sw.appendChild(item);
+    });
+    applyTocWidth();
+}
+
+function renderCurrentTOC() {
+    if (activeTocTab === 'juz')        generateJuzTOC();
+    else if (activeTocTab === 'revelation') generateRevelationTOC();
+    else                                generateTOC();
+}
+
+function setTocTabActive(tab) {
+    document.querySelectorAll('.toc-tab').forEach(function(btn) {
+        btn.classList.toggle('toc-tab-active', btn.getAttribute('data-tab') === tab);
+    });
+}
+
+function applyTocWidth() {
+    try {
+        const sw = parseInt(localStorage.getItem('quranTocWidth'), 10);
+        if (sw && sw >= 140) scaleTocFont(sw);
+    } catch(e) {}
+}
+
+// Tab click listeners
+document.querySelectorAll('.toc-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        const tab = btn.getAttribute('data-tab');
+        if (tab === 'surah')       generateTOC();
+        else if (tab === 'juz')    generateJuzTOC();
+        else                       generateRevelationTOC();
+        saveState();
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// VERSE RENDERING WITH ACTIONS
+// ═══════════════════════════════════════════════════════════════════
+function buildVerseActions(suraId, verseIdx, verseText, suraName) {
+    const actions = document.createElement('div');
+    actions.classList.add('verse-actions');
+
+    // Highlight button
+    const hlBtn = document.createElement('button');
+    hlBtn.className   = 'verse-action-btn';
+    hlBtn.textContent = '✦ Highlight';
+    if (isHighlighted(suraId, verseIdx)) hlBtn.classList.add('active');
+    hlBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleHighlight(suraId, verseIdx, hlBtn.closest('.verse'), hlBtn);
+    });
+
+    // Bookmark button
+    const bkBtn = document.createElement('button');
+    bkBtn.className   = 'verse-action-btn';
+    bkBtn.textContent = '🔖';
+    if (isBookmarked(suraId, verseIdx)) bkBtn.classList.add('active');
+    bkBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (isBookmarked(suraId, verseIdx)) {
+            removeBookmark(verseKey(suraId, verseIdx));
+            bkBtn.classList.remove('active');
+        } else {
+            addBookmark(suraId, verseIdx, verseText, suraName);
+            bkBtn.classList.add('active');
+        }
+    });
+
+    // Note button
+    const noteBtn = document.createElement('button');
+    noteBtn.className   = 'verse-action-btn';
+    noteBtn.textContent = '📝';
+    const notes = getNotes();
+    if (notes[verseKey(suraId, verseIdx)]) {
+        noteBtn.classList.add('active');
+        const dot = document.createElement('span'); dot.className = 'note-dot';
+        noteBtn.appendChild(dot);
+    }
+    noteBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        openNoteModal(suraId, verseIdx, noteBtn);
+    });
+
+    actions.appendChild(hlBtn);
+    actions.appendChild(bkBtn);
+    actions.appendChild(noteBtn);
+    return actions;
+}
+
+function buildSuraDOM(sura) {
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('sura'); wrapper.id = sura.id;
+    const title = document.createElement('h2');
+    title.id = 'suraTitle';
+    title.textContent = (parseInt(sura.id) + 1) + ' — ' + sura.name;
+    wrapper.appendChild(title);
+    sura.verses.forEach(function(verse, verseIdx) {
+        const p = document.createElement('p');
+        p.classList.add('verse');
+        if (isArabic) p.classList.add('right-align');
+        if (isHighlighted(sura.id, verseIdx)) p.classList.add('verse-highlighted');
+        p.innerHTML = highlightText(verse.text, '');
+        const icon = document.createElement('span');
+        icon.classList.add('verse-icon');
+        icon.innerHTML = '<span class="icon-number">' + verse.number + '</span>';
+        p.appendChild(icon);
+        p.appendChild(buildVerseActions(sura.id, verseIdx, verse.text, sura.name));
+        wrapper.appendChild(p);
+    });
+    return wrapper;
+}
+
+function reapplyVerseActions(suraId) {
+    const suraEl  = document.getElementById(suraId); if (!suraEl) return;
+    const sura    = quranData.find(function(s){ return s.id === String(suraId); }); if (!sura) return;
+    const verses  = suraEl.querySelectorAll('.verse');
+    verses.forEach(function(verseEl, verseIdx) {
+        const old = verseEl.querySelector('.verse-actions');
+        if (old) old.remove();
+        verseEl.appendChild(buildVerseActions(suraId, verseIdx, sura.verses[verseIdx].text, sura.name));
+        if (isHighlighted(suraId, verseIdx)) verseEl.classList.add('verse-highlighted');
+        else verseEl.classList.remove('verse-highlighted');
+    });
+}
+
+function displaySingleSura(suraId) {
+    const sura = quranData.find(function(s){ return s.id === String(suraId); });
+    if (!sura) return;
+    const container = document.getElementById('quranContainer');
+    container.innerHTML = '';
+    container.appendChild(buildSuraDOM(sura));
+    container.classList.replace('eraseDiv','textContainer');
+    container.scrollTop = 0;
+    clearSuraContext();
+    markSuraAsRead(suraId);
+    saveState();
+}
+
+function displaySingleRevelationSura(suraNum) {
+    const sura = quranData.find(function(s){ return s.id === String(suraNum-1); });
+    if (!sura) return;
+    const container = document.getElementById('quranContainer');
+    container.innerHTML = '';
+    container.appendChild(buildSuraDOM(sura));
+    container.classList.replace('eraseDiv','textContainer');
+    const ctx = document.getElementById('suraContent');
+    ctx.classList.replace('sura-contexte','eraseDiv'); ctx.innerHTML = '';
+    markSuraAsRead(suraNum - 1);
+    saveState();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SEARCH
+// ═══════════════════════════════════════════════════════════════════
+function highlightText(text, term) {
+    if (!term) return text;
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    return text.replace(new RegExp('('+escaped+')','gi'),'<span class="highlight">$1</span>');
+}
+
+function searchSourat(word) {
+    const container = document.getElementById('quranContainer'); if (!container.firstChild) return;
+    const sura = quranData.find(function(s){ return s.id === container.firstChild.id; }); if (!sura) return;
+    const ignoreDia = getIgnoreDiacritics();
+    const sw = normalize(word, ignoreDia).toLowerCase();
+    const matched = sura.verses.filter(function(v){ return normalize(v.text,ignoreDia).toLowerCase().includes(sw); });
+    displaySearchResultsForSourat(matched, sura, word);
+    addToSearchHistory(word); saveState();
+}
+
+function searchQuran(word) {
+    const ignoreDia  = getIgnoreDiacritics();
+    const searchTerm = normalize(word, ignoreDia).toLowerCase();
+    const matched = quranData.flatMap(function(sura){
+        return sura.verses
+            .map(function(v){ return { suraName:sura.name, suraId:sura.id, verseNumber:v.number, verseText:normalize(v.text,ignoreDia) }; })
+            .filter(function(v){ return v.verseText.toLowerCase().includes(searchTerm); });
+    });
+    displaySearchResults(matched, word);
+    addToSearchHistory(word); saveState();
+}
+
+function showResultsContainer(summaryText) {
+    document.getElementById('resultsContainerID').classList.replace('eraseDiv','resultsContainer');
+    document.getElementById('results-label').textContent = summaryText || 'Results';
+}
+
+function closeSearchResults() {
+    document.getElementById('resultsContainerID').classList.replace('resultsContainer','eraseDiv');
+    const r = document.getElementById('search-results');
+    r.innerHTML = ''; r.classList.replace('resultsClass','eraseDiv');
+    saveState();
+}
+
+function resetSearch() {
+    document.getElementById('search-input').value = '';
+    const first = document.getElementById('quranContainer').firstChild;
+    if (first) displaySingleSura(first.id);
+    closeSearchResults();
+}
+
+function displaySearchResultsForSourat(verses, sura, word) {
+    const ignoreDia = getIgnoreDiacritics();
+    const sw = normalize(word, ignoreDia);
+    const escaped = sw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    let totalMatches = 0;
+    verses.forEach(function(v){ totalMatches += (normalize(v.text,ignoreDia).match(new RegExp(escaped,'gi'))||[]).length; });
+    showResultsContainer(sura.name + ' · ' + totalMatches + ' matches');
+    const el = document.getElementById('search-results');
+    el.innerHTML = ''; el.classList.replace('eraseDiv','resultsClass');
+    const total = document.createElement('div'); total.classList.add('total-matches');
+    total.textContent = totalMatches + ' occurrences in ' + verses.length + ' verse(s)';
+    el.appendChild(total);
+    if (totalMatches === 0) { el.innerHTML += '<div>No results.</div>'; return; }
+    verses.forEach(function(verse){
+        const vt = normalize(verse.text, ignoreDia);
+        const mc = (vt.match(new RegExp(escaped,'gi'))||[]).length; if (mc === 0) return;
+        const row = document.createElement('div'); row.classList.add('search-result-item');
+        row.textContent = '· verse ' + verse.number + ' ×' + mc;
+        row.addEventListener('click', function(){ highlightAndScrollToVerse(sura.id, verse.number); });
+        el.appendChild(row);
+    });
+}
+
+function displaySearchResults(verses, word) {
+    if (verses.length === 0) {
+        showResultsContainer('No results');
+        const el = document.getElementById('search-results');
+        el.innerHTML = '<div style="padding:8px;font-size:0.82rem;opacity:0.6;">No results found.</div>';
+        el.classList.replace('eraseDiv','resultsClass'); return;
+    }
+    const ignoreDia = getIgnoreDiacritics();
+    const sw = normalize(word, ignoreDia);
+    const escaped = sw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    let total = 0; const surahMap = new Map();
+    verses.forEach(function(v){
+        const mc = (v.verseText.match(new RegExp(escaped,'gi'))||[]).length; total += mc;
+        if (!surahMap.has(v.suraName)) surahMap.set(v.suraName,[]);
+        surahMap.get(v.suraName).push({ verseNumber:v.verseNumber, matchCount:mc, suraId:v.suraId });
+    });
+    showResultsContainer(total + ' matches · ' + surahMap.size + ' surahs');
+    const el = document.getElementById('search-results');
+    el.innerHTML = ''; el.classList.replace('eraseDiv','resultsClass');
+    const totalEl = document.createElement('div'); totalEl.classList.add('total-matches');
+    totalEl.textContent = total + ' occurrences across ' + verses.length + ' verse(s)'; el.appendChild(totalEl);
+    surahMap.forEach(function(surahVerses, surahName){
+        const group = document.createElement('div'); group.classList.add('surah-results');
+        const h = document.createElement('h3'); h.classList.add('SearchResultSurah'); h.textContent = surahName; group.appendChild(h);
+        surahVerses.forEach(function(v){
+            const row = document.createElement('div'); row.classList.add('search-result-item');
+            row.textContent = '· verse ' + v.verseNumber + ' ×' + v.matchCount;
+            row.addEventListener('click', function(){ highlightAndScrollToVerse(v.suraId, v.verseNumber); });
+            group.appendChild(row);
+        });
+        el.appendChild(group);
+    });
+}
+
+function highlightAndScrollToVerse(suraId, verseNumber) {
+    const currentEl = document.getElementById('quranContainer').firstChild;
+    if (!currentEl || currentEl.id !== String(suraId)) displaySingleSura(suraId);
+    const suraContainer = document.getElementById(suraId); if (!suraContainer) return;
+    const verseEls = suraContainer.getElementsByClassName('verse');
+    const suraData = quranData.find(function(s){ return s.id === String(suraId); }); if (!suraData) return;
+    const term = document.getElementById('search-input').value.trim();
+    Array.from(verseEls).forEach(function(el, i){
+        // Rebuild verse content with highlight, keeping action buttons
+        const actions = el.querySelector('.verse-actions');
+        el.innerHTML = '';
+        const span = document.createElement('span'); span.innerHTML = highlightText(suraData.verses[i].text, term);
+        el.appendChild(span);
+        const icon = document.createElement('span'); icon.classList.add('verse-icon');
+        icon.innerHTML = '<span class="icon-number">' + (i+1) + '</span>';
+        el.appendChild(icon);
+        if (actions) el.appendChild(actions);
+        else el.appendChild(buildVerseActions(suraId, i, suraData.verses[i].text, suraData.name));
+    });
+    const target = verseEls[verseNumber - 1];
+    if (target) target.scrollIntoView({ behavior:'smooth' });
+    clearSuraContext();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// CONTEXT PANEL
+// ═══════════════════════════════════════════════════════════════════
+function clearSuraContext() {
+    contextOpen = false; contextSuraIndex = null;
+    const ctx = document.getElementById('suraContent');
+    if (ctx) { ctx.classList.replace('sura-contexte','eraseDiv'); ctx.innerHTML = ''; }
+    document.getElementById('quranContainer').classList.replace('eraseDiv','textContainer');
+    saveState();
+}
+
+async function fetchAndDisplayContext(suraIndex) {
+    isArabic = (currentLanguage === 'arabic');
+    async function tryFile(path) {
+        try {
+            const r = await fetch(path); if (!r.ok) return null;
+            const xml = await r.text();
+            const doc = new DOMParser().parseFromString(xml,'text/xml');
+            return Array.from(doc.getElementsByTagName('sura')).find(function(s){ return s.getAttribute('index') === String(suraIndex); }) || null;
+        } catch(e) { return null; }
+    }
+    const foundSura = await tryFile('data/context/context-'+currentLanguage+'1.xml')
+                   || await tryFile('data/context/context-'+currentLanguage+'2.xml');
+    const div = document.getElementById('suraContent');
+    if (!foundSura) {
+        div.innerHTML = '<p style="opacity:0.5;font-size:1.6rem;padding:20px;">Context not available for this surah.</p>';
+        div.classList.replace('eraseDiv','sura-contexte');
+    } else { displaySuraContext(foundSura); }
+    contextOpen = true; contextSuraIndex = suraIndex; saveState();
+}
+
+function displaySuraContext(sura) {
+    const div = document.getElementById('suraContent'); div.innerHTML = '';
+    const sections = sura.getElementsByTagName('section'); let isFirst = true;
+    Array.from(sections).forEach(function(section, idx){
+        const sectionTitle = section.getElementsByTagName('title')[0].textContent;
+        const contentEl    = section.getElementsByTagName('content')[0];
+        const items        = contentEl.getElementsByTagName('title');
+        const descs        = contentEl.getElementsByTagName('description');
+        const article      = document.createElement('article');
+        if (isFirst) {
+            const intro = section.getElementsByTagName('introduction')[0];
+            if (intro) { const p = document.createElement('p'); p.textContent = intro.textContent; article.appendChild(p); }
+            isFirst = false;
+        }
+        const h2 = document.createElement('h2'); h2.textContent = (idx+1) + '. ' + sectionTitle; article.appendChild(h2);
+        Array.from(items).forEach(function(item, i){
+            const d = document.createElement('div'); d.className = 'item';
+            const h3 = document.createElement('h3'); h3.textContent = item.textContent; d.appendChild(h3);
+            const p  = document.createElement('p');  p.textContent = descs[i] ? descs[i].textContent : ''; d.appendChild(p);
+            article.appendChild(d);
+        });
+        if (isArabic) div.classList.add('right-align'); else div.classList.remove('right-align');
+        div.appendChild(article); div.classList.replace('eraseDiv','sura-contexte');
+    });
+    div.scrollTop = 0;
+    document.getElementById('quranContainer').classList.replace('textContainer','eraseDiv');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// THEME & SIDEBAR
+// ═══════════════════════════════════════════════════════════════════
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.querySelectorAll('.theme-btn').forEach(function(btn){
+        btn.classList.toggle('active', btn.getAttribute('data-theme') === theme);
+    });
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// TOC FONT SCALING
+// ═══════════════════════════════════════════════════════════════════
+function scaleTocFont(w) {
+    const fs     = Math.round(Math.max(26, Math.min(42, 26 + (w-140)/40)));
+    const pad    = Math.round(Math.max(10, Math.min(18, 10 + (w-140)/70)));
+    const numSz  = Math.round(Math.max(18, Math.min(32, 18 + (w-140)/45)));
+    const numDim = Math.round(Math.max(40, Math.min(64, 40 + (w-140)/26)));
+    const iconSz = Math.round(Math.max(24, Math.min(42, 24 + (w-140)/28)));
+    const juzSz  = Math.round(Math.max(20, Math.min(36, 20 + (w-140)/40)));
+
+    document.querySelectorAll('.toc-item').forEach(function(el){
+        el.style.fontSize = fs + 'px'; el.style.padding = pad + 'px 14px ' + pad + 'px 16px';
+    });
+    document.querySelectorAll('.juz-item').forEach(function(el){
+        el.style.fontSize = juzSz + 'px'; el.style.padding = pad + 'px 14px ' + pad + 'px 16px';
+    });
+    document.querySelectorAll('.toc-num, .juz-num').forEach(function(el){
+        el.style.fontSize = numSz + 'px'; el.style.width = numDim + 'px';
+        el.style.height = numDim + 'px'; el.style.minWidth = numDim + 'px';
+    });
+    document.querySelectorAll('.city-icon').forEach(function(el){
+        el.style.width = iconSz + 'px'; el.style.height = iconSz + 'px';
+    });
+    document.querySelectorAll('.toc-item-left').forEach(function(el){
+        el.style.gap = Math.round(iconSz * 0.35) + 'px';
+    });
+    const lbl = document.getElementById('toc-section-label');
+    if (lbl) lbl.style.fontSize = Math.max(18, Math.min(30, fs)) + 'px';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EVENT LISTENERS
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('searchbutton').addEventListener('click', function(){
+    const term = document.getElementById('search-input').value.trim(); if (term) searchQuran(term);
+});
+
+document.getElementById('searchButtonSourats').addEventListener('click', function(){
+    const term = document.getElementById('search-input').value.trim(); if (term) searchSourat(term);
+});
+
+document.getElementById('search-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') { const term = e.target.value.trim(); if (term) searchQuran(term); }
+});
+
+document.getElementById('reset-button').addEventListener('click', resetSearch);
+
+document.getElementById('languageSelector').addEventListener('change', function(){
+    currentLanguage = this.value; isArabic = (currentLanguage === 'arabic');
+    if (additionalLanguages.indexOf(currentLanguage) !== -1) removeSecondaryLanguage(currentLanguage);
+    applyUILanguage(currentLanguage); loadQuranData();
+});
+
+document.getElementById('SurahLanguageSelector').addEventListener('change', function(){
+    const code = this.value; if (!code) return; this.value = '';
+    if (code === currentLanguage) return; addSecondaryLanguage(code);
+});
+
+document.getElementById('toggleOrder').addEventListener('click', function(){
+    const t = uiTranslations[currentLanguage] || uiTranslations['english'];
+    if (isOriginalOrder) {
+        const cl = t.rtl ? 'الترتيب الكلاسيكي' : (currentLanguage==='french'?'Ordre classique':currentLanguage==='spanish'?'Orden clásico':'Classic Order');
+        this.textContent = cl; this.style.direction = t.rtl?'rtl':'ltr'; this.style.textAlign = t.rtl?'right':'left';
+        clearAllSecondaryLanguages(); loadRevelationOrderQuranData();
+    } else {
+        this.textContent = t.toggleOrder; this.style.direction = t.rtl?'rtl':'ltr'; this.style.textAlign = t.rtl?'right':'left';
+        clearAllSecondaryLanguages(); loadQuranData();
+    }
+    isOriginalOrder = !isOriginalOrder; saveState();
+});
+
+document.getElementById('context').addEventListener('click', async function(){
+    if (contextOpen) { clearSuraContext(); return; }
+    closeSearchResults();
+    const first = document.getElementById('quranContainer').firstChild || document.querySelector('.sura');
+    if (!first) return;
+    const suraData = quranData.find(function(s){ return s.id === (first.id||'0'); });
+    if (!suraData) return;
+    await fetchAndDisplayContext(parseInt(suraData.id) + 1);
+});
+
+// Bookmarks button
+document.getElementById('bookmarksBtn').addEventListener('click', function(){
+    const panel = document.getElementById('bookmarksPanel');
+    const isOpen = panel.classList.contains('bookmarksContainer');
+    if (isOpen) {
+        panel.classList.replace('bookmarksContainer','eraseDiv');
+    } else {
+        renderBookmarksList();
+        panel.classList.replace('eraseDiv','bookmarksContainer');
+    }
+});
+
+document.getElementById('bookmarksClose').addEventListener('click', function(){
+    document.getElementById('bookmarksPanel').classList.replace('bookmarksContainer','eraseDiv');
+});
+
+document.getElementById('burgerMenu').addEventListener('click', toggleSidebar);
+
+document.querySelectorAll('.theme-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){ applyTheme(btn.getAttribute('data-theme')); saveState(); });
+});
+
+document.getElementById('quranContainer').addEventListener('scroll', function(){
+    clearTimeout(window._scrollTimer);
+    window._scrollTimer = setTimeout(saveState, 300);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// TOC DRAG RESIZE
+// ═══════════════════════════════════════════════════════════════════
+(function(){
+    const handle = document.getElementById('tocResizeHandle');
+    const toc    = document.getElementById('tocContainer');
+    let dragging = false, startX = 0, startW = 0;
+
+    function applyWidth(w) {
+        const clamped = Math.max(140, Math.min(700, w));
+        toc.style.width = clamped + 'px'; toc.style.minWidth = clamped + 'px'; toc.style.flex = 'none';
+        scaleTocFont(clamped); return clamped;
+    }
+
+    handle.addEventListener('mousedown', function(e){
+        dragging = true; startX = e.clientX; startW = toc.offsetWidth;
+        handle.classList.add('dragging'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none'; e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e){
+        if (!dragging) return; applyWidth(startW + (startX - e.clientX));
+    });
+    document.addEventListener('mouseup', function(){
+        if (!dragging) return; dragging = false; handle.classList.remove('dragging');
+        document.body.style.cursor = ''; document.body.style.userSelect = '';
+        try { localStorage.setItem('quranTocWidth', toc.offsetWidth); } catch(e) {}
+    });
+    handle.addEventListener('touchstart', function(e){
+        dragging = true; startX = e.touches[0].clientX; startW = toc.offsetWidth;
+        handle.classList.add('dragging'); e.preventDefault();
+    }, { passive:false });
+    document.addEventListener('touchmove', function(e){
+        if (!dragging) return; applyWidth(startW + (startX - e.touches[0].clientX));
+    }, { passive:false });
+    document.addEventListener('touchend', function(){
+        if (!dragging) return; dragging = false; handle.classList.remove('dragging');
+        try { localStorage.setItem('quranTocWidth', toc.offsetWidth); } catch(e) {}
+    });
+    try {
+        const sw = parseInt(localStorage.getItem('quranTocWidth'), 10);
+        if (sw && sw >= 140 && sw <= 700) applyWidth(sw);
+    } catch(e) {}
+}());
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+async function init() {
+    getHijriCalendarForMonth();
+    applyFontSizes();
+    renderSearchHistory();
+
+    const saved = loadState();
+
+    if (saved) {
+        if (saved.theme) applyTheme(saved.theme);
+        currentLanguage = saved.language || 'arabic';
+        isArabic        = (currentLanguage === 'arabic');
+        document.getElementById('languageSelector').value = currentLanguage;
+        applyUILanguage(currentLanguage);
+        if (saved.activeTocTab) activeTocTab = saved.activeTocTab;
+
+        if (saved.isOriginalOrder === false) {
+            isOriginalOrder = false;
+            const t = uiTranslations[currentLanguage] || uiTranslations['english'];
+            const cl = t.rtl ? 'الترتيب الكلاسيكي' : (currentLanguage==='french'?'Ordre classique':currentLanguage==='spanish'?'Orden clásico':'Classic Order');
+            const tog = document.getElementById('toggleOrder');
+            if (tog) { tog.textContent = cl; tog.style.direction = t.rtl?'rtl':'ltr'; tog.style.textAlign = t.rtl?'right':'left'; }
+        }
+
+        quranData = await fetchAndParseQuran(currentLanguage);
+        renderCurrentTOC();
+        document.getElementById('arabic-options').style.display = isArabic ? 'block' : 'none';
+
+        const suraId = (saved.suraId != null) ? saved.suraId : '0';
+        displaySingleSura(suraId);
+
+        // Restore additional languages
+        if (saved.additionalLanguages && saved.additionalLanguages.length > 0) {
+            for (let i = 0; i < saved.additionalLanguages.length; i++) {
+                const code = saved.additionalLanguages[i];
+                if (code && code !== currentLanguage) await addSecondaryLanguage(code);
+            }
+        }
+
+        if (saved.scrollTop) {
+            setTimeout(function(){ document.getElementById('quranContainer').scrollTop = saved.scrollTop; }, 80);
+        }
+
+        if (saved.contextOpen && saved.contextSuraIndex) {
+            await fetchAndDisplayContext(saved.contextSuraIndex);
+        }
+
+        if (saved.searchOpen && saved.searchTerm) {
+            document.getElementById('search-input').value = saved.searchTerm;
+            const ignoreDia  = getIgnoreDiacritics();
+            const searchTerm = normalize(saved.searchTerm, ignoreDia).toLowerCase();
+            const matched = quranData.flatMap(function(sura){
+                return sura.verses
+                    .map(function(v){ return { suraName:sura.name, suraId:sura.id, verseNumber:v.number, verseText:normalize(v.text,ignoreDia) }; })
+                    .filter(function(v){ return v.verseText.toLowerCase().includes(searchTerm); });
+            });
+            displaySearchResults(matched, saved.searchTerm);
+        }
+
+    } else {
+        applyUILanguage('arabic');
+        await loadQuranData(0);
+    }
+}
+
+init();
+
+// ═══════════════════════════════════════════════════════════════════
+// RESPONSIVE — Bottom nav, sidebar overlay, mobile search
+// ═══════════════════════════════════════════════════════════════════
+
+// ── Sidebar open/close with overlay ───────────────────────────────
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// Override burger menu to use new open function
+document.getElementById('burgerMenu').removeEventListener('click', toggleSidebar);
+document.getElementById('burgerMenu').addEventListener('click', function() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('open')) closeSidebar();
+    else openSidebar();
+});
+
+// ── Mobile search bar ──────────────────────────────────────────────
+var mobileSearchInput = document.getElementById('mobile-search-input');
+var mobileSearchGo    = document.getElementById('mobile-search-go');
+
+if (mobileSearchInput) {
+    mobileSearchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            var term = e.target.value.trim();
+            if (term) {
+                document.getElementById('search-input').value = term;
+                searchQuran(term);
+            }
+        }
+    });
+}
+
+if (mobileSearchGo) {
+    mobileSearchGo.addEventListener('click', function() {
+        var term = mobileSearchInput.value.trim();
+        if (term) {
+            document.getElementById('search-input').value = term;
+            searchQuran(term);
+        }
+    });
+}
+
+// Keep mobile search in sync with desktop search input
+document.getElementById('search-input').addEventListener('input', function() {
+    if (mobileSearchInput) mobileSearchInput.value = this.value;
+});
+
+// ── Bottom nav ────────────────────────────────────────────────────
+var bnavButtons = document.querySelectorAll('.bnav-btn');
+
+function setBnavActive(action) {
+    bnavButtons.forEach(function(btn) {
+        btn.classList.toggle('bnav-active', btn.getAttribute('data-action') === action);
+    });
+}
+
+// Settings panel (theme switcher on mobile)
+var settingsPanelOpen = false;
+
+function toggleSettingsPanel() {
+    settingsPanelOpen = !settingsPanelOpen;
+    if (settingsPanelOpen) {
+        openSidebar(); // Open sidebar as settings on mobile
+    } else {
+        closeSidebar();
+    }
+}
+
+bnavButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        var action = btn.getAttribute('data-action');
+        setBnavActive(action);
+
+        if (action === 'surah') {
+            closeSidebar();
+            generateTOC();
+            saveState();
+        } else if (action === 'juz') {
+            closeSidebar();
+            generateJuzTOC();
+            saveState();
+        } else if (action === 'search') {
+            closeSidebar();
+            // Focus mobile search bar if visible, else desktop
+            if (mobileSearchInput && window.innerWidth <= 600) {
+                mobileSearchInput.focus();
+            } else {
+                var desktopSearch = document.getElementById('search-input');
+                if (desktopSearch) desktopSearch.focus();
+            }
+        } else if (action === 'bookmarks') {
+            closeSidebar();
+            var panel = document.getElementById('bookmarksPanel');
+            var isOpen = panel.classList.contains('bookmarksContainer');
+            if (isOpen) {
+                panel.classList.replace('bookmarksContainer', 'eraseDiv');
+            } else {
+                renderBookmarksList();
+                panel.classList.replace('eraseDiv', 'bookmarksContainer');
+            }
+        } else if (action === 'settings') {
+            // Toggle sidebar as settings panel
+            var sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('open')) closeSidebar();
+            else openSidebar();
+        }
+    });
+});
+
+// ── Sync mobile search on search result restore ───────────────────
+(function syncMobileSearch() {
+    var savedTerm = (loadState() || {}).searchTerm;
+    if (savedTerm && mobileSearchInput) mobileSearchInput.value = savedTerm;
+}());

@@ -111,6 +111,7 @@
                 <div id="bookmarksPanel" class="eraseDiv">
                     <div id="bookmarks-topbar">
                         <span id="bookmarks-label">🔖 Bookmarks</span>
+                        <button id="bookmarksReset" title="Clear all bookmarks">🗑 Reset</button>
                         <button id="bookmarksClose">✕ Close</button>
                     </div>
                     <div id="bookmarks-list"></div>
@@ -186,11 +187,6 @@
         </button>
     </nav>
 
-    <!-- Mobile search bar (pinned above bottom nav on mobile) -->
-    <div id="mobileSearchBar" class="mobile-search-bar">
-        <input type="text" id="mobile-search-input" placeholder="Search the Quran…">
-        <button id="mobile-search-go">↵</button>
-    </div>
 
     <!-- Universal mobile bottom sheet -->
     <div id="mobileSheetOverlay" class="mob-sheet-overlay" onclick="closeMobileSheet()"></div>
@@ -205,7 +201,19 @@
         <div class="mob-sheet-body" id="mobileSheetBody"></div>
     </div>
 
-    <footer>Quran Display v9 — May you read with a mindful heart</footer>
+    <!-- Reusable confirm dialog -->
+    <div id="confirmOverlay" class="confirm-overlay" onclick="cancelConfirm(event)">
+        <div class="confirm-box">
+            <div class="confirm-title" id="confirmTitle">Are you sure?</div>
+            <div class="confirm-text" id="confirmText"></div>
+            <div class="confirm-btns">
+                <button class="confirm-btn" onclick="cancelConfirm()">Cancel</button>
+                <button class="confirm-btn danger" id="confirmOK">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>Quran Display v9.5 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
 </body>
 </html>

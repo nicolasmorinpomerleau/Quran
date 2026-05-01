@@ -25,6 +25,31 @@ const HISTORY_KEY    = 'quranReadHistory'; // {suraId: timestamp}
 const SEARCH_HX_KEY  = 'quranSearchHx';   // [term, term, ...]
 const FONT_KEY       = 'quranFontSizes';   // {arabic: 2.8, trans: 1.87}
 
+
+// ═══════════════════════════════════════════════════════════════════
+// v9.5 — Confirm dialog
+// ═══════════════════════════════════════════════════════════════════
+function showConfirm(title, text, onConfirm) {
+    var overlay = document.getElementById('confirmOverlay');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmText').textContent  = text;
+    var okBtn = document.getElementById('confirmOK');
+    // Replace OK button to clear old listeners
+    var newOk = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOk, okBtn);
+    newOk.addEventListener('click', function() {
+        overlay.classList.remove('show');
+        if (onConfirm) onConfirm();
+    });
+    overlay.classList.add('show');
+}
+
+function cancelConfirm(e) {
+    // Only cancel if clicking the overlay itself, not the box
+    if (e && e.target && !e.target.classList.contains('confirm-overlay')) return;
+    document.getElementById('confirmOverlay').classList.remove('show');
+}
+
 // ─── Load helpers ─────────────────────────────────────────────────
 function lsGet(key, fallback) {
     try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
@@ -251,8 +276,14 @@ function renderBookmarksList() {
     const list = document.getElementById('bookmarks-list');
     const bms  = getBookmarks();
     list.innerHTML = '';
+    // v9.5: update label with count
+    var lbl = document.getElementById('bookmarks-label');
+    if (lbl) lbl.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
+    // v9.5: hide reset button when empty
+    var resetBtn = document.getElementById('bookmarksReset');
+    if (resetBtn) resetBtn.style.display = bms.length ? '' : 'none';
     if (bms.length === 0) {
-        list.innerHTML = '<div class="bookmarks-empty">No bookmarks yet.<br>Hover a verse and click 🔖 to save it.</div>';
+        list.innerHTML = '<div class="bookmarks-empty"><div class="bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="bookmarks-empty-hint">Hover a verse and click 🔖 to save it.</div></div>';
         return;
     }
     bms.forEach(function(b) {
@@ -280,6 +311,31 @@ function renderBookmarksList() {
         });
         list.appendChild(item);
     });
+}
+
+
+// ── v9.5: Reset all bookmarks (with confirmation) ─────────────────
+function resetAllBookmarks() {
+    var bms = getBookmarks();
+    if (bms.length === 0) return;
+    showConfirm(
+        'Clear all bookmarks?',
+        'This removes all ' + bms.length + ' saved verse' + (bms.length === 1 ? '' : 's') + '. You can\'t undo this action.',
+        function() {
+            lsSet(BOOKMARKS_KEY, []);
+            renderBookmarksList();
+            // Update verse buttons in current sura
+            var suraEl = document.querySelector('.sura');
+            if (suraEl) reapplyVerseActions(suraEl.id);
+            // Refresh mobile sheet if it's the bookmarks one
+            var sheet = document.getElementById('mobileSheet');
+            if (sheet && sheet.classList.contains('open') && _sheetCurrentAction === 'bookmarks') {
+                var body = document.getElementById('mobileSheetBody');
+                var title = document.getElementById('mobileSheetTitle');
+                if (body && title) { body.innerHTML = ''; buildSheetBookmarks(body, title); }
+            }
+        }
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -736,6 +792,13 @@ function buildVerseActions(suraId, verseIdx, verseText, suraName) {
 function buildSuraDOM(sura) {
     const wrapper = document.createElement('div');
     wrapper.classList.add('sura'); wrapper.id = sura.id;
+
+    // v9.5: Sticky title bar at top of reading pane
+    const sticky = document.createElement('div');
+    sticky.className = 'sura-sticky-title';
+    sticky.textContent = (parseInt(sura.id) + 1) + ' · ' + sura.name;
+    wrapper.appendChild(sticky);
+
     const title = document.createElement('h2');
     title.id = 'suraTitle';
     title.textContent = (parseInt(sura.id) + 1) + ' — ' + sura.name;
@@ -1097,6 +1160,10 @@ document.getElementById('bookmarksClose').addEventListener('click', function(){
     document.getElementById('bookmarksPanel').classList.replace('bookmarksContainer','eraseDiv');
 });
 
+// v9.5: Reset all bookmarks button
+var bmResetBtn = document.getElementById('bookmarksReset');
+if (bmResetBtn) bmResetBtn.addEventListener('click', resetAllBookmarks);
+
 document.getElementById('burgerMenu').addEventListener('click', toggleSidebar);
 
 document.querySelectorAll('.theme-btn').forEach(function(btn){
@@ -1247,9 +1314,12 @@ function openMobileSheet(action) {
 
     // Build sheet content based on action
     body.innerHTML = '';
-    // Clean up any sibling extras added by previous sheet types (search scope/input/arabic option)
+    // Clean up any sibling extras added by previous sheet types
     var sheetEl = document.getElementById('mobileSheet');
     sheetEl.querySelectorAll('.mob-search-scope, .mob-search-row, .mob-arabic-opt').forEach(function(el) { el.remove(); });
+    // v9.5: Clean up sheet header reset button (added per-sheet)
+    var existingReset = sheetEl.querySelector('.mob-sheet-reset');
+    if (existingReset) existingReset.remove();
     if (action === 'surah')     buildSheetSurahs(body, title);
     else if (action === 'juz')  buildSheetJuz(body, title);
     else if (action === 'search')    buildSheetSearch(body, title);
@@ -1403,7 +1473,7 @@ function buildSheetSearch(body, title) {
     if (desktopInp) sInp.value = desktopInp.value;
     sInp.addEventListener('input', function() {
         if (desktopInp) desktopInp.value = this.value;
-        if (mobileSearchInput) mobileSearchInput.value = this.value;
+/* mobile search input removed in v9.5 */
     });
     var sGo = document.createElement('button');
     sGo.textContent = '↵';
@@ -1504,10 +1574,27 @@ function buildSheetSearch(body, title) {
 
 // ── Bookmarks sheet ───────────────────────────────────────────────
 function buildSheetBookmarks(body, title) {
-    title.textContent = '🔖 Bookmarks';
     var bms = getBookmarks();
+    title.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
+
+    // v9.5: Add Reset button to sheet header (if not already there)
+    var sheet = document.getElementById('mobileSheet');
+    var headerEl = sheet.querySelector('.mob-sheet-header');
+    var existingReset = headerEl.querySelector('.mob-sheet-reset');
+    if (existingReset) existingReset.remove();
+    if (bms.length > 0) {
+        var resetBtn = document.createElement('button');
+        resetBtn.className = 'mob-sheet-reset';
+        resetBtn.textContent = '🗑 Reset';
+        resetBtn.title = 'Clear all bookmarks';
+        resetBtn.addEventListener('click', resetAllBookmarks);
+        // Insert before the close button
+        var closeBtn = headerEl.querySelector('.mob-sheet-close');
+        headerEl.insertBefore(resetBtn, closeBtn);
+    }
+
     if (!bms.length) {
-        body.innerHTML = '<div class="mob-results-empty">No bookmarks yet.<br>Hover a verse and tap 🔖 to save it.</div>';
+        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="mob-bookmarks-empty-hint">Hover a verse and tap 🔖 to save it.</div></div>';
         return;
     }
     bms.forEach(function(b) {
@@ -1703,32 +1790,9 @@ document.getElementById('burgerMenu').addEventListener('click', function() {
     }
 });
 
-// ── Mobile search bar ─────────────────────────────────────────────
-var mobileSearchInput = document.getElementById('mobile-search-input');
-var mobileSearchGo    = document.getElementById('mobile-search-go');
-
-function runMobileSearch() {
-    var term = mobileSearchInput ? mobileSearchInput.value.trim() : '';
-    if (!term) return;
-    document.getElementById('search-input').value = term;
-    searchQuran(term);
-    // Open search sheet to show results
-    setTimeout(function() { openMobileSheet('search'); }, 80);
-}
-
-if (mobileSearchInput) {
-    mobileSearchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') runMobileSearch();
-    });
-}
-if (mobileSearchGo) {
-    mobileSearchGo.addEventListener('click', runMobileSearch);
-}
-
-// Keep mobile search in sync with desktop
-document.getElementById('search-input').addEventListener('input', function() {
-    if (mobileSearchInput) mobileSearchInput.value = this.value;
-});
+// v9.5: Fixed mobile search bar removed — search is fully handled by the search sheet
+var mobileSearchInput = null;
+var mobileSearchGo    = null;
 
 // ── Fix 1 (v9.3): Drag-to-close gesture ──────────────────────────
 (function() {
@@ -1810,10 +1874,4 @@ displaySearchResults = function(verses, word) {
     }
 };
 
-// Sync mobile search input on restore
-(function() {
-    var saved = loadState();
-    if (saved && saved.searchTerm && mobileSearchInput) {
-        mobileSearchInput.value = saved.searchTerm;
-    }
-}());
+// v9.5: Mobile search input sync removed — fixed bar no longer exists

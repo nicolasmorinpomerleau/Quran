@@ -937,44 +937,7 @@ footer {
 
 .bnav-btn.bnav-active .bnav-lbl { color: var(--accent); }
 
-/* ════════════════════════════════════════════════════════════════════
-   MOBILE SEARCH BAR (pinned above bottom nav on mobile)
-   ════════════════════════════════════════════════════════════════════ */
-.mobile-search-bar {
-    display: none;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    background: var(--bg-header);
-    border-top: 1px solid var(--border);
-    flex-shrink: 0;
-}
 
-#mobile-search-input {
-    flex: 1;
-    padding: 9px 12px;
-    background: var(--bg-input);
-    border: 1px solid var(--border-input);
-    border-radius: var(--radius);
-    color: var(--text-primary);
-    font-size: 16px;
-    font-family: var(--font-ui);
-}
-#mobile-search-input::placeholder { color: var(--text-muted); }
-#mobile-search-input:focus { outline: none; border-color: var(--accent-dim); }
-
-#mobile-search-go {
-    padding: 9px 16px;
-    background: var(--accent);
-    color: var(--bg-page);
-    border: none;
-    border-radius: var(--radius);
-    font-size: 18px;
-    cursor: pointer;
-    width: auto;
-    flex-shrink: 0;
-}
-#mobile-search-go:hover { opacity: 0.85; }
 
 /* ════════════════════════════════════════════════════════════════════
    RESPONSIVE — 1200px (hide TOC)
@@ -1104,7 +1067,7 @@ footer {
     }
 
     /* Mobile search bar visible */
-    .mobile-search-bar { display: flex; }
+    /* mobile-search-bar removed in v9.5 */
 
     /* Hide desktop search controls in sidebar on mobile
        (search is handled by mobile search bar) */
@@ -1148,7 +1111,7 @@ footer {
    ════════════════════════════════════════════════════════════════════ */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
     .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
-    .mobile-search-bar { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2009,4 +1972,188 @@ input[type="range"] {
     font-family: var(--font-heading);
     letter-spacing: 0.02em;
     opacity: 0.95;
+}
+/* ════════════════════════════════════════════════════════════════════
+   v9.5 — Reset button, sticky surah title, confirm dialog
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Reset button (desktop bookmarks header) */
+#bookmarksReset {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: #d9707018;
+    border: 1px solid #d9707040;
+    color: #e08585;
+    border-radius: 99px;
+    cursor: pointer;
+    font-weight: 600;
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: 6px;
+}
+#bookmarksReset:hover {
+    background: #d9707030;
+    color: #f0a0a0;
+}
+
+/* Mobile reset button inside sheet header */
+.mob-sheet-reset {
+    font-size: 12px;
+    padding: 4px 10px;
+    background: #d9707018;
+    border: 1px solid #d9707040;
+    color: #e08585;
+    border-radius: 99px;
+    cursor: pointer;
+    font-weight: 600;
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    margin-right: 6px;
+}
+.mob-sheet-reset:hover {
+    background: #d9707030;
+    color: #f0a0a0;
+}
+
+/* ── Sticky surah title (top of reading pane) ── */
+.sura-sticky-title {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg-content);
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 1.1rem;
+    text-align: center;
+    padding: 10px 16px 9px;
+    border-bottom: 1px solid var(--border);
+    margin: -36px -48px 24px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* In manuscript mode use the gradient-friendly transparent bg */
+[data-theme="manuscript"] .sura-sticky-title {
+    background: rgba(15, 11, 5, 0.92);
+}
+[data-theme="scholar"] .sura-sticky-title {
+    background: rgba(13, 17, 23, 0.92);
+}
+[data-theme="minimal"] .sura-sticky-title {
+    background: rgba(248, 247, 244, 0.94);
+}
+
+/* Mobile: tighter padding & adjust margin */
+@media (max-width: 900px) {
+    .sura-sticky-title {
+        font-size: 1rem;
+        padding: 9px 14px;
+        margin: -20px -24px 18px;
+    }
+}
+@media (max-width: 600px) {
+    .sura-sticky-title {
+        font-size: 0.95rem;
+        padding: 9px 12px;
+        margin: -14px -16px 14px;
+    }
+}
+
+/* ── Confirm dialog ── */
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 600;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.confirm-overlay.show { display: flex; }
+
+.confirm-box {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-mid);
+    border-radius: 12px;
+    padding: 22px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 12px 40px #00000060;
+}
+
+.confirm-title {
+    font-size: 17px;
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-style: italic;
+    margin-bottom: 8px;
+}
+
+.confirm-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-bottom: 18px;
+    opacity: 0.9;
+}
+
+.confirm-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.confirm-btn {
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid var(--border-btn);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    width: auto;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.confirm-btn:hover {
+    background: var(--bg-btn-hover);
+    color: var(--text-primary);
+}
+
+.confirm-btn.danger {
+    background: #d97070;
+    border-color: #d97070;
+    color: white;
+    font-weight: 600;
+}
+.confirm-btn.danger:hover {
+    background: #c46060;
+    color: white;
+}
+
+/* ── Empty bookmarks state — friendlier ── */
+.bookmarks-empty,
+.mob-bookmarks-empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.7;
+}
+.bookmarks-empty-icon,
+.mob-bookmarks-empty-icon {
+    font-size: 40px;
+    opacity: 0.3;
+    margin-bottom: 12px;
+}
+.bookmarks-empty-hint,
+.mob-bookmarks-empty-hint {
+    font-size: 12px;
+    margin-top: 6px;
+    opacity: 0.7;
 }

@@ -1247,6 +1247,9 @@ function openMobileSheet(action) {
 
     // Build sheet content based on action
     body.innerHTML = '';
+    // Clean up any sibling extras added by previous sheet types (search scope/input/arabic option)
+    var sheetEl = document.getElementById('mobileSheet');
+    sheetEl.querySelectorAll('.mob-search-scope, .mob-search-row, .mob-arabic-opt').forEach(function(el) { el.remove(); });
     if (action === 'surah')     buildSheetSurahs(body, title);
     else if (action === 'juz')  buildSheetJuz(body, title);
     else if (action === 'search')    buildSheetSearch(body, title);
@@ -1362,14 +1365,85 @@ function showMobileSearchPeek(verseLabel) {
 }
 
 // ── Search sheet ─────────────────────────────────────────────────
-// Called both from bottom nav AND after a search runs on mobile
+// v9.3: scope toggle (This Surah / Whole Quran) + own input + Arabic diacritic option
+var _mobileSearchScope = 'quran'; // 'surah' | 'quran'
+
 function buildSheetSearch(body, title) {
-    title.textContent = '🔍 Search results';
+    title.textContent = '🔍 Search';
+
+    // ── Scope toggle ──
+    var scopeRow = document.createElement('div');
+    scopeRow.className = 'mob-search-scope';
+    var btnSurah = document.createElement('button');
+    btnSurah.className = 'mob-scope-btn' + (_mobileSearchScope === 'surah' ? ' active' : '');
+    btnSurah.textContent = '📖 This Surah';
+    btnSurah.addEventListener('click', function() {
+        _mobileSearchScope = 'surah';
+        btnSurah.classList.add('active');
+        btnQuran.classList.remove('active');
+    });
+    var btnQuran = document.createElement('button');
+    btnQuran.className = 'mob-scope-btn' + (_mobileSearchScope === 'quran' ? ' active' : '');
+    btnQuran.textContent = '🌐 Whole Quran';
+    btnQuran.addEventListener('click', function() {
+        _mobileSearchScope = 'quran';
+        btnQuran.classList.add('active');
+        btnSurah.classList.remove('active');
+    });
+    scopeRow.appendChild(btnSurah); scopeRow.appendChild(btnQuran);
+    body.parentNode.insertBefore(scopeRow, body);
+
+    // ── Search input row ──
+    var searchRow = document.createElement('div');
+    searchRow.className = 'mob-search-row';
+    var sInp = document.createElement('input');
+    sInp.type = 'text';
+    sInp.placeholder = 'بحث / Search…';
+    var desktopInp = document.getElementById('search-input');
+    if (desktopInp) sInp.value = desktopInp.value;
+    sInp.addEventListener('input', function() {
+        if (desktopInp) desktopInp.value = this.value;
+        if (mobileSearchInput) mobileSearchInput.value = this.value;
+    });
+    var sGo = document.createElement('button');
+    sGo.textContent = '↵';
+    function runSearchInScope() {
+        var term = sInp.value.trim();
+        if (!term) return;
+        if (desktopInp) desktopInp.value = term;
+        if (_mobileSearchScope === 'surah') {
+            searchSourat(term);
+        } else {
+            searchQuran(term);
+        }
+    }
+    sInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') runSearchInScope(); });
+    sGo.addEventListener('click', runSearchInScope);
+    searchRow.appendChild(sInp); searchRow.appendChild(sGo);
+    body.parentNode.insertBefore(searchRow, body);
+
+    // ── Arabic diacritic option ──
+    var arabicOpt = document.createElement('div');
+    arabicOpt.className = 'mob-arabic-opt';
+    var arLabel = document.createElement('label');
+    var arChk = document.createElement('input');
+    arChk.type = 'checkbox';
+    var desktopChk = document.getElementById('ignore-diacritics');
+    arChk.checked = desktopChk ? desktopChk.checked : false;
+    arChk.addEventListener('change', function() {
+        if (desktopChk) desktopChk.checked = this.checked;
+    });
+    arLabel.appendChild(arChk);
+    arLabel.appendChild(document.createTextNode(' تجاهل علامات التشكيل (ignore diacritics)'));
+    arabicOpt.appendChild(arLabel);
+    body.parentNode.insertBefore(arabicOpt, body);
+
+    // ── Results ──
     var resultEl = document.getElementById('search-results');
     var isOpen   = resultEl && resultEl.classList.contains('resultsClass');
 
     if (!isOpen || !resultEl.children.length) {
-        body.innerHTML = '<div class="mob-results-empty">Type in the search bar below and hit ↵<br>Results will appear here.</div>';
+        body.innerHTML = '<div class="mob-results-empty">Type a search term above and hit ↵<br>Results will appear here.</div>';
         return;
     }
 
@@ -1604,20 +1678,6 @@ function buildSheetSettings(body, title) {
     });
     body.appendChild(toolSection);
 
-    // Arabic options
-    var arabicSect = document.createElement('div');
-    arabicSect.className = 'mob-settings-section';
-    var arabicLbl = document.createElement('div'); arabicLbl.className = 'mob-settings-lbl'; arabicLbl.textContent = 'Arabic options';
-    var arabicLabel = document.createElement('label');
-    arabicLabel.style.cssText = 'font-size:14px;color:var(--text-secondary);display:flex;align-items:center;gap:8px;direction:rtl;cursor:pointer;';
-    var arabicChk = document.createElement('input'); arabicChk.type = 'checkbox'; arabicChk.style.cssText = 'accent-color:var(--accent);width:16px;height:16px;';
-    var desktopChk = document.getElementById('ignore-diacritics');
-    if (desktopChk) arabicChk.checked = desktopChk.checked;
-    arabicChk.addEventListener('change', function() { if (desktopChk) desktopChk.checked = this.checked; });
-    arabicLabel.appendChild(arabicChk);
-    arabicLabel.appendChild(document.createTextNode(' تجاهل علامات التشكيل'));
-    arabicSect.appendChild(arabicLbl); arabicSect.appendChild(arabicLabel);
-    body.appendChild(arabicSect);
 }
 
 // ── Sidebar open/close (desktop burger) ──────────────────────────
@@ -1669,6 +1729,64 @@ if (mobileSearchGo) {
 document.getElementById('search-input').addEventListener('input', function() {
     if (mobileSearchInput) mobileSearchInput.value = this.value;
 });
+
+// ── Fix 1 (v9.3): Drag-to-close gesture ──────────────────────────
+(function() {
+    var grab = document.getElementById('mobileSheetGrab');
+    var sheet = document.getElementById('mobileSheet');
+    if (!grab || !sheet) return;
+
+    var startY = null;
+    var currentY = 0;
+    var sheetHeight = 0;
+
+    function getY(e) {
+        if (e.touches && e.touches[0]) return e.touches[0].clientY;
+        if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientY;
+        return e.clientY;
+    }
+
+    function start(e) {
+        if (!sheet.classList.contains('open')) return;
+        startY = getY(e);
+        currentY = 0;
+        sheetHeight = sheet.offsetHeight;
+        sheet.classList.add('dragging');
+    }
+
+    function move(e) {
+        if (startY === null) return;
+        var delta = getY(e) - startY;
+        if (delta < 0) delta = 0; // only allow dragging down
+        currentY = delta;
+        sheet.style.transform = 'translateY(' + delta + 'px)';
+    }
+
+    function end() {
+        if (startY === null) return;
+        sheet.classList.remove('dragging');
+        // Threshold: 25% of sheet height OR 90px — whichever is smaller
+        var threshold = Math.min(sheetHeight * 0.25, 90);
+        if (currentY > threshold) {
+            // Animate out
+            sheet.style.transform = '';
+            closeMobileSheet();
+        } else {
+            // Snap back
+            sheet.style.transform = '';
+        }
+        startY = null;
+        currentY = 0;
+    }
+
+    grab.addEventListener('touchstart', start, { passive: true });
+    grab.addEventListener('touchmove',  move,  { passive: true });
+    grab.addEventListener('touchend',   end);
+    grab.addEventListener('touchcancel', end);
+
+    grab.addEventListener('mousedown', function(e) { start(e); document.addEventListener('mousemove', move); document.addEventListener('mouseup', mouseUpHandler); });
+    function mouseUpHandler() { end(); document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', mouseUpHandler); }
+}());
 
 // ── Bottom nav click handlers ────────────────────────────────────
 document.querySelectorAll('.bnav-btn').forEach(function(btn) {

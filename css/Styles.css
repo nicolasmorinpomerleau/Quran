@@ -2471,3 +2471,52 @@ input[type="range"] {
     padding: 3px 6px;
     line-height: 1;
 }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   v9.8 — Pinch-to-zoom only the reading content
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Reading pane intercepts pinch gestures with JS — no native zoom needed */
+.textContainer,
+.sura-contexte {
+    touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: text;
+}
+
+/* The inner zoomable wrapper — applied via CSS variable from JS */
+.zoom-wrapper {
+    transform-origin: top center;
+    transform: scale(var(--reading-zoom, 1));
+    transition: transform 0.05s linear;
+    width: 100%;
+}
+
+/* When zoomed in, allow the wrapper to overflow horizontally so user can pan */
+.zoom-wrapper-active {
+    width: calc(100% / var(--reading-zoom, 1));
+}
+
+/* Pinch indicator (briefly shown when user pinches) */
+.zoom-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 99px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+.zoom-indicator.show { opacity: 1; }

@@ -2232,8 +2232,8 @@ function buildSheetSettings(body, title) {
     toolSection.appendChild(toolLbl);
     [
         { id:'toggleOrder', label: isOriginalOrder ? 'Revelation Order' : 'Classic Order' },
-        { id:'context',     label: 'Surah Context' },
-        { id:'bookmarksBtn',label: '🔖 Bookmarks' }
+        { id:'context',     label: 'Surah Context' }
+        // v9.8: Bookmarks removed — already accessible from bottom nav
     ].forEach(function(cfg) {
         var btn = document.createElement('button'); btn.className = 'mob-settings-btn';
         btn.textContent = cfg.label;
@@ -2355,3 +2355,152 @@ displaySearchResults = function(verses, word) {
 };
 
 // v9.5: Mobile search input sync removed — fixed bar no longer exists
+
+
+// ═══════════════════════════════════════════════════════════════════
+// v9.8 — Pinch-to-zoom only the reading content
+//        Header and bottom nav stay anchored (no whole-page zoom)
+// ═══════════════════════════════════════════════════════════════════
+(function() {
+    var ZOOM_KEY = 'quranReadingZoom';
+    var MIN_ZOOM = 0.7;
+    var MAX_ZOOM = 3.0;
+
+    // Restore saved zoom
+    var savedZoom = parseFloat(localStorage.getItem(ZOOM_KEY)) || 1;
+    if (savedZoom < MIN_ZOOM || savedZoom > MAX_ZOOM) savedZoom = 1;
+    document.documentElement.style.setProperty('--reading-zoom', savedZoom);
+
+    // Indicator element
+    var indicator = null;
+    function getIndicator() {
+        if (!indicator) {
+            indicator = document.createElement('div');
+            indicator.className = 'zoom-indicator';
+            document.body.appendChild(indicator);
+        }
+        return indicator;
+    }
+
+    function showIndicator(zoom) {
+        var el = getIndicator();
+        el.textContent = Math.round(zoom * 100) + '%';
+        el.classList.add('show');
+        clearTimeout(window._zoomIndicatorTimer);
+        window._zoomIndicatorTimer = setTimeout(function() {
+            el.classList.remove('show');
+        }, 600);
+    }
+
+    function setZoom(z) {
+        z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+        document.documentElement.style.setProperty('--reading-zoom', z);
+        try { localStorage.setItem(ZOOM_KEY, z); } catch(e) {}
+        return z;
+    }
+
+    // Wrap reading content in a zoom wrapper after every render
+    function wrapReadingContent() {
+        var container = document.getElementById('quranContainer');
+        var ctxContainer = document.getElementById('suraContent');
+        [container, ctxContainer].forEach(function(target) {
+            if (!target) return;
+            // Only wrap once: if first child is already the wrapper, skip
+            if (target.firstElementChild && target.firstElementChild.classList && target.firstElementChild.classList.contains('zoom-wrapper')) return;
+            // Don't wrap empty containers
+            if (target.children.length === 0) return;
+            // Don't wrap eraseDiv
+            if (target.classList.contains('eraseDiv')) return;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'zoom-wrapper';
+            // Move all children into wrapper
+            while (target.firstChild) wrapper.appendChild(target.firstChild);
+            target.appendChild(wrapper);
+        });
+    }
+
+    // Re-wrap when content changes (after displaySingleSura, displaySuraContext, etc.)
+    var origDisplaySingleSura = displaySingleSura;
+    displaySingleSura = function(suraId) {
+        origDisplaySingleSura(suraId);
+        setTimeout(wrapReadingContent, 10);
+    };
+
+    var origDisplaySingleRevelationSura = displaySingleRevelationSura;
+    displaySingleRevelationSura = function(suraNum) {
+        origDisplaySingleRevelationSura(suraNum);
+        setTimeout(wrapReadingContent, 10);
+    };
+
+    var origDisplaySuraContext = displaySuraContext;
+    displaySuraContext = function(sura, suraIndex) {
+        origDisplaySuraContext(sura, suraIndex);
+        setTimeout(wrapReadingContent, 10);
+    };
+
+    // Pinch gesture handler
+    var pinchActive = false;
+    var pinchStartDist = 0;
+    var pinchStartZoom = 1;
+
+    function getDist(touches) {
+        var dx = touches[0].clientX - touches[1].clientX;
+        var dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx*dx + dy*dy);
+    }
+
+    function isInsideReading(target) {
+        // Only handle pinch if touches are inside the reading area
+        return target && (target.closest('#quranContainer') || target.closest('#suraContent'));
+    }
+
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2 && isInsideReading(e.target)) {
+            pinchActive = true;
+            pinchStartDist = getDist(e.touches);
+            pinchStartZoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--reading-zoom')) || 1;
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchmove', function(e) {
+        if (pinchActive && e.touches.length === 2) {
+            var newDist = getDist(e.touches);
+            var ratio = newDist / pinchStartDist;
+            var newZoom = setZoom(pinchStartZoom * ratio);
+            showIndicator(newZoom);
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', function(e) {
+        if (pinchActive && e.touches.length < 2) {
+            pinchActive = false;
+        }
+    });
+
+    document.addEventListener('touchcancel', function() {
+        pinchActive = false;
+    });
+
+    // Double-tap to reset zoom
+    var lastTap = 0;
+    document.addEventListener('touchend', function(e) {
+        if (!isInsideReading(e.target)) return;
+        if (e.changedTouches.length !== 1) return;
+        var now = Date.now();
+        if (now - lastTap < 300) {
+            // Double-tap — reset zoom to 1
+            var current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--reading-zoom')) || 1;
+            if (current !== 1) {
+                setZoom(1);
+                showIndicator(1);
+                e.preventDefault();
+            }
+        }
+        lastTap = now;
+    });
+
+    // Initial wrap on page load
+    setTimeout(wrapReadingContent, 200);
+}());

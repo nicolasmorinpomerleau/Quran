@@ -1,0 +1,448 @@
+/* ════════════════════════════════════════════════════════════════════
+   v9.9 — Phase 1 Feature Styles
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Toast (used by copy/share/error feedback) ── */
+.app-toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: rgba(15, 11, 5, 0.95);
+    color: var(--text-primary);
+    padding: 11px 22px;
+    border-radius: 99px;
+    border: 1px solid var(--accent-faint);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1), opacity 0.3s;
+    max-width: 80vw;
+    text-align: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.app-toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+/* Account for bottom nav on mobile */
+@media (max-width: 900px) {
+    .app-toast { bottom: 75px; }
+}
+
+/* ── Last-read banner ── */
+.last-read-banner {
+    background: var(--accent-trace);
+    border-bottom: 1px solid var(--accent-faint);
+    padding: 9px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    font-family: var(--font-ui);
+    animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+.lrb-icon { font-size: 16px; flex-shrink: 0; }
+.lrb-text {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.lrb-text strong { color: var(--accent); font-weight: 600; }
+.lrb-go {
+    background: var(--accent);
+    color: var(--bg-page);
+    border: none;
+    border-radius: 99px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    width: auto;
+    flex-shrink: 0;
+}
+.lrb-close {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 6px;
+    width: auto;
+    flex-shrink: 0;
+}
+.lrb-close:hover { color: var(--accent); }
+
+/* ── Skeleton loaders ── */
+.skeleton-wrap { padding: 24px; }
+.skeleton-line {
+    height: 18px;
+    background: linear-gradient(90deg, var(--accent-trace) 0%, var(--accent-faint) 50%, var(--accent-trace) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+    border-radius: 4px;
+    margin: 8px 0;
+}
+.skeleton-title { height: 28px; width: 50%; margin-bottom: 24px; }
+.skeleton-verse { padding: 14px 0; border-bottom: 1px solid var(--border); }
+.skeleton-ar { height: 28px; width: 90%; }
+.skeleton-tr { height: 16px; width: 70%; }
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Error states ── */
+.error-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-primary);
+}
+.error-icon { font-size: 48px; opacity: 0.5; margin-bottom: 16px; }
+.error-msg {
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    opacity: 0.85;
+}
+.error-retry {
+    background: var(--accent);
+    color: var(--bg-page);
+    border: none;
+    border-radius: 99px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: auto;
+    font-family: var(--font-ui);
+}
+
+/* ── Keyboard shortcuts overlay ── */
+.shortcuts-help {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 800;
+    backdrop-filter: blur(4px);
+}
+.shortcuts-help.show { display: flex; }
+.shortcuts-box {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-mid);
+    border-radius: 14px;
+    padding: 20px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.5);
+}
+.shortcuts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+}
+.shortcuts-header h3 {
+    font-size: 17px;
+    font-family: var(--font-heading);
+    font-style: italic;
+    color: var(--accent);
+    font-weight: 600;
+}
+.shortcuts-close {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px 8px;
+    width: auto;
+}
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13px;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+}
+.shortcut-row kbd {
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 12px;
+    color: var(--accent);
+    font-family: monospace;
+    font-weight: 600;
+    min-width: 28px;
+    text-align: center;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+}
+.shortcut-row span:not(kbd) {
+    flex: 1;
+    opacity: 0.85;
+}
+
+/* ── Focus mode ── */
+body.focus-mode header,
+body.focus-mode .sidebar1,
+body.focus-mode .bottom-nav,
+body.focus-mode footer,
+body.focus-mode #verseNavFab,
+body.focus-mode #lastReadBanner,
+body.focus-mode #tocContainer {
+    display: none !important;
+}
+body.focus-mode .textContainer,
+body.focus-mode .sura-contexte {
+    padding: 40px 60px !important;
+}
+@media (max-width: 600px) {
+    body.focus-mode .textContainer,
+    body.focus-mode .sura-contexte {
+        padding: 24px 18px !important;
+    }
+}
+/* Subtle exit hint in focus mode */
+body.focus-mode::after {
+    content: 'F or Esc to exit focus mode';
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 9;
+}
+
+/* ── Verse navigation FAB ── */
+.verse-nav-fab {
+    position: fixed;
+    right: 16px;
+    bottom: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 40;
+    opacity: 0.55;
+    transition: opacity 0.2s;
+}
+.verse-nav-fab:hover { opacity: 1; }
+.vnav-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-family: var(--font-ui);
+    transition: background 0.15s, transform 0.1s;
+}
+.vnav-btn:hover { background: var(--accent-trace); }
+.vnav-btn:active { transform: scale(0.92); }
+.vnav-jump { font-size: 16px; font-weight: 700; }
+
+@media (max-width: 900px) {
+    .verse-nav-fab { bottom: 70px; right: 10px; }
+    .vnav-btn { width: 38px; height: 38px; font-size: 19px; }
+}
+
+@media (max-width: 600px) {
+    .verse-nav-fab {
+        bottom: 70px;
+        flex-direction: column;
+        right: 8px;
+    }
+}
+
+/* ── Pull-to-refresh indicator ── */
+.pull-indicator {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background: var(--accent-trace);
+    color: var(--accent);
+    padding: 8px 18px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: var(--font-ui);
+    z-index: 900;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s, transform 0.15s;
+    border: 1px solid var(--accent-faint);
+}
+
+/* ── Feature toggles in settings ── */
+.feature-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    font-family: var(--font-ui);
+}
+.feature-toggle-row:last-child { border-bottom: none; }
+.feature-toggle-lbl {
+    font-size: 14px;
+    color: var(--text-primary);
+    flex: 1;
+    padding-right: 12px;
+    opacity: 0.92;
+}
+
+/* iOS-style toggle switch */
+.feature-toggle-sw {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+.feature-toggle-sw input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.feature-toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border-mid);
+    border-radius: 99px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.feature-toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.feature-toggle-sw input:checked + .feature-toggle-slider {
+    background: var(--accent);
+}
+.feature-toggle-sw input:checked + .feature-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.feature-sub-row {
+    padding: 12px 0 8px;
+    border-top: 1px dashed var(--border);
+    margin-top: 8px;
+}
+.feature-sub-lbl {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 6px;
+    opacity: 0.85;
+}
+
+/* ── Khatm heatmap ── */
+.khatm-heatmap {
+    padding: 4px 0 10px;
+}
+.khatm-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+.khatm-completions {
+    background: var(--accent-trace);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-weight: 600;
+}
+.khatm-grid {
+    display: grid;
+    grid-template-columns: repeat(15, 1fr);
+    gap: 3px;
+    margin-bottom: 8px;
+}
+.khatm-cell {
+    aspect-ratio: 1;
+    background: var(--accent-trace);
+    border-radius: 2px;
+    transition: background 0.15s;
+}
+.khatm-cell[data-level="1"] { background: var(--accent-faint); }
+.khatm-cell[data-level="2"] { background: var(--accent-dim); }
+.khatm-cell[data-level="3"] { background: var(--accent); opacity: 0.7; }
+.khatm-cell[data-level="4"] { background: var(--accent); }
+.khatm-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    font-size: 10px;
+    color: var(--text-muted);
+}
+.khatm-legend .kl {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    background: var(--accent-trace);
+    display: inline-block;
+}
+.khatm-legend .kl[data-level="1"] { background: var(--accent-faint); }
+.khatm-legend .kl[data-level="2"] { background: var(--accent-dim); }
+.khatm-legend .kl[data-level="3"] { background: var(--accent); opacity: 0.7; }
+.khatm-legend .kl[data-level="4"] { background: var(--accent); }
+
+/* ── Landscape layout adjustments ── */
+@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
+    body { font-size: 14px; }
+    header { min-height: 44px; padding: 4px 12px; }
+    .Bismileh { height: 28px; }
+    #introductionTitle { font-size: 0.7rem; }
+    .bottom-nav .bnav-btn { padding: 4px 2px 6px; }
+    .bnav-ico { font-size: 16px; }
+    .bnav-lbl { font-size: 8px; }
+    .verse { font-size: 1.3rem; padding: 10px 0; }
+    .last-read-banner { padding: 6px 12px; }
+    .lrb-text { font-size: 12px; }
+}

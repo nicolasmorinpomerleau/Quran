@@ -141,7 +141,8 @@ body {
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100vh;            /* fallback */
+    height: 100dvh;            /* respects mobile browser UI */
     overflow: hidden;
     transition: background-color 0.3s, color 0.3s;
 }
@@ -977,6 +978,7 @@ footer {
         position: fixed;
         top: 0; left: 0;
         height: 100vh;
+        height: 100dvh;
         z-index: 100;
         transform: translateX(-100%);
         transition: transform 0.28s cubic-bezier(.4,0,.2,1);
@@ -1041,29 +1043,11 @@ footer {
     .verse { font-size: 1.4rem; line-height: 2; }
     #suraTitle { font-size: 1.05rem; }
 
-    /* Search results: full-width overlay on mobile */
-    .resultsContainer {
-        position: fixed;
-        top: 52px;
-        left: 0; right: 0;
-        bottom: 112px; /* above mobile search + bottom nav */
-        width: 100% !important;
-        min-width: unset !important;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        z-index: 80;
-    }
-
-    /* Bookmarks full-width on mobile */
+    /* v9.7: Hide desktop search/bookmarks panels entirely on mobile.
+       The mobile sheet handles both — desktop panels would be redundant overlays. */
+    .resultsContainer,
     .bookmarksContainer {
-        position: fixed;
-        top: 52px;
-        left: 0; right: 0;
-        bottom: 112px;
-        width: 100% !important;
-        min-width: unset !important;
-        border-right: none;
-        z-index: 80;
+        display: none !important;
     }
 
     /* Mobile search bar visible */
@@ -1149,10 +1133,14 @@ input[type="range"] {
 
 .font-slider-val {
     font-size: 13px;
-    color: var(--text-muted);
+    color: var(--text-primary);
     width: 36px;
     text-align: right;
     flex-shrink: 0;
+    opacity: 0.85;
+    background: var(--accent-trace);
+    border-radius: 4px;
+    padding: 2px 6px;
 }
 
 /* ── TOC Tabs ── */
@@ -1239,8 +1227,9 @@ input[type="range"] {
 .juz-sub {
     display: block;
     font-size: 0.55em;
-    color: var(--text-muted);
+    color: var(--text-primary);
     margin-top: 2px;
+    opacity: 0.78;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1693,39 +1682,57 @@ input[type="range"] {
 
 .mob-juz-info { flex: 1; min-width: 0; }
 .mob-juz-ar { font-size: 16px; color: var(--text-primary); font-family: var(--font-heading); font-style: italic; }
-.mob-juz-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.mob-juz-sub {
+    font-size: 13px;
+    color: var(--text-primary);
+    margin-top: 2px;
+    opacity: 0.78;
+}
 
 /* ── Search results inside sheet ── */
 .mob-results-total {
-    font-size: 13px; color: var(--text-muted);
-    padding: 10px 20px;
+    font-size: 14px;
+    color: var(--text-primary);
+    font-style: italic;
+    font-weight: 600;
+    padding: 11px 18px;
     border-bottom: 1px solid var(--border);
+    opacity: 0.95;
 }
 
 .mob-results-surah {
-    font-size: 16px; color: var(--accent);
-    font-family: var(--font-heading); font-style: italic;
-    padding: 10px 20px 4px;
+    font-size: 17px;
+    color: var(--accent);
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-weight: 700;
+    padding: 12px 18px 5px;
+    letter-spacing: 0.02em;
 }
 
 .mob-results-verse {
-    font-size: 16px; color: var(--text-result);
-    padding: 10px 20px;
+    font-size: 15px;
+    color: var(--text-primary);
+    padding: 11px 18px;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     display: flex; align-items: center; justify-content: space-between;
     transition: background 0.12s;
+    opacity: 0.92;
 }
 
 .mob-results-verse:hover,
 .mob-results-verse:active { background: var(--bg-toc-active); color: var(--text-result-h); }
 
-.mob-results-arrow { font-size: 14px; color: var(--accent-dim); flex-shrink: 0; }
+.mob-results-arrow { font-size: 16px; color: var(--accent); flex-shrink: 0; }
 
 .mob-results-empty {
-    padding: 24px 20px;
-    font-size: 15px; color: var(--text-muted);
-    text-align: center; line-height: 1.7;
+    padding: 30px 20px;
+    font-size: 15px;
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.7;
+    opacity: 0.92;
 }
 
 /* ── Bookmarks inside sheet ── */
@@ -1738,8 +1745,19 @@ input[type="range"] {
 .mob-bm-item:hover,
 .mob-bm-item:active { background: var(--bg-toc-active); }
 
-.mob-bm-surah { font-size: 15px; color: var(--accent); font-style: italic; margin-bottom: 3px; }
-.mob-bm-verse { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+.mob-bm-surah {
+    font-size: 16px;
+    color: var(--accent);
+    font-style: italic;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+.mob-bm-verse {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.55;
+    opacity: 0.9;
+}
 
 /* ── Settings inside sheet ── */
 .mob-settings-section { padding: 12px 20px; border-bottom: 1px solid var(--border); }
@@ -2220,13 +2238,15 @@ input[type="range"] {
 }
 
 .mob-peek-label {
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-primary);
+    font-weight: 500;
     flex: 1;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    opacity: 0.95;
 }
 
 .mob-peek-close-btn {
@@ -2256,25 +2276,29 @@ input[type="range"] {
 }
 
 .mob-saved-tab {
-    padding: 7px 11px 9px;
+    padding: 8px 12px 10px;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    font-size: 12px;
-    color: var(--text-muted);
+    font-size: 14px;
+    color: var(--text-primary);
     cursor: pointer;
     font-family: var(--font-heading);
     font-style: italic;
+    font-weight: 600;
     white-space: nowrap;
     transition: color 0.15s, border-color 0.15s;
     width: auto;
     flex-shrink: 0;
+    opacity: 0.7;
 }
+.mob-saved-tab:hover { opacity: 0.9; }
 
 .mob-saved-tab.active {
     color: var(--accent);
     border-bottom-color: var(--accent);
-    font-weight: 600;
+    font-weight: 700;
+    opacity: 1;
 }
 
 /* ── Saved item remove button (✕ on each row, mobile) ── */
@@ -2367,15 +2391,16 @@ input[type="range"] {
 }
 
 .saved-tab {
-    padding: 7px 12px 9px;
+    padding: 8px 13px 10px;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    font-size: 12px;
-    color: var(--text-muted);
+    font-size: 13px;
+    color: var(--text-secondary);
     cursor: pointer;
     font-family: var(--font-heading);
     font-style: italic;
+    font-weight: 600;
     white-space: nowrap;
     transition: color 0.15s, border-color 0.15s;
     width: auto;

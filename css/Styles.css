@@ -2157,3 +2157,292 @@ input[type="range"] {
     margin-top: 6px;
     opacity: 0.7;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v9.6 — MINIMIZE / PEEK BAR / SAVED HUB
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Minimize button in sheet header ── */
+.mob-sheet-min {
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 99px;
+    padding: 4px 10px;
+    cursor: pointer;
+    width: auto;
+    flex-shrink: 0;
+    margin-right: 4px;
+    font-family: var(--font-ui);
+    transition: background 0.15s;
+}
+.mob-sheet-min:hover { background: var(--accent-faint); color: var(--accent); }
+
+/* ── Sheet minimized state — slide it down so only the header peeks ── */
+.mob-sheet.minimized {
+    /* Let the peek bar handle visibility instead */
+    transform: translateY(100%);
+}
+
+/* ── Peek bar (floating bar at bottom when sheet is minimized) ── */
+.mob-sheet-peek {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--accent-trace);
+    border-top: 1px solid var(--accent-dim);
+    padding: 11px 14px;
+    display: none;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    z-index: 200;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.25);
+    font-family: var(--font-ui);
+    /* Sit above the bottom nav */
+    margin-bottom: 60px;
+}
+.mob-sheet-peek.show { display: flex; }
+
+/* On notched phones, push peek bar above the safe area too */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .mob-sheet-peek { margin-bottom: calc(60px + env(safe-area-inset-bottom)); }
+}
+
+.mob-peek-arrow {
+    font-size: 14px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.mob-peek-label {
+    font-size: 13px;
+    color: var(--text-primary);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.mob-peek-close-btn {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 99px;
+    cursor: pointer;
+    width: auto;
+    flex-shrink: 0;
+    font-weight: 600;
+}
+.mob-peek-close-btn:hover { background: var(--accent); color: var(--bg-page); }
+
+/* ── Saved hub: 3-tab bar inside mobile sheet ── */
+.mob-saved-tabs {
+    display: flex;
+    padding: 6px 8px 0;
+    gap: 3px;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.mob-saved-tab {
+    padding: 7px 11px 9px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-style: italic;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.mob-saved-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+/* ── Saved item remove button (✕ on each row, mobile) ── */
+.mob-saved-rm {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    font-size: 13px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 7px;
+    border-radius: 5px;
+    line-height: 1;
+    width: auto;
+    z-index: 2;
+    transition: color 0.15s, background 0.15s;
+}
+.mob-saved-rm:hover {
+    color: var(--accent);
+    background: var(--accent-trace);
+}
+
+/* ── Note edit + remove combo (mobile) ── */
+.mob-saved-actions {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    display: flex;
+    gap: 3px;
+    z-index: 2;
+}
+
+.mob-saved-actions .mob-saved-rm {
+    position: static;
+}
+
+.mob-saved-edit {
+    font-size: 13px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 7px;
+    border-radius: 5px;
+    line-height: 1;
+    width: auto;
+    transition: color 0.15s, background 0.15s;
+}
+.mob-saved-edit:hover {
+    color: var(--accent);
+    background: var(--accent-trace);
+}
+
+/* ── Note content row (mobile) ── */
+.mob-note-text {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin-top: 4px;
+    padding-right: 56px;
+    word-wrap: break-word;
+}
+
+/* ── Highlight item — gold left border ── */
+.mob-hl-item {
+    border-left: 3px solid var(--accent) !important;
+    padding-left: 11px;
+}
+
+/* Existing mob-bm-item needs position: relative for absolute ✕ button */
+.mob-bm-item {
+    position: relative;
+    padding-right: 56px !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   v9.6 — DESKTOP SAVED HUB (Bookmarks / Notes / Highlights tabs)
+   ════════════════════════════════════════════════════════════════════ */
+
+#saved-tabs {
+    display: flex;
+    padding: 6px 12px 0;
+    gap: 3px;
+    background: var(--bg-results);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    overflow-x: auto;
+}
+
+.saved-tab {
+    padding: 7px 12px 9px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-heading);
+    font-style: italic;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.saved-tab:hover { color: var(--text-secondary); }
+
+.saved-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+/* ── Note edit/remove combo (desktop) ── */
+.note-actions-row {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 2px;
+    z-index: 2;
+}
+
+.note-edit-btn {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px 6px;
+    border-radius: 4px;
+    line-height: 1;
+    width: auto;
+    transition: color 0.15s, background 0.15s;
+}
+.note-edit-btn:hover {
+    color: var(--accent);
+    background: var(--accent-trace);
+}
+
+/* ── Note text preview in desktop saved hub ── */
+.note-text-preview {
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.55;
+    margin-top: 4px;
+    padding-right: 50px;
+    word-wrap: break-word;
+}
+
+/* ── Desktop highlight item gold left border ── */
+.bookmark-highlight {
+    border-left: 3px solid var(--accent) !important;
+}
+
+/* Make .bookmark-item position relative so ✕ button can absolutely position */
+.bookmark-item {
+    position: relative;
+    padding-right: 36px !important;
+}
+
+/* Bump bookmark-remove styling for note-actions-row alignment */
+.note-actions-row .bookmark-remove {
+    position: static;
+    float: none;
+    font-size: 12px;
+    padding: 3px 6px;
+    line-height: 1;
+}

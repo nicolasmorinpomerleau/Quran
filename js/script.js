@@ -272,45 +272,168 @@ function removeBookmark(key) {
     if (suraEl) reapplyVerseActions(suraEl.id);
 }
 
-function renderBookmarksList() {
+// v9.6: Desktop saved hub — bookmarks / notes / highlights
+var _desktopSavedTab = 'bookmarks';
+
+function renderSavedHubDesktop(tab) {
+    if (tab) _desktopSavedTab = tab;
     const list = document.getElementById('bookmarks-list');
-    const bms  = getBookmarks();
     list.innerHTML = '';
-    // v9.5: update label with count
-    var lbl = document.getElementById('bookmarks-label');
-    if (lbl) lbl.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
-    // v9.5: hide reset button when empty
-    var resetBtn = document.getElementById('bookmarksReset');
-    if (resetBtn) resetBtn.style.display = bms.length ? '' : 'none';
-    if (bms.length === 0) {
-        list.innerHTML = '<div class="bookmarks-empty"><div class="bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="bookmarks-empty-hint">Hover a verse and click 🔖 to save it.</div></div>';
-        return;
-    }
-    bms.forEach(function(b) {
-        const item = document.createElement('div');
-        item.className = 'bookmark-item';
-        const removeBtn = document.createElement('button');
-        removeBtn.className   = 'bookmark-remove';
-        removeBtn.textContent = '✕';
-        removeBtn.addEventListener('click', function(e){ e.stopPropagation(); removeBookmark(b.key); });
-        const surahEl = document.createElement('div');
-        surahEl.className   = 'bookmark-surah';
-        surahEl.textContent = b.suraName + ' · v.' + (b.verseIdx + 1);
-        const verseEl = document.createElement('div');
-        verseEl.className   = 'bookmark-verse';
-        verseEl.textContent = b.text;
-        item.appendChild(removeBtn);
-        item.appendChild(surahEl);
-        item.appendChild(verseEl);
-        item.addEventListener('click', function() {
-            displaySingleSura(b.suraId);
-            setTimeout(function() {
-                const verses = document.querySelectorAll('.verse');
-                if (verses[b.verseIdx]) verses[b.verseIdx].scrollIntoView({ behavior:'smooth' });
-            }, 100);
-        });
-        list.appendChild(item);
+
+    const bms      = getBookmarks();
+    const notesArr = getNotesList();
+    const hlArr    = getHighlightsList();
+
+    // Update tab counts
+    document.querySelectorAll('.saved-tab').forEach(function(b) {
+        var t = b.getAttribute('data-savedtab');
+        var count = t === 'bookmarks' ? bms.length : t === 'notes' ? notesArr.length : hlArr.length;
+        var icon = t === 'bookmarks' ? '🔖 Bookmarks' : t === 'notes' ? '📝 Notes' : '✦ Highlights';
+        b.textContent = icon + (count ? ' (' + count + ')' : '');
+        b.classList.toggle('active', t === _desktopSavedTab);
     });
+
+    var lbl = document.getElementById('bookmarks-label');
+    var resetBtn = document.getElementById('bookmarksReset');
+
+    if (_desktopSavedTab === 'bookmarks') {
+        if (lbl) lbl.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
+        if (resetBtn) {
+            resetBtn.style.display = bms.length ? '' : 'none';
+            resetBtn.title = 'Clear all bookmarks';
+        }
+        if (bms.length === 0) {
+            list.innerHTML = '<div class="bookmarks-empty"><div class="bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="bookmarks-empty-hint">Hover a verse and click 🔖 to save it.</div></div>';
+            return;
+        }
+        bms.forEach(function(b) {
+            const item = document.createElement('div');
+            item.className = 'bookmark-item';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'bookmark-remove';
+            removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', function(e){ e.stopPropagation(); removeBookmark(b.key); });
+            const surahEl = document.createElement('div');
+            surahEl.className = 'bookmark-surah';
+            surahEl.textContent = b.suraName + ' · v.' + (b.verseIdx + 1);
+            const verseEl = document.createElement('div');
+            verseEl.className = 'bookmark-verse';
+            verseEl.textContent = b.text;
+            item.appendChild(removeBtn); item.appendChild(surahEl); item.appendChild(verseEl);
+            item.addEventListener('click', function() {
+                displaySingleSura(b.suraId);
+                setTimeout(function() {
+                    const verses = document.querySelectorAll('.verse');
+                    if (verses[b.verseIdx]) verses[b.verseIdx].scrollIntoView({ behavior:'smooth' });
+                }, 100);
+            });
+            list.appendChild(item);
+        });
+
+    } else if (_desktopSavedTab === 'notes') {
+        if (lbl) lbl.textContent = '📝 Notes' + (notesArr.length ? ' (' + notesArr.length + ')' : '');
+        if (resetBtn) {
+            resetBtn.style.display = notesArr.length ? '' : 'none';
+            resetBtn.title = 'Clear all notes';
+        }
+        if (notesArr.length === 0) {
+            list.innerHTML = '<div class="bookmarks-empty"><div class="bookmarks-empty-icon">📝</div><div>No notes yet</div><div class="bookmarks-empty-hint">Hover a verse and click 📝 to add a note.</div></div>';
+            return;
+        }
+        notesArr.forEach(function(n) {
+            const item = document.createElement('div');
+            item.className = 'bookmark-item';
+            const actions = document.createElement('div');
+            actions.className = 'note-actions-row';
+            const editBtn = document.createElement('button');
+            editBtn.className = 'note-edit-btn'; editBtn.textContent = '✎'; editBtn.title = 'Edit note';
+            editBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                displaySingleSura(n.suraId);
+                setTimeout(function() {
+                    const verses = document.querySelectorAll('.verse');
+                    if (verses[n.verseIdx]) {
+                        verses[n.verseIdx].scrollIntoView({ behavior: 'smooth' });
+                        var noteBtn = verses[n.verseIdx].querySelector('.verse-action-btn:nth-child(3)');
+                        if (noteBtn) setTimeout(function(){ openNoteModal(n.suraId, n.verseIdx, noteBtn); }, 200);
+                    }
+                }, 100);
+            });
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'bookmark-remove'; removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', function(e){
+                e.stopPropagation();
+                deleteNoteByKey(n.key);
+                renderSavedHubDesktop();
+            });
+            actions.appendChild(editBtn); actions.appendChild(removeBtn);
+            item.appendChild(actions);
+            const surahEl = document.createElement('div');
+            surahEl.className = 'bookmark-surah';
+            surahEl.textContent = n.suraName + ' · v.' + (n.verseIdx + 1);
+            const noteText = document.createElement('div');
+            noteText.className = 'note-text-preview';
+            noteText.textContent = n.text;
+            const verseText = document.createElement('div');
+            verseText.className = 'bookmark-verse';
+            verseText.style.opacity = '0.55';
+            verseText.style.fontSize = '12px';
+            verseText.style.marginTop = '4px';
+            verseText.textContent = n.verseText;
+            item.appendChild(surahEl); item.appendChild(noteText); item.appendChild(verseText);
+            item.addEventListener('click', function() {
+                displaySingleSura(n.suraId);
+                setTimeout(function() {
+                    const verses = document.querySelectorAll('.verse');
+                    if (verses[n.verseIdx]) verses[n.verseIdx].scrollIntoView({ behavior:'smooth' });
+                }, 100);
+            });
+            list.appendChild(item);
+        });
+
+    } else { // highlights
+        if (lbl) lbl.textContent = '✦ Highlights' + (hlArr.length ? ' (' + hlArr.length + ')' : '');
+        if (resetBtn) {
+            resetBtn.style.display = hlArr.length ? '' : 'none';
+            resetBtn.title = 'Clear all highlights';
+        }
+        if (hlArr.length === 0) {
+            list.innerHTML = '<div class="bookmarks-empty"><div class="bookmarks-empty-icon">✦</div><div>No highlights yet</div><div class="bookmarks-empty-hint">Hover a verse and click ✦ Highlight.</div></div>';
+            return;
+        }
+        hlArr.forEach(function(h) {
+            const item = document.createElement('div');
+            item.className = 'bookmark-item bookmark-highlight';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'bookmark-remove'; removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', function(e){
+                e.stopPropagation();
+                deleteHighlightByKey(h.key);
+                renderSavedHubDesktop();
+            });
+            item.appendChild(removeBtn);
+            const surahEl = document.createElement('div');
+            surahEl.className = 'bookmark-surah';
+            surahEl.textContent = h.suraName + ' · v.' + (h.verseIdx + 1);
+            const verseEl = document.createElement('div');
+            verseEl.className = 'bookmark-verse';
+            verseEl.textContent = h.verseText;
+            item.appendChild(surahEl); item.appendChild(verseEl);
+            item.addEventListener('click', function() {
+                displaySingleSura(h.suraId);
+                setTimeout(function() {
+                    const verses = document.querySelectorAll('.verse');
+                    if (verses[h.verseIdx]) verses[h.verseIdx].scrollIntoView({ behavior:'smooth' });
+                }, 100);
+            });
+            list.appendChild(item);
+        });
+    }
+}
+
+// Compatibility wrapper — renderBookmarksList now delegates to the hub
+function renderBookmarksList() {
+    renderSavedHubDesktop(_desktopSavedTab);
 }
 
 
@@ -324,19 +447,27 @@ function resetAllBookmarks() {
         function() {
             lsSet(BOOKMARKS_KEY, []);
             renderBookmarksList();
-            // Update verse buttons in current sura
             var suraEl = document.querySelector('.sura');
             if (suraEl) reapplyVerseActions(suraEl.id);
-            // Refresh mobile sheet if it's the bookmarks one
-            var sheet = document.getElementById('mobileSheet');
-            if (sheet && sheet.classList.contains('open') && _sheetCurrentAction === 'bookmarks') {
-                var body = document.getElementById('mobileSheetBody');
-                var title = document.getElementById('mobileSheetTitle');
-                if (body && title) { body.innerHTML = ''; buildSheetBookmarks(body, title); }
-            }
+            refreshSavedHub();
         }
     );
 }
+
+// Wire desktop tab switching
+document.querySelectorAll('.saved-tab').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        _desktopSavedTab = btn.getAttribute('data-savedtab');
+        renderSavedHubDesktop();
+    });
+});
+
+// Reset button on desktop should now be tab-aware
+document.getElementById('bookmarksReset').onclick = function() {
+    if (_desktopSavedTab === 'notes')           resetAllNotes();
+    else if (_desktopSavedTab === 'highlights') resetAllHighlights();
+    else                                        resetAllBookmarks();
+};
 
 // ═══════════════════════════════════════════════════════════════════
 // VERSE HIGHLIGHTING
@@ -423,6 +554,107 @@ document.getElementById('noteModalDelete').addEventListener('click', function() 
 document.getElementById('noteModal').addEventListener('click', function(e) {
     if (e.target === this) closeNoteModal();
 });
+
+
+// ── v9.6: Notes list helpers ──────────────────────────────────────
+function getNotesList() {
+    var notes = getNotes();
+    var arr = [];
+    Object.keys(notes).forEach(function(key) {
+        var parts = key.split('_'); // suraId_verseIdx
+        var suraId = parts[0];
+        var verseIdx = parseInt(parts[1]);
+        var sura = quranData.find(function(s){ return s.id === String(suraId); });
+        if (!sura) return;
+        var verseText = sura.verses[verseIdx] ? sura.verses[verseIdx].text : '';
+        arr.push({ key: key, suraId: suraId, verseIdx: verseIdx, text: notes[key], suraName: sura.name, verseText: verseText });
+    });
+    return arr;
+}
+
+function deleteNoteByKey(key) {
+    var notes = getNotes();
+    delete notes[key];
+    lsSet(NOTES_KEY, notes);
+    var suraEl = document.querySelector('.sura');
+    if (suraEl) reapplyVerseActions(suraEl.id);
+}
+
+function resetAllNotes() {
+    var notes = getNotes();
+    var count = Object.keys(notes).length;
+    if (count === 0) return;
+    showConfirm(
+        'Clear all notes?',
+        'This removes all ' + count + ' note' + (count === 1 ? '' : 's') + '. You can\'t undo this action.',
+        function() {
+            lsSet(NOTES_KEY, {});
+            var suraEl = document.querySelector('.sura');
+            if (suraEl) reapplyVerseActions(suraEl.id);
+            // Refresh saved hub if open
+            refreshSavedHub();
+            renderDesktopNotesList();
+        }
+    );
+}
+
+// ── v9.6: Highlights list helpers ─────────────────────────────────
+function getHighlightsList() {
+    var hl = getHighlights();
+    var arr = [];
+    Object.keys(hl).forEach(function(key) {
+        var parts = key.split('_');
+        var suraId = parts[0];
+        var verseIdx = parseInt(parts[1]);
+        var sura = quranData.find(function(s){ return s.id === String(suraId); });
+        if (!sura) return;
+        var verseText = sura.verses[verseIdx] ? sura.verses[verseIdx].text : '';
+        arr.push({ key: key, suraId: suraId, verseIdx: verseIdx, suraName: sura.name, verseText: verseText });
+    });
+    return arr;
+}
+
+function deleteHighlightByKey(key) {
+    var hl = getHighlights();
+    delete hl[key];
+    lsSet(HIGHLIGHTS_KEY, hl);
+    var suraEl = document.querySelector('.sura');
+    if (suraEl) reapplyVerseActions(suraEl.id);
+}
+
+function resetAllHighlights() {
+    var hl = getHighlights();
+    var count = Object.keys(hl).length;
+    if (count === 0) return;
+    showConfirm(
+        'Clear all highlights?',
+        'This removes all ' + count + ' highlight' + (count === 1 ? '' : 's') + '. You can\'t undo this action.',
+        function() {
+            lsSet(HIGHLIGHTS_KEY, {});
+            var suraEl = document.querySelector('.sura');
+            if (suraEl) reapplyVerseActions(suraEl.id);
+            refreshSavedHub();
+            renderDesktopNotesList();
+        }
+    );
+}
+
+function refreshSavedHub() {
+    var sheet = document.getElementById('mobileSheet');
+    if (sheet && sheet.classList.contains('open') && _sheetCurrentAction === 'bookmarks') {
+        var body = document.getElementById('mobileSheetBody');
+        var title = document.getElementById('mobileSheetTitle');
+        if (body && title) { body.innerHTML = ''; buildSheetBookmarks(body, title); }
+    }
+}
+
+function renderDesktopNotesList() {
+    // Hook for desktop notes panel update — implemented if panel is visible
+    var panel = document.getElementById('savedHubPanel');
+    if (panel && panel.classList.contains('savedHubContainer')) {
+        renderSavedHubDesktop(_savedHubActiveTab || 'bookmarks');
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // MULTI-LANGUAGE
@@ -1160,9 +1392,7 @@ document.getElementById('bookmarksClose').addEventListener('click', function(){
     document.getElementById('bookmarksPanel').classList.replace('bookmarksContainer','eraseDiv');
 });
 
-// v9.5: Reset all bookmarks button
-var bmResetBtn = document.getElementById('bookmarksReset');
-if (bmResetBtn) bmResetBtn.addEventListener('click', resetAllBookmarks);
+// v9.6: bookmarksReset onclick set per-tab in renderSavedHubDesktop
 
 document.getElementById('burgerMenu').addEventListener('click', toggleSidebar);
 
@@ -1293,6 +1523,62 @@ init();
 // same bottom sheet. Desktop is completely unaffected.
 // ═══════════════════════════════════════════════════════════════════
 
+
+// ═══════════════════════════════════════════════════════════════════
+// v9.6 — Sheet MINIMIZE (collapse to peek bar without losing state)
+// ═══════════════════════════════════════════════════════════════════
+var _sheetMinimized = false;
+
+function minimizeMobileSheet() {
+    var sheet   = document.getElementById('mobileSheet');
+    var overlay = document.getElementById('mobileSheetOverlay');
+    if (!sheet || !sheet.classList.contains('open')) return;
+
+    _sheetMinimized = true;
+    sheet.classList.remove('open');
+    sheet.classList.add('minimized');
+    overlay.classList.remove('active');
+
+    // Build/show the peek bar
+    var peek = document.getElementById('mobileSheetPeek');
+    if (!peek) {
+        peek = document.createElement('div');
+        peek.id = 'mobileSheetPeek';
+        peek.className = 'mob-sheet-peek';
+        peek.addEventListener('click', function(e) {
+            // Avoid restoring if user clicks the inner close button
+            if (e.target.closest('.mob-peek-close-btn')) return;
+            restoreMobileSheet();
+        });
+        document.body.appendChild(peek);
+    }
+
+    // Build peek content from current sheet
+    var titleText = document.getElementById('mobileSheetTitle').textContent || 'Sheet';
+    peek.innerHTML =
+        '<span class="mob-peek-arrow">▲</span>' +
+        '<span class="mob-peek-label">' + titleText + ' · tap to expand</span>' +
+        '<button class="mob-peek-close-btn" title="Close completely">✕</button>';
+    peek.querySelector('.mob-peek-close-btn').addEventListener('click', function(e) {
+        e.stopPropagation();
+        closeMobileSheet();
+    });
+    peek.classList.add('show');
+}
+
+function restoreMobileSheet() {
+    if (!_sheetMinimized) return;
+    var sheet   = document.getElementById('mobileSheet');
+    var overlay = document.getElementById('mobileSheetOverlay');
+    sheet.classList.remove('minimized');
+    sheet.classList.add('open');
+    overlay.classList.add('active');
+    var peek = document.getElementById('mobileSheetPeek');
+    if (peek) peek.classList.remove('show');
+    _sheetMinimized = false;
+}
+
+
 var _sheetCurrentAction = null;
 
 function isMobile() { return window.innerWidth <= 900; }
@@ -1320,6 +1606,12 @@ function openMobileSheet(action) {
     // v9.5: Clean up sheet header reset button (added per-sheet)
     var existingReset = sheetEl.querySelector('.mob-sheet-reset');
     if (existingReset) existingReset.remove();
+    // v9.6: Clean up minimize button (only valid for search sheet)
+    var existingMin = sheetEl.querySelector('.mob-sheet-min');
+    if (existingMin) existingMin.remove();
+    // v9.6: Clean up saved hub tabs row
+    var existingTabs = sheetEl.querySelector('.mob-saved-tabs');
+    if (existingTabs) existingTabs.remove();
     if (action === 'surah')     buildSheetSurahs(body, title);
     else if (action === 'juz')  buildSheetJuz(body, title);
     else if (action === 'search')    buildSheetSearch(body, title);
@@ -1337,6 +1629,13 @@ function openMobileSheet(action) {
 }
 
 function closeMobileSheet() {
+    // v9.6: also clean up minimized peek bar
+    _sheetMinimized = false;
+    var peek = document.getElementById('mobileSheetPeek');
+    if (peek) peek.classList.remove('show');
+    var sheet0 = document.getElementById('mobileSheet');
+    if (sheet0) sheet0.classList.remove('minimized');
+    
     var overlay = document.getElementById('mobileSheetOverlay');
     var sheet   = document.getElementById('mobileSheet');
     sheet.classList.remove('open');
@@ -1440,6 +1739,23 @@ var _mobileSearchScope = 'quran'; // 'surah' | 'quran'
 
 function buildSheetSearch(body, title) {
     title.textContent = '🔍 Search';
+
+    // v9.6 FIX: clean up any leftover sibling extras from previous render
+    var sheetEl = document.getElementById('mobileSheet');
+    sheetEl.querySelectorAll('.mob-search-scope, .mob-search-row, .mob-arabic-opt').forEach(function(el) { el.remove(); });
+
+    // v9.6: Add minimize button to header (only for search)
+    var headerEl = sheetEl.querySelector('.mob-sheet-header');
+    var existingMin = headerEl.querySelector('.mob-sheet-min');
+    if (!existingMin) {
+        var minBtn = document.createElement('button');
+        minBtn.className = 'mob-sheet-min';
+        minBtn.title = 'Minimize';
+        minBtn.textContent = '▼';
+        minBtn.addEventListener('click', minimizeMobileSheet);
+        var closeBtn = headerEl.querySelector('.mob-sheet-close');
+        headerEl.insertBefore(minBtn, closeBtn);
+    }
 
     // ── Scope toggle ──
     var scopeRow = document.createElement('div');
@@ -1573,28 +1889,86 @@ function buildSheetSearch(body, title) {
 }
 
 // ── Bookmarks sheet ───────────────────────────────────────────────
-function buildSheetBookmarks(body, title) {
-    var bms = getBookmarks();
-    title.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
+// v9.6: Saved hub — Bookmarks / Notes / Highlights with tabs
+var _savedHubActiveTab = 'bookmarks';
 
-    // v9.5: Add Reset button to sheet header (if not already there)
+function buildSheetBookmarks(body, title) {
     var sheet = document.getElementById('mobileSheet');
     var headerEl = sheet.querySelector('.mob-sheet-header');
+
+    // ── Counts ──
+    var bms = getBookmarks();
+    var notesArr = getNotesList();
+    var hlArr = getHighlightsList();
+
+    // ── Title reflects active tab ──
+    function updateTitle(tab) {
+        if (tab === 'notes')      title.textContent = '📝 Notes' + (notesArr.length ? ' (' + notesArr.length + ')' : '');
+        else if (tab === 'highlights') title.textContent = '✦ Highlights' + (hlArr.length ? ' (' + hlArr.length + ')' : '');
+        else                      title.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
+    }
+    updateTitle(_savedHubActiveTab);
+
+    // ── Reset button (top-right, varies by active tab) ──
     var existingReset = headerEl.querySelector('.mob-sheet-reset');
     if (existingReset) existingReset.remove();
-    if (bms.length > 0) {
+    function ensureReset(tab) {
+        var oldR = headerEl.querySelector('.mob-sheet-reset');
+        if (oldR) oldR.remove();
+        var hasItems = (tab === 'bookmarks' && bms.length) ||
+                       (tab === 'notes'     && notesArr.length) ||
+                       (tab === 'highlights'&& hlArr.length);
+        if (!hasItems) return;
         var resetBtn = document.createElement('button');
         resetBtn.className = 'mob-sheet-reset';
         resetBtn.textContent = '🗑 Reset';
-        resetBtn.title = 'Clear all bookmarks';
-        resetBtn.addEventListener('click', resetAllBookmarks);
-        // Insert before the close button
+        resetBtn.title = 'Clear all in this tab';
+        resetBtn.addEventListener('click', function() {
+            if (tab === 'notes')      resetAllNotes();
+            else if (tab === 'highlights') resetAllHighlights();
+            else                      resetAllBookmarks();
+        });
         var closeBtn = headerEl.querySelector('.mob-sheet-close');
         headerEl.insertBefore(resetBtn, closeBtn);
     }
+    ensureReset(_savedHubActiveTab);
 
+    // ── Tab bar ──
+    var tabsRow = sheet.querySelector('.mob-saved-tabs');
+    if (tabsRow) tabsRow.remove();
+    tabsRow = document.createElement('div');
+    tabsRow.className = 'mob-saved-tabs';
+    [
+        { id: 'bookmarks',  label: '🔖 Bookmarks',  count: bms.length },
+        { id: 'notes',      label: '📝 Notes',      count: notesArr.length },
+        { id: 'highlights', label: '✦ Highlights', count: hlArr.length }
+    ].forEach(function(t) {
+        var btn = document.createElement('button');
+        btn.className = 'mob-saved-tab' + (_savedHubActiveTab === t.id ? ' active' : '');
+        btn.textContent = t.label + (t.count ? ' (' + t.count + ')' : '');
+        btn.addEventListener('click', function() {
+            _savedHubActiveTab = t.id;
+            // Re-render
+            buildSheetBookmarks(body, title);
+        });
+        tabsRow.appendChild(btn);
+    });
+    body.parentNode.insertBefore(tabsRow, body);
+
+    // ── Body content ──
+    body.innerHTML = '';
+    if (_savedHubActiveTab === 'bookmarks') {
+        renderBookmarksInBody(body, bms);
+    } else if (_savedHubActiveTab === 'notes') {
+        renderNotesInBody(body, notesArr);
+    } else {
+        renderHighlightsInBody(body, hlArr);
+    }
+}
+
+function renderBookmarksInBody(body, bms) {
     if (!bms.length) {
-        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="mob-bookmarks-empty-hint">Hover a verse and tap 🔖 to save it.</div></div>';
+        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the 🔖 button to save it.</div></div>';
         return;
     }
     bms.forEach(function(b) {
@@ -1604,6 +1978,17 @@ function buildSheetBookmarks(body, title) {
         surah.textContent = b.suraName + ' · verse ' + (b.verseIdx + 1);
         var verse = document.createElement('div'); verse.className = 'mob-bm-verse';
         verse.textContent = b.text;
+        var rmv = document.createElement('button');
+        rmv.className = 'mob-saved-rm'; rmv.textContent = '✕'; rmv.title = 'Remove';
+        rmv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            removeBookmark(b.key);
+            // Refresh tab
+            var bodyEl = document.getElementById('mobileSheetBody');
+            var titleEl = document.getElementById('mobileSheetTitle');
+            if (bodyEl && titleEl) buildSheetBookmarks(bodyEl, titleEl);
+        });
+        item.appendChild(rmv);
         item.appendChild(surah); item.appendChild(verse);
         item.addEventListener('click', function() {
             closeMobileSheet();
@@ -1611,6 +1996,101 @@ function buildSheetBookmarks(body, title) {
             setTimeout(function() {
                 var verses = document.querySelectorAll('.verse');
                 if (verses[b.verseIdx]) verses[b.verseIdx].scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+        });
+        body.appendChild(item);
+    });
+}
+
+function renderNotesInBody(body, notesArr) {
+    if (!notesArr.length) {
+        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">📝</div><div>No notes yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the 📝 button to add a note.</div></div>';
+        return;
+    }
+    notesArr.forEach(function(n) {
+        var item = document.createElement('div');
+        item.className = 'mob-bm-item';
+        var actions = document.createElement('div');
+        actions.className = 'mob-saved-actions';
+        var editBtn = document.createElement('button');
+        editBtn.className = 'mob-saved-edit'; editBtn.textContent = '✎'; editBtn.title = 'Edit note';
+        editBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Need to navigate to the verse first so the noteBtn is real, then open modal
+            closeMobileSheet();
+            displaySingleSura(n.suraId);
+            setTimeout(function() {
+                var verses = document.querySelectorAll('.verse');
+                if (verses[n.verseIdx]) {
+                    verses[n.verseIdx].scrollIntoView({ behavior: 'smooth' });
+                    var noteBtn = verses[n.verseIdx].querySelector('.verse-action-btn:nth-child(3)');
+                    if (noteBtn) setTimeout(function(){ openNoteModal(n.suraId, n.verseIdx, noteBtn); }, 200);
+                }
+            }, 150);
+        });
+        var rmv = document.createElement('button');
+        rmv.className = 'mob-saved-rm'; rmv.textContent = '✕'; rmv.title = 'Delete note';
+        rmv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deleteNoteByKey(n.key);
+            var bodyEl = document.getElementById('mobileSheetBody');
+            var titleEl = document.getElementById('mobileSheetTitle');
+            if (bodyEl && titleEl) buildSheetBookmarks(bodyEl, titleEl);
+        });
+        actions.appendChild(editBtn);
+        actions.appendChild(rmv);
+        item.appendChild(actions);
+        var surah = document.createElement('div'); surah.className = 'mob-bm-surah';
+        surah.textContent = n.suraName + ' · verse ' + (n.verseIdx + 1);
+        var noteText = document.createElement('div'); noteText.className = 'mob-note-text';
+        noteText.textContent = n.text;
+        var verseText = document.createElement('div'); verseText.className = 'mob-bm-verse';
+        verseText.textContent = n.verseText;
+        verseText.style.opacity = '0.6';
+        verseText.style.fontSize = '11px';
+        verseText.style.marginTop = '5px';
+        item.appendChild(surah); item.appendChild(noteText); item.appendChild(verseText);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            displaySingleSura(n.suraId);
+            setTimeout(function() {
+                var verses = document.querySelectorAll('.verse');
+                if (verses[n.verseIdx]) verses[n.verseIdx].scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+        });
+        body.appendChild(item);
+    });
+}
+
+function renderHighlightsInBody(body, hlArr) {
+    if (!hlArr.length) {
+        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">✦</div><div>No highlights yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the ✦ Highlight button.</div></div>';
+        return;
+    }
+    hlArr.forEach(function(h) {
+        var item = document.createElement('div');
+        item.className = 'mob-bm-item mob-hl-item';
+        var rmv = document.createElement('button');
+        rmv.className = 'mob-saved-rm'; rmv.textContent = '✕'; rmv.title = 'Remove highlight';
+        rmv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deleteHighlightByKey(h.key);
+            var bodyEl = document.getElementById('mobileSheetBody');
+            var titleEl = document.getElementById('mobileSheetTitle');
+            if (bodyEl && titleEl) buildSheetBookmarks(bodyEl, titleEl);
+        });
+        item.appendChild(rmv);
+        var surah = document.createElement('div'); surah.className = 'mob-bm-surah';
+        surah.textContent = h.suraName + ' · verse ' + (h.verseIdx + 1);
+        var verseText = document.createElement('div'); verseText.className = 'mob-bm-verse';
+        verseText.textContent = h.verseText;
+        item.appendChild(surah); item.appendChild(verseText);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            displaySingleSura(h.suraId);
+            setTimeout(function() {
+                var verses = document.querySelectorAll('.verse');
+                if (verses[h.verseIdx]) verses[h.verseIdx].scrollIntoView({ behavior: 'smooth' });
             }, 150);
         });
         body.appendChild(item);

@@ -107,12 +107,17 @@
         <article class="main">
             <div id="content-wrapper">
 
-                <!-- Bookmarks panel -->
+                <!-- Saved hub panel (Bookmarks / Notes / Highlights) -->
                 <div id="bookmarksPanel" class="eraseDiv">
                     <div id="bookmarks-topbar">
                         <span id="bookmarks-label">🔖 Bookmarks</span>
-                        <button id="bookmarksReset" title="Clear all bookmarks">🗑 Reset</button>
+                        <button id="bookmarksReset" title="Clear all in this tab">🗑 Reset</button>
                         <button id="bookmarksClose">✕ Close</button>
+                    </div>
+                    <div id="saved-tabs">
+                        <button class="saved-tab active" data-savedtab="bookmarks">🔖 Bookmarks</button>
+                        <button class="saved-tab" data-savedtab="notes">📝 Notes</button>
+                        <button class="saved-tab" data-savedtab="highlights">✦ Highlights</button>
                     </div>
                     <div id="bookmarks-list"></div>
                 </div>

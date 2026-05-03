@@ -356,18 +356,42 @@ function toggleFocusMode() {
     hapticTap(15);
 }
 
+// Tap anywhere in focus mode to exit (mobile-friendly)
+document.addEventListener('click', function(e) {
+    if (!document.body.classList.contains('focus-mode')) return;
+    // Don't exit if user clicked a button inside the verse area
+    if (e.target.closest('.verse-action-btn')) return;
+    if (e.target.closest('.verse-actions')) return;
+    document.body.classList.remove('focus-mode');
+});
+
 // ═══════════════════════════════════════════════════════════════════
-// #5 — Search-as-you-type (debounced)
+// #5 — Search-as-you-type (debounced) — works for ANY search input
+// Uses event delegation so it covers desktop AND mobile sheet inputs
 // ═══════════════════════════════════════════════════════════════════
 (function searchAsYouType() {
-    var inp = document.getElementById('search-input');
-    if (!inp) return;
     var timer = null;
-    inp.addEventListener('input', function() {
+    document.addEventListener('input', function(e) {
         if (!isFeatureOn('searchAsYouType')) return;
-        var term = this.value.trim();
+        var t = e.target;
+        // Only respond to actual search inputs:
+        // - desktop #search-input
+        // - mobile sheet search input (inside .mob-search-row)
+        var isDesktop = t.id === 'search-input';
+        var isMobile  = t.tagName === 'INPUT' && t.closest && t.closest('.mob-search-row');
+        if (!isDesktop && !isMobile) return;
+
+        var term = t.value.trim();
         clearTimeout(timer);
-        if (term.length < 2) return;
+        if (term.length < 2) {
+            // Optional: clear results if user erases
+            return;
+        }
+
+        // Sync the desktop input so searchQuran() reads the right value
+        var desktop = document.getElementById('search-input');
+        if (desktop && desktop !== t) desktop.value = t.value;
+
         timer = setTimeout(function() {
             if (typeof searchQuran === 'function') searchQuran(term);
         }, 350);
@@ -829,6 +853,7 @@ function loadArabicFontChoice() {
     window.buildSheetSettings = buildSheetSettings = function(body, title) {
         orig(body, title);
         appendFeaturesUI(body);
+        appendFocusModeButton(body);
         appendDataUI(body);
         appendKhatmUI(body);
     };
@@ -844,33 +869,41 @@ function appendFeaturesUI(body) {
 
     var f = getFeatures();
     var FEATURE_LABELS = {
-        keyboardShortcuts:  '⌨️ Keyboard shortcuts',
-        copyShareVerse:     '📋 Copy & share verse',
-        swipeBetweenSurahs: '👆 Swipe between surahs',
-        searchAsYouType:    '⚡ Search as you type',
-        lastReadBanner:     '📍 "Continue reading" banner',
-        bookmarkTags:       '🏷️ Bookmark tags',
-        khatmTracker:       '🎯 Khatm tracker',
-        loadingSkeletons:   '✨ Loading animations',
-        arabicFontChoice:   '🔤 Arabic font choice',
-        focusMode:          '🧘 Focus mode (key: F)',
-        autoDarkTheme:      '🌗 Auto dark theme (after 7pm)',
-        browserLangDefault: '🌐 Use browser language by default',
-        pullToRefresh:      '↻ Pull to refresh',
-        hapticFeedback:     '📳 Haptic feedback',
-        landscapeLayout:    '📐 Landscape layout',
-        verseNavigation:    '⇆ Verse navigation buttons',
-        deepLinks:          '🔗 Verse deep links',
-        notesExportImport:  '💾 Backup / restore data',
-        betterErrorStates:  '⚠️ Friendly error messages'
+        keyboardShortcuts:  ['⌨️ Keyboard shortcuts',     'Use ←/→ ? F / on desktop'],
+        copyShareVerse:     ['📋 Copy & share verse',     'Adds copy / share / link buttons under each verse'],
+        swipeBetweenSurahs: ['👆 Swipe between surahs',   'Swipe left / right to switch surah on phone'],
+        searchAsYouType:    ['⚡ Search as you type',     'Auto-runs search 350ms after you stop typing'],
+        lastReadBanner:     ['📍 "Continue reading" banner','Shows previously-read surah at top so you can jump back'],
+        bookmarkTags:       ['🏷️ Bookmark tags',          'Categorize saved verses (e.g. "patience", "prayer")'],
+        khatmTracker:       ['🎯 Khatm tracker',          'Daily reading heatmap + completion count'],
+        loadingSkeletons:   ['✨ Loading animations',      'Shimmer effect while content loads'],
+        arabicFontChoice:   ['🔤 Arabic font choice',      'Pick from Amiri / Scheherazade / Naskh / Lateef'],
+        focusMode:          ['🧘 Focus mode',              'Hides everything except verses (key: F)'],
+        autoDarkTheme:      ['🌗 Auto dark theme',         'Switches to Scholar after 7pm, Manuscript before'],
+        browserLangDefault: ['🌐 Browser language default','Picks French/English/Spanish/Arabic from device'],
+        pullToRefresh:      ['↻ Pull to refresh',         'Pull down at top of reading to refresh on mobile'],
+        hapticFeedback:     ['📳 Haptic feedback',         'Subtle vibration on taps (mobile only)'],
+        landscapeLayout:    ['📐 Landscape layout',        'Compact spacing in landscape on mobile'],
+        verseNavigation:    ['⇆ Verse navigation buttons', 'Floating prev / next / jump-to-verse buttons'],
+        deepLinks:          ['🔗 Verse deep links',        'Adds 🔗 button per verse to copy a shareable URL'],
+        notesExportImport:  ['💾 Backup / restore data',   'Adds export / import buttons in settings'],
+        betterErrorStates:  ['⚠️ Friendly error messages', 'Replaces blank failures with helpful retry']
     };
 
     Object.keys(FEATURE_LABELS).forEach(function(key) {
+        var labelData = FEATURE_LABELS[key];
         var row = document.createElement('label');
         row.className = 'feature-toggle-row';
+        var labelWrap = document.createElement('span');
+        labelWrap.className = 'feature-toggle-lbl-wrap';
         var span = document.createElement('span');
         span.className = 'feature-toggle-lbl';
-        span.textContent = FEATURE_LABELS[key];
+        span.textContent = labelData[0];
+        var sub = document.createElement('span');
+        sub.className = 'feature-toggle-sub';
+        sub.textContent = labelData[1];
+        labelWrap.appendChild(span);
+        labelWrap.appendChild(sub);
         var swWrap = document.createElement('span');
         swWrap.className = 'feature-toggle-sw';
         var inp = document.createElement('input');
@@ -898,7 +931,7 @@ function appendFeaturesUI(body) {
         slider.className = 'feature-toggle-slider';
         swWrap.appendChild(inp);
         swWrap.appendChild(slider);
-        row.appendChild(span);
+        row.appendChild(labelWrap);
         row.appendChild(swWrap);
         sec.appendChild(row);
     });
@@ -934,12 +967,17 @@ function appendDataUI(body) {
     sec.className = 'mob-settings-section';
     var lbl = document.createElement('div');
     lbl.className = 'mob-settings-lbl';
-    lbl.textContent = 'Backup & restore';
+    lbl.textContent = 'Export notes & data';
     sec.appendChild(lbl);
+
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:8px;opacity:0.85;line-height:1.4;';
+    hint.textContent = 'Saves all your notes, bookmarks, highlights, and reading history as a JSON file.';
+    sec.appendChild(hint);
 
     var exp = document.createElement('button');
     exp.className = 'mob-settings-btn';
-    exp.textContent = '💾 Export all data';
+    exp.textContent = '💾 Export notes & bookmarks (JSON)';
     exp.addEventListener('click', exportAllData);
     sec.appendChild(exp);
 
@@ -947,7 +985,7 @@ function appendDataUI(body) {
     impLbl.className = 'mob-settings-btn';
     impLbl.style.cursor = 'pointer';
     impLbl.style.display = 'block';
-    impLbl.textContent = '📥 Import from backup';
+    impLbl.textContent = '📥 Restore from JSON file';
     var impInp = document.createElement('input');
     impInp.type = 'file';
     impInp.accept = 'application/json';
@@ -957,6 +995,33 @@ function appendDataUI(body) {
     });
     impLbl.appendChild(impInp);
     sec.appendChild(impLbl);
+
+    body.appendChild(sec);
+}
+
+function appendFocusModeButton(body) {
+    if (!isFeatureOn('focusMode')) return;
+    var sec = document.createElement('div');
+    sec.className = 'mob-settings-section';
+    var lbl = document.createElement('div');
+    lbl.className = 'mob-settings-lbl';
+    lbl.textContent = 'Reading mode';
+    sec.appendChild(lbl);
+
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--text-secondary);margin-bottom:8px;opacity:0.85;line-height:1.4;';
+    hint.textContent = 'Hides everything except the verses. Tap the screen to bring back controls.';
+    sec.appendChild(hint);
+
+    var btn = document.createElement('button');
+    btn.className = 'mob-settings-btn';
+    btn.textContent = '🧘 Enter focus mode';
+    btn.addEventListener('click', function() {
+        if (typeof closeMobileSheet === 'function') closeMobileSheet();
+        document.body.classList.add('focus-mode');
+        hapticTap(15);
+    });
+    sec.appendChild(btn);
 
     body.appendChild(sec);
 }

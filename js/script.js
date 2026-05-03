@@ -1805,7 +1805,20 @@ function buildSheetSearch(body, title) {
     }
     sInp.addEventListener('keydown', function(e) { if (e.key === 'Enter') runSearchInScope(); });
     sGo.addEventListener('click', runSearchInScope);
-    searchRow.appendChild(sInp); searchRow.appendChild(sGo);
+    // v9.10: Clear button — wipes input AND search results
+    var sClear = document.createElement('button');
+    sClear.textContent = '🗑';
+    sClear.className = 'mob-search-clear';
+    sClear.title = 'Clear search and results';
+    sClear.addEventListener('click', function() {
+        sInp.value = '';
+        if (desktopInp) desktopInp.value = '';
+        if (typeof closeSearchResults === 'function') closeSearchResults();
+        // Refresh sheet body to show the empty state
+        body.innerHTML = '<div class="mob-results-empty">Type a search term above and hit ↵<br>Results will appear here.</div>';
+        sInp.focus();
+    });
+    searchRow.appendChild(sInp); searchRow.appendChild(sClear); searchRow.appendChild(sGo);
     body.parentNode.insertBefore(searchRow, body);
 
     // ── Arabic diacritic option ──

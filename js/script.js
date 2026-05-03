@@ -1823,21 +1823,23 @@ function buildSheetSearch(body, title) {
     searchRow.appendChild(sInp); searchRow.appendChild(sClear); searchRow.appendChild(sGo);
     body.parentNode.insertBefore(searchRow, body);
 
-    // ── Arabic diacritic option ──
-    var arabicOpt = document.createElement('div');
-    arabicOpt.className = 'mob-arabic-opt';
-    var arLabel = document.createElement('label');
-    var arChk = document.createElement('input');
-    arChk.type = 'checkbox';
-    var desktopChk = document.getElementById('ignore-diacritics');
-    arChk.checked = desktopChk ? desktopChk.checked : false;
-    arChk.addEventListener('change', function() {
-        if (desktopChk) desktopChk.checked = this.checked;
-    });
-    arLabel.appendChild(arChk);
-    arLabel.appendChild(document.createTextNode(' تجاهل علامات التشكيل (ignore diacritics)'));
-    arabicOpt.appendChild(arLabel);
-    body.parentNode.insertBefore(arabicOpt, body);
+    // ── Arabic diacritic option (only when primary language is Arabic) ──
+    if (currentLanguage === 'arabic') {
+        var arabicOpt = document.createElement('div');
+        arabicOpt.className = 'mob-arabic-opt';
+        var arLabel = document.createElement('label');
+        var arChk = document.createElement('input');
+        arChk.type = 'checkbox';
+        var desktopChk = document.getElementById('ignore-diacritics');
+        arChk.checked = desktopChk ? desktopChk.checked : false;
+        arChk.addEventListener('change', function() {
+            if (desktopChk) desktopChk.checked = this.checked;
+        });
+        arLabel.appendChild(arChk);
+        arLabel.appendChild(document.createTextNode(' تجاهل علامات التشكيل (ignore diacritics)'));
+        arabicOpt.appendChild(arLabel);
+        body.parentNode.insertBefore(arabicOpt, body);
+    }
 
     // ── Results ──
     var resultEl = document.getElementById('search-results');
@@ -2415,6 +2417,7 @@ displaySearchResults = function(verses, word) {
     }
 
     // Wrap reading content in a zoom wrapper after every render
+    // v9.12: Re-applies zoom as a defensive measure after every wrap
     function wrapReadingContent() {
         var container = document.getElementById('quranContainer');
         var ctxContainer = document.getElementById('suraContent');
@@ -2432,6 +2435,12 @@ displaySearchResults = function(verses, word) {
             while (target.firstChild) wrapper.appendChild(target.firstChild);
             target.appendChild(wrapper);
         });
+        // v9.12: Defensively re-assert the saved zoom value on the root
+        // in case anything cleared it
+        var savedZ = parseFloat(localStorage.getItem(ZOOM_KEY)) || 1;
+        if (savedZ !== 1) {
+            document.documentElement.style.setProperty('--reading-zoom', savedZ);
+        }
     }
 
     // Re-wrap when content changes (after displaySingleSura, displaySuraContext, etc.)
@@ -2488,23 +2497,30 @@ displaySearchResults = function(verses, word) {
         }
     }, { passive: false });
 
+    var lastTap = 0;
     document.addEventListener('touchend', function(e) {
         if (pinchActive && e.touches.length < 2) {
             pinchActive = false;
+            // v9.12: After a pinch, reset lastTap so the next single-tap
+            // doesn't trigger an accidental double-tap zoom reset
+            lastTap = 0;
         }
     });
 
     document.addEventListener('touchcancel', function() {
         pinchActive = false;
+        lastTap = 0;
     });
 
     // Double-tap to reset zoom
-    var lastTap = 0;
     document.addEventListener('touchend', function(e) {
         if (!isInsideReading(e.target)) return;
         if (e.changedTouches.length !== 1) return;
+        // v9.12: Don't count taps during/right after a multi-touch
+        if (pinchActive) return;
+        if (e.touches.length > 0) return; // still touching with another finger
         var now = Date.now();
-        if (now - lastTap < 300) {
+        if (lastTap > 0 && now - lastTap < 300) {
             // Double-tap — reset zoom to 1
             var current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--reading-zoom')) || 1;
             if (current !== 1) {
@@ -2512,8 +2528,10 @@ displaySearchResults = function(verses, word) {
                 showIndicator(1);
                 e.preventDefault();
             }
+            lastTap = 0; // consume
+        } else {
+            lastTap = now;
         }
-        lastTap = now;
     });
 
     // Initial wrap on page load

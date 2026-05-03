@@ -696,21 +696,24 @@ function buildVerseNav() {
         sura.style.opacity = '0';
 
         setTimeout(function() {
+            // v9.12: Render new sura, then IMMEDIATELY (same frame) set its
+            // initial transform before the browser paints — no flicker
             displaySingleSura(nextIdx);
             hapticTap(20);
-            // The new sura is rendered fresh; animate it in from the opposite direction
-            setTimeout(function() {
-                var newSura = document.querySelector('.sura');
-                if (!newSura) return;
-                newSura.style.transition = 'none';
-                newSura.style.transform = 'translateX(' + (-direction * screenWidth * 0.5) + 'px)';
-                newSura.style.opacity = '0';
-                // Force reflow then animate in
-                void newSura.offsetWidth;
-                newSura.style.transition = 'transform 0.28s cubic-bezier(.4,0,.2,1), opacity 0.28s';
+            var newSura = document.querySelector('.sura');
+            if (!newSura) return;
+            // Set off-screen position synchronously (no transition)
+            newSura.style.transition = 'none';
+            newSura.style.transform = 'translateX(' + (-direction * screenWidth) + 'px)';
+            newSura.style.opacity = '0';
+            // Force reflow so the next style changes are independent
+            void newSura.offsetWidth;
+            // Animate in via rAF (next frame after the off-screen state is committed)
+            requestAnimationFrame(function() {
+                newSura.style.transition = 'transform 0.28s cubic-bezier(.25,.46,.45,.94), opacity 0.28s';
                 newSura.style.transform = '';
                 newSura.style.opacity = '';
-            }, 20);
+            });
         }, 200);
     });
 
@@ -1213,3 +1216,53 @@ if (document.readyState === 'loading') {
 } else {
     initFeatures();
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// v9.12 — Desktop Features modal wiring
+// ═══════════════════════════════════════════════════════════════════
+window.openFeaturesModal = function() {
+    var overlay = document.getElementById('featuresModal');
+    var body    = document.getElementById('featuresModalBody');
+    if (!overlay || !body) return;
+    body.innerHTML = '';
+    // Reuse the same UI builders the mobile sheet uses
+    if (typeof appendFeaturesUI      === 'function') appendFeaturesUI(body);
+    if (typeof appendFocusModeButton === 'function') appendFocusModeButton(body);
+    if (typeof appendDataUI          === 'function') appendDataUI(body);
+    if (typeof appendKhatmUI         === 'function') appendKhatmUI(body);
+    overlay.classList.add('show');
+};
+
+window.closeFeaturesModal = function(e) {
+    // If called from overlay click, only close when target is the overlay itself
+    if (e && e.target && !e.target.classList.contains('features-modal-overlay')) return;
+    var overlay = document.getElementById('featuresModal');
+    if (overlay) overlay.classList.remove('show');
+};
+
+// Wire up the button (after DOM ready)
+(function wireFeaturesBtn() {
+    function attach() {
+        var btn = document.getElementById('featuresBtn');
+        if (btn && !btn._featuresWired) {
+            btn._featuresWired = true;
+            btn.addEventListener('click', function() {
+                openFeaturesModal();
+            });
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+    } else {
+        attach();
+    }
+}());
+
+// Close on Escape (in addition to existing keyboard handler)
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return;
+    var overlay = document.getElementById('featuresModal');
+    if (overlay && overlay.classList.contains('show')) {
+        overlay.classList.remove('show');
+    }
+});

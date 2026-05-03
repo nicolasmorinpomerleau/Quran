@@ -100,6 +100,8 @@
                     <button id="context">Surah Context</button>
                     <!-- Bookmarks panel toggle -->
                     <button id="bookmarksBtn">🔖 Bookmarks</button>
+                    <!-- v9.12: Features panel (desktop access to feature toggles) -->
+                    <button id="featuresBtn">⚙ Features &amp; Tools</button>
                 </div>
 
             </div>
@@ -219,7 +221,18 @@
         </div>
     </div>
 
-    <footer>Quran Display v9.11 — May you read with a mindful heart</footer>
+    <!-- v9.12: Desktop Features modal — same content as mobile settings sheet -->
+    <div id="featuresModal" class="features-modal-overlay" onclick="closeFeaturesModal(event)">
+        <div class="features-modal-box" onclick="event.stopPropagation()">
+            <div class="features-modal-header">
+                <span class="features-modal-title">⚙ Features &amp; Tools</span>
+                <button class="features-modal-close" onclick="closeFeaturesModal()">✕</button>
+            </div>
+            <div class="features-modal-body" id="featuresModalBody"></div>
+        </div>
+    </div>
+
+    <footer>Quran Display v9.12 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

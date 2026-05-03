@@ -352,13 +352,21 @@ function toggleShortcutsHelp() {
 // ═══════════════════════════════════════════════════════════════════
 function toggleFocusMode() {
     if (!isFeatureOn('focusMode')) return;
-    document.body.classList.toggle('focus-mode');
+    if (document.body.classList.contains('focus-mode')) {
+        document.body.classList.remove('focus-mode');
+    } else {
+        document.body.classList.add('focus-mode');
+        window._focusModeActivatedAt = Date.now();
+    }
     hapticTap(15);
 }
 
-// Tap anywhere in focus mode to exit (mobile-friendly)
+// v9.11: Tap anywhere in focus mode to exit — but ignore taps that happen
+// within 500ms of activation (so the same tap that activated it doesn't exit)
 document.addEventListener('click', function(e) {
     if (!document.body.classList.contains('focus-mode')) return;
+    var activated = window._focusModeActivatedAt || 0;
+    if (Date.now() - activated < 500) return;
     // Don't exit if user clicked a button inside the verse area
     if (e.target.closest('.verse-action-btn')) return;
     if (e.target.closest('.verse-actions')) return;
@@ -587,43 +595,133 @@ function buildVerseNav() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// #4 — Swipe between surahs (mobile)
+// #4 — Swipe between surahs (mobile) — with animated transition
+// v9.11: Content follows finger; releases with slide-in animation
 // ═══════════════════════════════════════════════════════════════════
 (function swipeBetweenSurahs() {
     var startX = null, startY = null, startTime = 0;
+    var tracking = false;
+    var container = null;
+
+    function getContainer() {
+        if (!container) container = document.getElementById('quranContainer');
+        return container;
+    }
+
     document.addEventListener('touchstart', function(e) {
         if (!isFeatureOn('swipeBetweenSurahs')) return;
         if (window.innerWidth > 900) return;
-        // Only inside reading container
         if (!e.target.closest('#quranContainer')) return;
-        if (e.touches.length !== 1) { startX = null; return; }
+        if (e.touches.length !== 1) { startX = null; tracking = false; return; }
+        // Don't track if user is interacting with verse-action-btns or scroll
+        if (e.target.closest('.verse-action-btn')) return;
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
         startTime = Date.now();
+        tracking = false;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(e) {
+        if (startX === null) return;
+        if (e.touches.length !== 1) return;
+        var dx = e.touches[0].clientX - startX;
+        var dy = e.touches[0].clientY - startY;
+        // Decide once whether this is a horizontal swipe (lock in direction)
+        if (!tracking && Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            tracking = true;
+            var c = getContainer();
+            if (c) c.style.transition = 'none';
+        }
+        if (tracking) {
+            var c = getContainer();
+            if (!c) return;
+            // Apply translateX to the inner sura element so it follows finger
+            var sura = c.querySelector('.sura');
+            if (sura) {
+                // Dampen with sqrt for natural resistance feel
+                var move = dx * 0.7;
+                sura.style.transform = 'translateX(' + move + 'px)';
+                sura.style.opacity = String(Math.max(0.4, 1 - Math.abs(dx) / 600));
+            }
+        }
     }, { passive: true });
 
     document.addEventListener('touchend', function(e) {
         if (startX === null) return;
-        if (e.changedTouches.length !== 1) return;
-        var dx = e.changedTouches[0].clientX - startX;
-        var dy = e.changedTouches[0].clientY - startY;
+        var ended = e.changedTouches[0];
+        var dx = ended.clientX - startX;
+        var dy = ended.clientY - startY;
         var dt = Date.now() - startTime;
+        var wasTracking = tracking;
         startX = null;
-        // Threshold: must be mostly horizontal, fast, and substantial
-        if (Math.abs(dx) < 80) return;
-        if (Math.abs(dy) > 60) return;
-        if (dt > 500) return;
-        var s = document.querySelector('.sura');
-        if (!s) return;
-        var i = parseInt(s.id);
-        // RTL-aware: in Arabic mode, swipe-left = next is reversed culturally,
-        // but we'll keep swipe-left = next surah universally (most common app convention).
+        tracking = false;
+
+        var sura = document.querySelector('.sura');
+        if (!sura) return;
+
+        // Quick swipe threshold: 80px OR fast flick (>0.4 px/ms)
+        var velocity = Math.abs(dx) / Math.max(dt, 1);
+        var isSwipe = wasTracking && (Math.abs(dx) > 80 || velocity > 0.4);
+        var isHorizontal = Math.abs(dy) < 100;
+
+        if (!isSwipe || !isHorizontal) {
+            // Bounce back to original position
+            sura.style.transition = 'transform 0.25s cubic-bezier(.4,0,.2,1), opacity 0.25s';
+            sura.style.transform = '';
+            sura.style.opacity = '';
+            return;
+        }
+
+        var i = parseInt(sura.id);
+        var nextIdx;
+        var direction;
         if (dx < 0 && i < 113) {
-            displaySingleSura(i + 1);
-            hapticTap(20);
+            nextIdx = i + 1;
+            direction = -1; // slide out to left
         } else if (dx > 0 && i > 0) {
-            displaySingleSura(i - 1);
+            nextIdx = i - 1;
+            direction = 1; // slide out to right
+        } else {
+            // Edge case (first or last surah) — bounce back
+            sura.style.transition = 'transform 0.25s cubic-bezier(.4,0,.2,1), opacity 0.25s';
+            sura.style.transform = '';
+            sura.style.opacity = '';
+            return;
+        }
+
+        // Animate current sura sliding off-screen, then load next
+        var screenWidth = window.innerWidth;
+        sura.style.transition = 'transform 0.22s cubic-bezier(.4,0,.2,1), opacity 0.22s';
+        sura.style.transform = 'translateX(' + (direction * screenWidth) + 'px)';
+        sura.style.opacity = '0';
+
+        setTimeout(function() {
+            displaySingleSura(nextIdx);
             hapticTap(20);
+            // The new sura is rendered fresh; animate it in from the opposite direction
+            setTimeout(function() {
+                var newSura = document.querySelector('.sura');
+                if (!newSura) return;
+                newSura.style.transition = 'none';
+                newSura.style.transform = 'translateX(' + (-direction * screenWidth * 0.5) + 'px)';
+                newSura.style.opacity = '0';
+                // Force reflow then animate in
+                void newSura.offsetWidth;
+                newSura.style.transition = 'transform 0.28s cubic-bezier(.4,0,.2,1), opacity 0.28s';
+                newSura.style.transform = '';
+                newSura.style.opacity = '';
+            }, 20);
+        }, 200);
+    });
+
+    document.addEventListener('touchcancel', function() {
+        startX = null;
+        tracking = false;
+        var sura = document.querySelector('.sura');
+        if (sura) {
+            sura.style.transition = 'transform 0.25s';
+            sura.style.transform = '';
+            sura.style.opacity = '';
         }
     });
 }());
@@ -1016,10 +1114,16 @@ function appendFocusModeButton(body) {
     var btn = document.createElement('button');
     btn.className = 'mob-settings-btn';
     btn.textContent = '🧘 Enter focus mode';
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
         if (typeof closeMobileSheet === 'function') closeMobileSheet();
-        document.body.classList.add('focus-mode');
-        hapticTap(15);
+        // v9.11: Delay activation so this same click doesn't trigger the
+        // tap-to-exit listener bubbling up to document
+        setTimeout(function() {
+            document.body.classList.add('focus-mode');
+            window._focusModeActivatedAt = Date.now();
+            hapticTap(15);
+        }, 350);
     });
     sec.appendChild(btn);
 
@@ -1092,7 +1196,11 @@ function patchDisplay() {
             setTimeout(function() {
                 var sura = quranData.find(function(s) { return s.id === String(suraId); });
                 if (!sura) return;
-                document.querySelectorAll('#' + sura.id + ' .verse').forEach(function(verseEl, idx) {
+                // v9.11: Use getElementById + descendant query — IDs starting with
+                // digits are illegal in CSS selectors but legal as element IDs
+                var suraEl = document.getElementById(sura.id);
+                if (!suraEl) return;
+                suraEl.querySelectorAll('.verse').forEach(function(verseEl, idx) {
                     attachVerseExtras(verseEl, sura.id, idx, sura.verses[idx].text, sura.name);
                 });
             }, 50);

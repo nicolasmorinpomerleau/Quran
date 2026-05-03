@@ -226,7 +226,7 @@ body.focus-mode .sura-contexte {
 }
 /* Subtle exit hint in focus mode */
 body.focus-mode::after {
-    content: 'F or Esc to exit focus mode';
+    content: 'F or Esc to exit';
     position: fixed;
     bottom: 16px;
     left: 50%;
@@ -237,6 +237,11 @@ body.focus-mode::after {
     opacity: 0.5;
     pointer-events: none;
     z-index: 9;
+}
+@media (max-width: 900px) {
+    body.focus-mode::after {
+        content: 'Tap anywhere to exit';
+    }
 }
 
 /* ── Verse navigation FAB ── */

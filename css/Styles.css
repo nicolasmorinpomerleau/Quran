@@ -994,7 +994,7 @@ footer {
         padding: 20px 24px;
         flex: 1;
     }
-    .verse { font-size: 1.6rem; }
+    /* v9.11: don't override font-size — let user's slider control it */
     #suraTitle { font-size: 1.2rem; }
 
     /* Search results narrower */
@@ -1040,7 +1040,8 @@ footer {
 
     /* Reading padding tighter */
     .textContainer, .sura-contexte { padding: 14px 16px; }
-    .verse { font-size: 1.4rem; line-height: 2; }
+    /* v9.11: verse font-size respects slider — only set line-height here */
+    .verse { line-height: 2; }
     #suraTitle { font-size: 1.05rem; }
 
     /* v9.7: Hide desktop search/bookmarks panels entirely on mobile.
@@ -1083,7 +1084,7 @@ footer {
 @media (max-width: 380px) {
     .Bismileh { height: 26px; }
     #introductionTitle { font-size: 0.65rem; }
-    .verse { font-size: 1.2rem; }
+    /* v9.11: verse font-size respects slider */
     #suraTitle { font-size: 0.95rem; }
     .bnav-btn { padding: 6px 2px 8px; }
     .bnav-ico { font-size: 16px; }
@@ -1122,6 +1123,14 @@ footer {
     width: 28px;
     text-align: center;
     flex-shrink: 0;
+}
+/* v9.11: text labels (Verse/Translation) instead of letters */
+.font-slider-label-text {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-style: italic;
+    width: 78px;
+    text-align: left;
 }
 
 input[type="range"] {
@@ -1390,8 +1399,8 @@ input[type="range"] {
 
 /* ── Bookmarks panel ── */
 .bookmarksContainer {
-    width: 240px;
-    min-width: 240px;
+    width: 300px;
+    min-width: 300px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border);
@@ -1511,13 +1520,14 @@ input[type="range"] {
     border-radius: 99px;
     padding: 3px 10px;
     font-size: 13px;
-    color: var(--accent-dim);
+    color: var(--accent);
     cursor: pointer;
     white-space: nowrap;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     transition: background 0.15s, color 0.15s;
+    opacity: 0.9;
 }
 
 .search-chip:hover {
@@ -1787,7 +1797,7 @@ input[type="range"] {
 
 /* ── Slider in settings sheet ── */
 .mob-slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.mob-slider-label { font-size: 20px; color: var(--accent); font-family: var(--font-arabic); width: 28px; text-align: center; }
+.mob-slider-label { font-size: 12px; font-style: italic; color: var(--accent); font-family: var(--font-ui); width: 80px; text-align: left; flex-shrink: 0; }
 .mob-slider-val { font-size: 13px; color: var(--text-muted); width: 36px; text-align: right; }
 
 /* Only show sheet on mobile/tablet */
@@ -2391,11 +2401,11 @@ input[type="range"] {
 }
 
 .saved-tab {
-    padding: 8px 13px 10px;
+    padding: 8px 9px 10px;
     background: transparent;
     border: none;
     border-bottom: 2px solid transparent;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--text-secondary);
     cursor: pointer;
     font-family: var(--font-heading);

@@ -175,7 +175,9 @@ function getIgnoreDiacritics() {
 // ═══════════════════════════════════════════════════════════════════
 // FONT SIZE SLIDER
 // ═══════════════════════════════════════════════════════════════════
-let fontSizes = lsGet(FONT_KEY, { arabic: 2.8, trans: 1.87 });
+// v9.11: Mobile default smaller than desktop (2.8rem is too big on phone)
+const _isPhone = window.innerWidth <= 600;
+let fontSizes = lsGet(FONT_KEY, _isPhone ? { arabic: 1.6, trans: 1.0 } : { arabic: 2.8, trans: 1.87 });
 
 function applyFontSizes() {
     document.documentElement.style.setProperty('--verse-font-size', fontSizes.arabic + 'rem');
@@ -2157,8 +2159,8 @@ function buildSheetSettings(body, title) {
     var fontLbl = document.createElement('div'); fontLbl.className = 'mob-settings-lbl'; fontLbl.textContent = 'Font size';
     fontSection.appendChild(fontLbl);
     [
-        { label:'أ', id:'arabicFontSlider', valId:'arabicFontVal', min:1.2, max:5, step:0.1 },
-        { label:'A', id:'transFontSlider',  valId:'transFontVal',  min:0.7, max:3, step:0.05 }
+        { label:'Verse',       id:'arabicFontSlider', valId:'arabicFontVal', min:1.2, max:5, step:0.1 },
+        { label:'Translation', id:'transFontSlider',  valId:'transFontVal',  min:0.7, max:3, step:0.05 }
     ].forEach(function(cfg) {
         var row = document.createElement('div'); row.className = 'mob-slider-row';
         var lbl = document.createElement('span'); lbl.className = 'mob-slider-label'; lbl.textContent = cfg.label;

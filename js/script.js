@@ -65,6 +65,21 @@ function saveState() {
     const container   = document.getElementById('quranContainer');
     const searchTerm  = document.getElementById('search-input').value.trim();
     const resultsOpen = !document.getElementById('resultsContainerID').classList.contains('eraseDiv');
+
+    // v10: Track last-visible verse index per sura for "Continue" deep-resume
+    let lastVerseBySura = {};
+    try { lastVerseBySura = (lsGet(STATE_KEY, {}) || {}).lastVerseBySura || {}; } catch(e) {}
+    if (suraEl && container) {
+        const verses = suraEl.querySelectorAll('.verse');
+        const cTop = container.getBoundingClientRect().top;
+        let bestIdx = 0;
+        for (let i = 0; i < verses.length; i++) {
+            const r = verses[i].getBoundingClientRect();
+            if (r.bottom > cTop + 40) { bestIdx = i; break; }
+        }
+        lastVerseBySura[suraEl.id] = bestIdx;
+    }
+
     lsSet(STATE_KEY, {
         language:            currentLanguage,
         additionalLanguages: additionalLanguages.slice(),
@@ -77,7 +92,8 @@ function saveState() {
         searchOpen:          resultsOpen,
         contextOpen:         contextOpen,
         contextSuraIndex:    contextSuraIndex,
-        activeTocTab:        activeTocTab
+        activeTocTab:        activeTocTab,
+        lastVerseBySura:     lastVerseBySura
     });
 }
 
@@ -870,6 +886,14 @@ function generateTOC() {
     setTocTabActive('surah');
     setTocLabel('📖 114 Surahs');
     const sw = getScrollWrap();
+    // v10: Continue Reading card at top of desktop Surahs TOC
+    if (typeof buildContinueCard === 'function') {
+        const crc = buildContinueCard();
+        if (crc) {
+            crc.classList.add('continue-reading-card-desktop');
+            sw.appendChild(crc);
+        }
+    }
     quranData.forEach(function(sura, index) {
         const item = buildTocItem(sura.name, sura.city, index, function() {
             clearSuraContext(); clearAllSecondaryLanguages(); closeSearchResults();
@@ -970,67 +994,204 @@ document.querySelectorAll('.toc-tab').forEach(function(btn) {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// VERSE RENDERING WITH ACTIONS
+// VERSE RENDERING WITH ACTIONS — v10: Grouped Save/Share with chooser
 // ═══════════════════════════════════════════════════════════════════
 function buildVerseActions(suraId, verseIdx, verseText, suraName) {
     const actions = document.createElement('div');
     actions.classList.add('verse-actions');
 
-    // Highlight button
-    const hlBtn = document.createElement('button');
-    hlBtn.className   = 'verse-action-btn';
-    hlBtn.textContent = '✦ Highlight';
-    if (isHighlighted(suraId, verseIdx)) hlBtn.classList.add('active');
-    hlBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        toggleHighlight(suraId, verseIdx, hlBtn.closest('.verse'), hlBtn);
-    });
+    // ── Compute current saved state ──
+    const isHL = isHighlighted(suraId, verseIdx);
+    const isBM = isBookmarked(suraId, verseIdx);
+    const noteData = getNotes()[verseKey(suraId, verseIdx)];
+    const isNT = !!noteData;
+    const anySaved = isHL || isBM || isNT;
 
-    // Bookmark button
-    const bkBtn = document.createElement('button');
-    bkBtn.className   = 'verse-action-btn';
-    bkBtn.textContent = '🔖';
-    if (isBookmarked(suraId, verseIdx)) bkBtn.classList.add('active');
-    bkBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (isBookmarked(suraId, verseIdx)) {
-            removeBookmark(verseKey(suraId, verseIdx));
-            bkBtn.classList.remove('active');
-        } else {
-            addBookmark(suraId, verseIdx, verseText, suraName);
-            bkBtn.classList.add('active');
-        }
-    });
-
-    // Note button
-    const noteBtn = document.createElement('button');
-    noteBtn.className   = 'verse-action-btn';
-    noteBtn.textContent = '📝';
-    const notes = getNotes();
-    if (notes[verseKey(suraId, verseIdx)]) {
-        noteBtn.classList.add('active');
-        const dot = document.createElement('span'); dot.className = 'note-dot';
-        noteBtn.appendChild(dot);
+    // ── SAVE button (groups Highlight, Bookmark, Note) ──
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'verse-action-btn verse-action-save';
+    if (anySaved) saveBtn.classList.add('has-saved');
+    saveBtn.innerHTML = '<span class="va-icon">🔖</span><span class="va-label">Save</span>';
+    if (anySaved) {
+        const dot = document.createElement('span');
+        dot.className = 'va-dot';
+        saveBtn.appendChild(dot);
     }
-    noteBtn.addEventListener('click', function(e) {
+    saveBtn.addEventListener('click', function(e) {
         e.stopPropagation();
-        openNoteModal(suraId, verseIdx, noteBtn);
+        openVerseChooser('save', saveBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
     });
 
-    actions.appendChild(hlBtn);
-    actions.appendChild(bkBtn);
-    actions.appendChild(noteBtn);
+    // ── SHARE button (groups Copy, Share, Link) ──
+    const shareBtn = document.createElement('button');
+    shareBtn.className = 'verse-action-btn verse-action-share';
+    shareBtn.innerHTML = '<span class="va-icon">↗</span><span class="va-label">Share</span>';
+    shareBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        openVerseChooser('share', shareBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
+    });
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(shareBtn);
     return actions;
+}
+
+// ── v10: Verse chooser popover (Save / Share) ──
+let _activeChooser = null;
+function closeVerseChooser() {
+    if (_activeChooser) {
+        _activeChooser.remove();
+        _activeChooser = null;
+    }
+}
+document.addEventListener('click', function(e) {
+    if (_activeChooser && !e.target.closest('.verse-chooser') && !e.target.closest('.verse-action-btn')) {
+        closeVerseChooser();
+    }
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeVerseChooser();
+});
+
+function openVerseChooser(kind, anchorBtn, ctx) {
+    closeVerseChooser();
+    const chooser = document.createElement('div');
+    chooser.className = 'verse-chooser';
+
+    const items = (kind === 'save')
+        ? [
+            { id: 'highlight', icon: '✦', label: 'Highlight', active: isHighlighted(ctx.suraId, ctx.verseIdx) },
+            { id: 'bookmark',  icon: '🔖', label: 'Bookmark', active: isBookmarked(ctx.suraId, ctx.verseIdx) },
+            { id: 'note',      icon: '📝', label: getNotes()[verseKey(ctx.suraId, ctx.verseIdx)] ? 'Edit note' : 'Add note', active: !!getNotes()[verseKey(ctx.suraId, ctx.verseIdx)] }
+          ]
+        : [
+            { id: 'copy',  icon: '📋', label: 'Copy verse' },
+            ...(navigator.share ? [{ id: 'share', icon: '↗', label: 'Share…' }] : []),
+            { id: 'link',  icon: '🔗', label: 'Copy link' }
+          ];
+
+    items.forEach(function(item) {
+        const it = document.createElement('button');
+        it.className = 'verse-chooser-item' + (item.active ? ' active' : '');
+        it.innerHTML = '<span class="vci-icon">' + item.icon + '</span>' +
+                       '<span class="vci-label">' + item.label + '</span>' +
+                       (item.active ? '<span class="vci-check">✓</span>' : '');
+        it.addEventListener('click', function(e) {
+            e.stopPropagation();
+            handleChooserAction(kind, item.id, ctx, anchorBtn);
+            closeVerseChooser();
+        });
+        chooser.appendChild(it);
+    });
+
+    // Position: place under the button, right-aligned to it
+    document.body.appendChild(chooser);
+    const rect = anchorBtn.getBoundingClientRect();
+    const chooserH = chooser.offsetHeight;
+    const chooserW = chooser.offsetWidth;
+    let top = rect.bottom + 6 + window.scrollY;
+    let left = rect.left + window.scrollX;
+    // Flip up if no room below
+    if (top + chooserH > window.innerHeight + window.scrollY - 10) {
+        top = rect.top - chooserH - 6 + window.scrollY;
+    }
+    // Keep within viewport horizontally
+    if (left + chooserW > window.innerWidth - 10) {
+        left = window.innerWidth - chooserW - 10;
+    }
+    if (left < 10) left = 10;
+    chooser.style.top = top + 'px';
+    chooser.style.left = left + 'px';
+    _activeChooser = chooser;
+
+    // Animate in
+    requestAnimationFrame(function() {
+        chooser.classList.add('show');
+    });
+}
+
+function handleChooserAction(kind, action, ctx, anchorBtn) {
+    const verseEl = anchorBtn.closest('.verse');
+    if (kind === 'save') {
+        if (action === 'highlight') {
+            toggleHighlight(ctx.suraId, ctx.verseIdx, verseEl, null);
+        } else if (action === 'bookmark') {
+            if (isBookmarked(ctx.suraId, ctx.verseIdx)) {
+                removeBookmark(verseKey(ctx.suraId, ctx.verseIdx));
+            } else {
+                addBookmark(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName);
+            }
+        } else if (action === 'note') {
+            // Use a fake noteBtn anchor; openNoteModal needs an element to anchor near
+            openNoteModal(ctx.suraId, ctx.verseIdx, anchorBtn);
+        }
+        // Refresh this verse's actions to update saved-state visuals
+        const old = verseEl.querySelector('.verse-actions');
+        if (old) old.remove();
+        verseEl.appendChild(buildVerseActions(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName));
+    } else if (kind === 'share') {
+        if (typeof copyVerseToClipboard === 'function' && action === 'copy') {
+            copyVerseToClipboard(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName);
+        } else if (typeof shareVerse === 'function' && action === 'share') {
+            shareVerse(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName);
+        } else if (action === 'link' && typeof buildDeepLink === 'function') {
+            const url = buildDeepLink(ctx.suraId, ctx.verseIdx + 1);
+            if (typeof copyToClipboard === 'function') copyToClipboard(url);
+            if (typeof showToast === 'function') showToast('🔗 Link copied');
+        }
+    }
 }
 
 function buildSuraDOM(sura) {
     const wrapper = document.createElement('div');
     wrapper.classList.add('sura'); wrapper.id = sura.id;
 
-    // v9.5: Sticky title bar at top of reading pane
+    // v10: Sticky title bar with streak pill + focus pill
     const sticky = document.createElement('div');
     sticky.className = 'sura-sticky-title';
-    sticky.textContent = (parseInt(sura.id) + 1) + ' · ' + sura.name;
+
+    // Streak pill (left) — only shown if khatm tracker on AND streak > 0
+    const streakSpan = document.createElement('span');
+    streakSpan.className = 'sura-streak-pill';
+    if (typeof getCurrentReadingStreak === 'function') {
+        const streak = getCurrentReadingStreak();
+        if (streak > 0) {
+            streakSpan.innerHTML = '🔥 <span class="streak-num">' + streak + '</span>';
+            streakSpan.title = 'Reading streak — tap for activity';
+            streakSpan.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (typeof toggleInlineHeatmap === 'function') toggleInlineHeatmap(wrapper);
+            });
+        } else {
+            streakSpan.classList.add('hidden');
+        }
+    } else {
+        streakSpan.classList.add('hidden');
+    }
+    sticky.appendChild(streakSpan);
+
+    // Title text (center)
+    const titleText = document.createElement('span');
+    titleText.className = 'sura-sticky-title-text';
+    titleText.textContent = (parseInt(sura.id) + 1) + ' · ' + sura.name;
+    sticky.appendChild(titleText);
+
+    // Focus pill (right) — only if focus mode feature is on
+    const focusPill = document.createElement('button');
+    focusPill.className = 'sura-focus-pill';
+    focusPill.title = 'Enter focus mode';
+    focusPill.textContent = '🧘';
+    focusPill.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (typeof enterFocusMode === 'function') {
+            enterFocusMode();
+        }
+    });
+    if (typeof isFeatureOn === 'function' && !isFeatureOn('focusMode')) {
+        focusPill.classList.add('hidden');
+    }
+    sticky.appendChild(focusPill);
+
     wrapper.appendChild(sticky);
 
     const title = document.createElement('h2');
@@ -1655,6 +1816,13 @@ function buildSheetSurahs(body, title) {
     title.textContent = '📖 114 Surahs';
     var currentSuraEl = document.querySelector('.sura');
     var currentId = currentSuraEl ? currentSuraEl.id : '0';
+
+    // v10: Continue Reading card at top — persistent (not dismissible)
+    if (typeof buildContinueCard === 'function') {
+        var crc = buildContinueCard();
+        if (crc) body.appendChild(crc);
+    }
+
     quranData.forEach(function(sura, index) {
         var item = document.createElement('div');
         item.className = 'mob-surah-item' + (sura.id === currentId ? ' active-surah' : '');
@@ -2124,12 +2292,21 @@ function buildSheetSettings(body, title) {
     var themeLbl = document.createElement('div'); themeLbl.className = 'mob-settings-lbl'; themeLbl.textContent = 'Theme';
     var chips = document.createElement('div'); chips.className = 'mob-theme-chips';
     var currentTheme = document.documentElement.getAttribute('data-theme') || 'manuscript';
-    [['manuscript','📜 Manuscript'],['minimal','🌿 Minimal'],['scholar','🌙 Scholar']].forEach(function(pair) {
+    // v10: Familiar word + visual swatch + aesthetic name
+    var themeData = [
+        { id: 'manuscript', primary: '🌙 Sepia', aesthetic: 'Manuscript' },
+        { id: 'minimal',    primary: '☀️ Light', aesthetic: 'Minimal' },
+        { id: 'scholar',    primary: '🌑 Dark',  aesthetic: 'Scholar' }
+    ];
+    themeData.forEach(function(t) {
         var chip = document.createElement('button');
-        chip.className = 'mob-theme-chip' + (currentTheme === pair[0] ? ' active' : '');
-        chip.textContent = pair[1];
+        chip.className = 'mob-theme-chip' + (currentTheme === t.id ? ' active' : '');
+        chip.innerHTML =
+            '<span class="mob-theme-swatch mob-theme-swatch-' + t.id + '"></span>' +
+            '<span class="mob-theme-primary">' + t.primary + '</span>' +
+            '<span class="mob-theme-aesthetic">' + t.aesthetic + '</span>';
         chip.addEventListener('click', function() {
-            applyTheme(pair[0]); saveState();
+            applyTheme(t.id); saveState();
             chips.querySelectorAll('.mob-theme-chip').forEach(function(c){ c.classList.remove('active'); });
             chip.classList.add('active');
         });

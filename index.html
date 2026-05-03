@@ -19,9 +19,21 @@
             <div id="introductionTitle">أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا</div>
         </div>
         <div id="themeSwitcher">
-            <button class="theme-btn active" data-theme="manuscript">📜 Manuscript</button>
-            <button class="theme-btn"        data-theme="minimal">🌿 Minimal</button>
-            <button class="theme-btn"        data-theme="scholar">🌙 Scholar</button>
+            <button class="theme-btn active" data-theme="manuscript">
+                <span class="theme-swatch theme-swatch-manuscript"></span>
+                <span class="theme-name-primary">🌙 Sepia</span>
+                <span class="theme-name-aesthetic">Manuscript</span>
+            </button>
+            <button class="theme-btn" data-theme="minimal">
+                <span class="theme-swatch theme-swatch-minimal"></span>
+                <span class="theme-name-primary">☀️ Light</span>
+                <span class="theme-name-aesthetic">Minimal</span>
+            </button>
+            <button class="theme-btn" data-theme="scholar">
+                <span class="theme-swatch theme-swatch-scholar"></span>
+                <span class="theme-name-primary">🌑 Dark</span>
+                <span class="theme-name-aesthetic">Scholar</span>
+            </button>
         </div>
     </header>
 
@@ -37,48 +49,9 @@
             </div>
             <div id="controlsElements">
 
-                <!-- Font size slider -->
-                <div id="fontSizeSection">
-                    <label class="SelectLanguage" id="lbl-fontsize">Font size</label>
-                    <div class="font-slider-row">
-                        <span class="font-slider-label font-slider-label-text">Verse</span>
-                        <input type="range" id="arabicFontSlider" min="1.2" max="5" step="0.1" value="2.8">
-                        <span class="font-slider-val" id="arabicFontVal">2.8</span>
-                    </div>
-                    <div class="font-slider-row">
-                        <span class="font-slider-label font-slider-label-text">Translation</span>
-                        <input type="range" id="transFontSlider" min="0.7" max="3" step="0.05" value="1.87">
-                        <span class="font-slider-val" id="transFontVal">1.87</span>
-                    </div>
-                </div>
-
-                <div id="firstLanguage">
-                    <label for="languageSelector" class="SelectLanguage">Quran language</label>
-                    <select id="languageSelector">
-                        <option value="arabic">Arabic</option>
-                        <option value="french">Français</option>
-                        <option value="english">English</option>
-                        <option value="spanish">Español</option>
-                    </select>
-                </div>
-
-                <div id="multiLanguage">
-                    <label class="SelectLanguage">
-                        Add translations
-                        <span class="lang-badge">unlimited</span>
-                    </label>
-                    <div id="langTagsContainer"></div>
-                    <select id="SurahLanguageSelector">
-                        <option value="">+ Add a language…</option>
-                        <option value="arabic">Arabic</option>
-                        <option value="french">Français</option>
-                        <option value="english">English</option>
-                        <option value="spanish">Español</option>
-                    </select>
-                </div>
-
+                <!-- v10: Search (always visible — primary action) -->
                 <div id="searchControls">
-                    <input type="text" id="search-input" placeholder="Search the Quran…">
+                    <input type="text" id="search-input" placeholder="🔍 Search the Quran…">
                     <!-- Search history chips -->
                     <div id="searchHistoryRow"></div>
                     <div id="searDetails">
@@ -95,13 +68,78 @@
                     </div>
                 </div>
 
-                <div id="toggleButtons">
-                    <button id="toggleOrder">Revelation Order</button>
-                    <button id="context">Surah Context</button>
-                    <!-- Bookmarks panel toggle -->
-                    <button id="bookmarksBtn">🔖 Bookmarks</button>
-                    <!-- v9.12: Features panel (desktop access to feature toggles) -->
-                    <button id="featuresBtn">⚙ Features &amp; Tools</button>
+                <!-- v10: Display section (theme + font sliders) — collapsed -->
+                <div class="side-group" data-default="closed">
+                    <button class="side-group-header" type="button">
+                        <span class="side-group-arrow">▶</span>
+                        <span class="side-group-label">Display</span>
+                    </button>
+                    <div class="side-group-body">
+                        <!-- Font size slider -->
+                        <div id="fontSizeSection">
+                            <label class="SelectLanguage" id="lbl-fontsize">Font size</label>
+                            <div class="font-slider-row">
+                                <span class="font-slider-label font-slider-label-text">Verse</span>
+                                <input type="range" id="arabicFontSlider" min="1.2" max="5" step="0.1" value="2.8">
+                                <span class="font-slider-val" id="arabicFontVal">2.8</span>
+                            </div>
+                            <div class="font-slider-row">
+                                <span class="font-slider-label font-slider-label-text">Translation</span>
+                                <input type="range" id="transFontSlider" min="0.7" max="3" step="0.05" value="1.87">
+                                <span class="font-slider-val" id="transFontVal">1.87</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v10: Languages section — collapsed -->
+                <div class="side-group" data-default="closed">
+                    <button class="side-group-header" type="button">
+                        <span class="side-group-arrow">▶</span>
+                        <span class="side-group-label">Languages</span>
+                    </button>
+                    <div class="side-group-body">
+                        <div id="firstLanguage">
+                            <label for="languageSelector" class="SelectLanguage">Quran language</label>
+                            <select id="languageSelector">
+                                <option value="arabic">Arabic</option>
+                                <option value="french">Français</option>
+                                <option value="english">English</option>
+                                <option value="spanish">Español</option>
+                            </select>
+                        </div>
+
+                        <div id="multiLanguage">
+                            <label class="SelectLanguage">
+                                Add translations
+                                <span class="lang-badge">unlimited</span>
+                            </label>
+                            <div id="langTagsContainer"></div>
+                            <select id="SurahLanguageSelector">
+                                <option value="">+ Add a language…</option>
+                                <option value="arabic">Arabic</option>
+                                <option value="french">Français</option>
+                                <option value="english">English</option>
+                                <option value="spanish">Español</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- v10: Tools section — collapsed -->
+                <div class="side-group" data-default="closed">
+                    <button class="side-group-header" type="button">
+                        <span class="side-group-arrow">▶</span>
+                        <span class="side-group-label">Tools</span>
+                    </button>
+                    <div class="side-group-body">
+                        <div id="toggleButtons">
+                            <button id="toggleOrder">Revelation Order</button>
+                            <button id="context">Surah Context</button>
+                            <button id="bookmarksBtn">🔖 Bookmarks</button>
+                            <button id="featuresBtn">⚙ Features &amp; Tools</button>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -232,7 +270,7 @@
         </div>
     </div>
 
-    <footer>Quran Display v9.12 — May you read with a mindful heart</footer>
+    <footer>Quran Display v10.0 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

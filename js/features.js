@@ -145,48 +145,86 @@ function buildDeepLink(suraId, verseNum) {
 function getLastReadInfo() {
     var hx = JSON.parse(localStorage.getItem('quranReadHistory') || '{}');
     var keys = Object.keys(hx);
-    if (keys.length < 2) return null;
-    // Find the most recently read sura that's NOT the current one
+    if (keys.length < 1) return null;
+    // Find the most recently read sura
     var current = document.querySelector('.sura');
     var currentId = current ? current.id : null;
     var sorted = keys.sort(function(a, b) { return hx[b] - hx[a]; });
+    // Skip the current one only if there's something else
     for (var i = 0; i < sorted.length; i++) {
-        if (sorted[i] !== currentId) {
+        if (sorted[i] !== currentId || sorted.length === 1) {
             var data = quranData.find(function(s) { return s.id === sorted[i]; });
-            if (data) return { suraId: sorted[i], suraName: data.name, suraNum: parseInt(sorted[i]) + 1, ts: hx[sorted[i]] };
+            if (data) {
+                // Try to read scroll position too (saved in main app state)
+                var lastVerseIdx = null;
+                try {
+                    var st = JSON.parse(localStorage.getItem('quranAppState') || '{}');
+                    if (st.lastVerseBySura && st.lastVerseBySura[sorted[i]] != null) {
+                        lastVerseIdx = st.lastVerseBySura[sorted[i]];
+                    }
+                } catch(e) {}
+                // Calculate "X ago" timestamp
+                var elapsed = Date.now() - hx[sorted[i]];
+                var ago;
+                if (elapsed < 60000) ago = 'just now';
+                else if (elapsed < 3600000) ago = Math.round(elapsed/60000) + ' min ago';
+                else if (elapsed < 86400000) ago = Math.round(elapsed/3600000) + ' hr ago';
+                else ago = Math.round(elapsed/86400000) + 'd ago';
+                return {
+                    suraId: sorted[i],
+                    suraName: data.name,
+                    suraNum: parseInt(sorted[i]) + 1,
+                    ts: hx[sorted[i]],
+                    ago: ago,
+                    verseIdx: lastVerseIdx
+                };
+            }
         }
     }
     return null;
 }
 
-function showLastReadBanner() {
-    if (!isFeatureOn('lastReadBanner')) return;
+// v10: Persistent Continue Reading card — builds and returns the element.
+// Inserted by the Surahs sheet builder + desktop TOC builder.
+function buildContinueCard() {
+    if (!isFeatureOn('lastReadBanner')) return null;
     var info = getLastReadInfo();
-    if (!info) return;
-    var existing = document.getElementById('lastReadBanner');
-    if (existing) existing.remove();
-
-    var banner = document.createElement('div');
-    banner.id = 'lastReadBanner';
-    banner.className = 'last-read-banner';
-    banner.innerHTML =
-        '<span class="lrb-icon">📍</span>' +
-        '<span class="lrb-text">Continue reading: <strong>' + info.suraName + '</strong> (' + info.suraNum + ')</span>' +
-        '<button class="lrb-go" type="button">Go →</button>' +
-        '<button class="lrb-close" type="button">✕</button>';
-
-    banner.querySelector('.lrb-go').addEventListener('click', function() {
-        if (typeof displaySingleSura === 'function') displaySingleSura(info.suraId);
-        banner.remove();
+    if (!info) return null;
+    var card = document.createElement('div');
+    card.className = 'continue-reading-card';
+    var verseLine = info.verseIdx != null
+        ? '<div class="crc-verse">Verse ' + (info.verseIdx + 1) + ' · ' + info.ago + '</div>'
+        : '<div class="crc-verse">' + info.ago + '</div>';
+    card.innerHTML =
+        '<span class="crc-icon">📍</span>' +
+        '<div class="crc-text">' +
+            '<div class="crc-label">Continue where you left off</div>' +
+            '<div class="crc-name">' + info.suraName + '</div>' +
+            verseLine +
+        '</div>' +
+        '<span class="crc-arrow">→</span>';
+    card.addEventListener('click', function() {
+        if (typeof closeMobileSheet === 'function') closeMobileSheet();
+        if (typeof displaySingleSura === 'function') {
+            displaySingleSura(info.suraId);
+            if (info.verseIdx != null) {
+                setTimeout(function() {
+                    var verses = document.querySelectorAll('.verse');
+                    if (verses[info.verseIdx]) {
+                        verses[info.verseIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 200);
+            }
+        }
         hapticTap(15);
     });
-    banner.querySelector('.lrb-close').addEventListener('click', function() {
-        banner.remove();
-        try { sessionStorage.setItem('lrbDismissed', '1'); } catch(e) {}
-    });
+    return card;
+}
 
-    var contentWrapper = document.getElementById('content-wrapper');
-    if (contentWrapper) contentWrapper.parentNode.insertBefore(banner, contentWrapper);
+// v10: Old banner removed — kept as a no-op stub for backward compat
+function showLastReadBanner() {
+    var existing = document.getElementById('lastReadBanner');
+    if (existing) existing.remove();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -370,6 +408,7 @@ document.addEventListener('click', function(e) {
     // Don't exit if user clicked a button inside the verse area
     if (e.target.closest('.verse-action-btn')) return;
     if (e.target.closest('.verse-actions')) return;
+    if (e.target.closest('.verse-chooser')) return;
     document.body.classList.remove('focus-mode');
 });
 
@@ -408,58 +447,14 @@ document.addEventListener('click', function(e) {
 
 // ═══════════════════════════════════════════════════════════════════
 // #3 — Copy / Share verse + #1 verse navigation buttons
-// We add these as additional .verse-action-btn entries
+// v10: The Save/Share chooser in buildVerseActions handles this natively.
+// This function is kept as a no-op for backwards compatibility — the
+// helpers (copyVerseToClipboard / shareVerse / buildDeepLink) are still
+// called by the new chooser in script.js.
 // ═══════════════════════════════════════════════════════════════════
 function attachVerseExtras(verseEl, suraId, verseIdx, verseText, suraName) {
-    var actions = verseEl.querySelector('.verse-actions');
-    if (!actions) return;
-
-    if (isFeatureOn('copyShareVerse')) {
-        // Copy button
-        if (!actions.querySelector('[data-action="copy"]')) {
-            var copyBtn = document.createElement('button');
-            copyBtn.className = 'verse-action-btn';
-            copyBtn.setAttribute('data-action', 'copy');
-            copyBtn.title = 'Copy verse';
-            copyBtn.textContent = '📋';
-            copyBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                copyVerseToClipboard(suraId, verseIdx, verseText, suraName);
-                hapticTap(15);
-            });
-            actions.appendChild(copyBtn);
-        }
-        // Share button (if Web Share API supported)
-        if (navigator.share && !actions.querySelector('[data-action="share"]')) {
-            var shareBtn = document.createElement('button');
-            shareBtn.className = 'verse-action-btn';
-            shareBtn.setAttribute('data-action', 'share');
-            shareBtn.title = 'Share verse';
-            shareBtn.textContent = '↗';
-            shareBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                shareVerse(suraId, verseIdx, verseText, suraName);
-                hapticTap(15);
-            });
-            actions.appendChild(shareBtn);
-        }
-        // Deep link button
-        if (isFeatureOn('deepLinks') && !actions.querySelector('[data-action="link"]')) {
-            var linkBtn = document.createElement('button');
-            linkBtn.className = 'verse-action-btn';
-            linkBtn.setAttribute('data-action', 'link');
-            linkBtn.title = 'Copy link to this verse';
-            linkBtn.textContent = '🔗';
-            linkBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var url = buildDeepLink(suraId, verseIdx + 1);
-                copyToClipboard(url);
-                showToast('🔗 Link copied');
-                hapticTap(15);
-            });
-            actions.appendChild(linkBtn);
-        }
-    }
+    // v10: No-op — chooser pattern in buildVerseActions handles all these actions.
+    return;
 }
 
 function copyToClipboard(text) {
@@ -913,6 +908,75 @@ function buildKhatmHeatmap() {
     return wrap;
 }
 
+// ── v10: Reading streak — counts consecutive days with at least 1 read ──
+function getCurrentReadingStreak() {
+    if (!isFeatureOn('khatmTracker')) return 0;
+    var k = getKhatmData();
+    var streak = 0;
+    var d = new Date();
+    // Count today + walk back day-by-day until we miss
+    for (var i = 0; i < 365; i++) {
+        var key = d.toISOString().slice(0, 10);
+        if (k.daily[key]) {
+            streak++;
+        } else {
+            // First day allowed to be missing (haven't read today yet but yesterday counts)
+            if (i === 0 && streak === 0) {
+                d.setDate(d.getDate() - 1);
+                continue;
+            }
+            break;
+        }
+        d.setDate(d.getDate() - 1);
+    }
+    return streak;
+}
+
+// ── v10: Toggle inline heatmap (drops down under the sticky title) ──
+function toggleInlineHeatmap(suraWrapper) {
+    var existing = suraWrapper.querySelector('.inline-heatmap-box');
+    if (existing) {
+        existing.remove();
+        return;
+    }
+    var box = document.createElement('div');
+    box.className = 'inline-heatmap-box';
+    var heatmap = buildKhatmHeatmap();
+    if (heatmap) box.appendChild(heatmap);
+    var sticky = suraWrapper.querySelector('.sura-sticky-title');
+    if (sticky && sticky.nextSibling) {
+        suraWrapper.insertBefore(box, sticky.nextSibling);
+    } else {
+        suraWrapper.appendChild(box);
+    }
+    // Animate in
+    box.style.maxHeight = '0';
+    requestAnimationFrame(function() {
+        box.style.maxHeight = box.scrollHeight + 'px';
+    });
+    // Auto-collapse on outside click
+    setTimeout(function() {
+        document.addEventListener('click', function dismiss(e) {
+            if (e.target.closest('.inline-heatmap-box') || e.target.closest('.sura-streak-pill')) return;
+            box.remove();
+            document.removeEventListener('click', dismiss);
+        });
+    }, 100);
+}
+
+// ── v10: Programmatic focus mode entry (replaces old toggle in some paths) ──
+function enterFocusMode() {
+    if (!isFeatureOn('focusMode')) {
+        // Auto-enable for the user since they obviously want it
+        var current = getFeatures();
+        current.focusMode = true;
+        saveFeatures(current);
+    }
+    document.body.classList.add('focus-mode');
+    window._focusModeActivatedAt = Date.now();
+    hapticTap(15);
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // #17 — Arabic font choice
 // ═══════════════════════════════════════════════════════════════════
@@ -1266,3 +1330,47 @@ document.addEventListener('keydown', function(e) {
         overlay.classList.remove('show');
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// v10 — Sidebar collapsible groups
+// ═══════════════════════════════════════════════════════════════════
+(function sidebarGroups() {
+    var SIDE_GROUPS_KEY = 'quranSideGroupsOpen';
+
+    function getOpenState() {
+        try { return JSON.parse(localStorage.getItem(SIDE_GROUPS_KEY) || '{}'); }
+        catch(e) { return {}; }
+    }
+    function saveOpenState(state) {
+        try { localStorage.setItem(SIDE_GROUPS_KEY, JSON.stringify(state)); } catch(e) {}
+    }
+
+    function init() {
+        var groups = document.querySelectorAll('.side-group');
+        if (!groups.length) return;
+        var saved = getOpenState();
+        groups.forEach(function(g, i) {
+            var header = g.querySelector('.side-group-header');
+            var body = g.querySelector('.side-group-body');
+            if (!header || !body) return;
+            var label = g.querySelector('.side-group-label');
+            var key = label ? label.textContent.trim().toLowerCase() : 'group_' + i;
+            // Apply saved state, fall back to data-default
+            var open = (key in saved) ? saved[key] : (g.getAttribute('data-default') !== 'closed');
+            if (open) g.classList.add('side-group-open');
+            header.addEventListener('click', function() {
+                var nowOpen = !g.classList.contains('side-group-open');
+                g.classList.toggle('side-group-open', nowOpen);
+                var state = getOpenState();
+                state[key] = nowOpen;
+                saveOpenState(state);
+            });
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+}());

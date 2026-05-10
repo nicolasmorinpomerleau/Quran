@@ -1374,3 +1374,568 @@ document.addEventListener('keydown', function(e) {
         init();
     }
 }());
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.1 — DAILY READING PLAN (#10)
+// Picks a plan length, calculates today's reading, tracks progress
+// ═══════════════════════════════════════════════════════════════════
+const READING_PLAN_KEY = 'quranReadingPlan';
+
+// Juz boundaries: which surah:verse each juz starts at
+// (Standard 30-juz division — surahs are 1-indexed here)
+const JUZ_START = [
+    { juz: 1,  sura: 1,   verse: 1 },
+    { juz: 2,  sura: 2,   verse: 142 },
+    { juz: 3,  sura: 2,   verse: 253 },
+    { juz: 4,  sura: 3,   verse: 93 },
+    { juz: 5,  sura: 4,   verse: 24 },
+    { juz: 6,  sura: 4,   verse: 148 },
+    { juz: 7,  sura: 5,   verse: 82 },
+    { juz: 8,  sura: 6,   verse: 111 },
+    { juz: 9,  sura: 7,   verse: 88 },
+    { juz: 10, sura: 8,   verse: 41 },
+    { juz: 11, sura: 9,   verse: 93 },
+    { juz: 12, sura: 11,  verse: 6 },
+    { juz: 13, sura: 12,  verse: 53 },
+    { juz: 14, sura: 15,  verse: 1 },
+    { juz: 15, sura: 17,  verse: 1 },
+    { juz: 16, sura: 18,  verse: 75 },
+    { juz: 17, sura: 21,  verse: 1 },
+    { juz: 18, sura: 23,  verse: 1 },
+    { juz: 19, sura: 25,  verse: 21 },
+    { juz: 20, sura: 27,  verse: 56 },
+    { juz: 21, sura: 29,  verse: 46 },
+    { juz: 22, sura: 33,  verse: 31 },
+    { juz: 23, sura: 36,  verse: 28 },
+    { juz: 24, sura: 39,  verse: 32 },
+    { juz: 25, sura: 41,  verse: 47 },
+    { juz: 26, sura: 46,  verse: 1 },
+    { juz: 27, sura: 51,  verse: 31 },
+    { juz: 28, sura: 58,  verse: 1 },
+    { juz: 29, sura: 67,  verse: 1 },
+    { juz: 30, sura: 78,  verse: 1 }
+];
+
+function getReadingPlan() {
+    try {
+        var p = JSON.parse(localStorage.getItem(READING_PLAN_KEY) || 'null');
+        if (!p) return null;
+        if (!p.completedDays) p.completedDays = {};
+        return p;
+    } catch(e) { return null; }
+}
+
+function saveReadingPlan(p) {
+    try { localStorage.setItem(READING_PLAN_KEY, JSON.stringify(p)); } catch(e) {}
+}
+
+function clearReadingPlan() {
+    try { localStorage.removeItem(READING_PLAN_KEY); } catch(e) {}
+}
+
+// Plan types map to total days, and how to slice the Quran
+// 30-day plans = 1 juz per day. 60-day = half-juz/day. 90-day = third-juz/day.
+function getPlanConfig(planType, customDays) {
+    var totalDays;
+    if (planType === '30day') totalDays = 30;
+    else if (planType === '60day') totalDays = 60;
+    else if (planType === '90day') totalDays = 90;
+    else if (planType === 'custom' && customDays) totalDays = customDays;
+    else totalDays = 30;
+    return { totalDays: totalDays, juzPerDay: 30 / totalDays };
+}
+
+// Calculate today's reading assignment as a list of surahs
+// (which surahs to read today, sorted by sura number)
+function calculateTodayReading() {
+    var plan = getReadingPlan();
+    if (!plan) return null;
+
+    var cfg = getPlanConfig(plan.planType, plan.customDays);
+    var startDate = new Date(plan.startDate);
+    var today = new Date();
+    today.setHours(0,0,0,0);
+    startDate.setHours(0,0,0,0);
+    var dayIdx = Math.floor((today - startDate) / 86400000); // 0-indexed
+
+    if (dayIdx >= cfg.totalDays) {
+        return { dayNum: cfg.totalDays, totalDays: cfg.totalDays, finished: true, surahs: [], juzList: [] };
+    }
+    if (dayIdx < 0) {
+        return { dayNum: 1, totalDays: cfg.totalDays, surahs: [], juzList: [], notStarted: true };
+    }
+
+    // Calculate juz range covered today
+    var juzStart = dayIdx * cfg.juzPerDay; // float, 0-indexed
+    var juzEnd = juzStart + cfg.juzPerDay;
+
+    // Convert juz range to surah list
+    // Find which surahs intersect with the juz range
+    var surahsToday = {};
+    var juzListToday = [];
+
+    var firstJuzInt = Math.floor(juzStart) + 1; // 1-indexed
+    var lastJuzInt = Math.ceil(juzEnd); // 1-indexed inclusive boundary
+    if (lastJuzInt > 30) lastJuzInt = 30;
+
+    for (var j = firstJuzInt; j <= lastJuzInt; j++) {
+        juzListToday.push(j);
+        var jStart = JUZ_START[j - 1];
+        var jEnd = (j < 30) ? JUZ_START[j] : { sura: 115, verse: 1 }; // sentinel beyond
+        // Add all surahs from jStart.sura through jEnd.sura
+        for (var s = jStart.sura; s <= jEnd.sura && s <= 114; s++) {
+            // Skip sentinel
+            if (s >= jEnd.sura && jEnd.verse === 1 && j < 30) {
+                // jEnd's verse 1 means next juz starts cleanly at top of that surah
+                // so this surah is NOT in current juz unless we include it via overlap
+                if (s === jEnd.sura) continue;
+            }
+            surahsToday[s] = true;
+        }
+    }
+
+    var surahArr = Object.keys(surahsToday).map(function(k){ return parseInt(k); }).sort(function(a,b){ return a-b; });
+
+    return {
+        dayNum: dayIdx + 1,
+        totalDays: cfg.totalDays,
+        juzList: juzListToday,
+        surahs: surahArr,
+        completed: !!plan.completedDays[dateKey(today)]
+    };
+}
+
+function dateKey(d) {
+    return d.toISOString().slice(0, 10);
+}
+
+function markTodayComplete() {
+    var plan = getReadingPlan();
+    if (!plan) return;
+    var todayKey = dateKey(new Date());
+    plan.completedDays[todayKey] = true;
+    saveReadingPlan(plan);
+
+    // Check if we've finished all days
+    var cfg = getPlanConfig(plan.planType, plan.customDays);
+    var doneCount = Object.keys(plan.completedDays).length;
+    if (doneCount >= cfg.totalDays) {
+        if (typeof recordKhatmCompletion === 'function') recordKhatmCompletion();
+        showToast('🎉 Plan completed — Khatm logged!');
+        clearReadingPlan();
+    } else {
+        showToast('✓ Today marked complete');
+    }
+    hapticTap(20);
+    renderReadingPlanCard();
+}
+
+// ── Render the plan card at top of reading area ──
+function renderReadingPlanCard() {
+    var existing = document.getElementById('readingPlanCard');
+    if (existing) existing.remove();
+
+    var plan = getReadingPlan();
+    if (!plan) return;
+
+    var info = calculateTodayReading();
+    if (!info) return;
+
+    var card = document.createElement('div');
+    card.id = 'readingPlanCard';
+    card.className = 'reading-plan-card';
+
+    if (info.notStarted) {
+        card.innerHTML =
+            '<span class="rpc-icon">📖</span>' +
+            '<div class="rpc-text">' +
+                '<div class="rpc-label">Reading plan</div>' +
+                '<div class="rpc-detail">Starts ' + new Date(plan.startDate).toLocaleDateString() + '</div>' +
+            '</div>';
+    } else if (info.finished) {
+        card.innerHTML =
+            '<span class="rpc-icon">🎉</span>' +
+            '<div class="rpc-text">' +
+                '<div class="rpc-label">Plan complete!</div>' +
+                '<div class="rpc-detail">All ' + info.totalDays + ' days done</div>' +
+            '</div>' +
+            '<button class="rpc-action" id="rpcDismiss">Dismiss</button>';
+    } else {
+        // Active plan day
+        var doneCount = Object.keys(plan.completedDays).length;
+        var pct = Math.round((doneCount / info.totalDays) * 100);
+        var juzText = info.juzList.length === 1
+            ? 'Juz ' + info.juzList[0]
+            : 'Juz ' + info.juzList[0] + '–' + info.juzList[info.juzList.length-1];
+        var surahHint = info.surahs.length > 0
+            ? ' · Surahs ' + info.surahs[0] + (info.surahs.length > 1 ? '–' + info.surahs[info.surahs.length-1] : '')
+            : '';
+        var statusIcon = info.completed ? '✓' : '📖';
+        var actionBtn = info.completed
+            ? '<span class="rpc-done-badge">✓ Done</span>'
+            : '<button class="rpc-action" id="rpcMarkDone">Mark done</button>';
+
+        card.innerHTML =
+            '<span class="rpc-icon">' + statusIcon + '</span>' +
+            '<div class="rpc-text">' +
+                '<div class="rpc-label">Day ' + info.dayNum + ' of ' + info.totalDays + ' · ' + juzText + surahHint + '</div>' +
+                '<div class="rpc-progress"><div class="rpc-progress-fill" style="width:' + pct + '%"></div></div>' +
+                '<div class="rpc-detail">' + doneCount + ' / ' + info.totalDays + ' days · ' + pct + '%</div>' +
+            '</div>' +
+            actionBtn;
+    }
+
+    // Insert at the top of content-wrapper, above any sura
+    var contentWrapper = document.getElementById('content-wrapper');
+    if (contentWrapper) {
+        contentWrapper.insertBefore(card, contentWrapper.firstChild);
+    }
+
+    // Wire actions
+    var markBtn = card.querySelector('#rpcMarkDone');
+    if (markBtn) markBtn.addEventListener('click', markTodayComplete);
+    var dismissBtn = card.querySelector('#rpcDismiss');
+    if (dismissBtn) dismissBtn.addEventListener('click', function() {
+        clearReadingPlan();
+        card.remove();
+    });
+}
+
+// ── Plan setup UI (in settings) ──
+function appendReadingPlanUI(body) {
+    var sec = document.createElement('div');
+    sec.className = 'mob-settings-section';
+    var lbl = document.createElement('div');
+    lbl.className = 'mob-settings-lbl';
+    lbl.textContent = 'Reading plan';
+    sec.appendChild(lbl);
+
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--text-primary);margin-bottom:10px;opacity:0.78;line-height:1.4;';
+    hint.textContent = 'Pick how fast you want to finish the Quran. Each day shows what to read; mark days complete to track progress.';
+    sec.appendChild(hint);
+
+    var current = getReadingPlan();
+
+    if (current) {
+        // Active plan — show details + cancel
+        var cfg = getPlanConfig(current.planType, current.customDays);
+        var doneCount = Object.keys(current.completedDays).length;
+        var info = document.createElement('div');
+        info.className = 'reading-plan-active';
+        info.innerHTML =
+            '<div class="rpa-row"><span class="rpa-key">Plan:</span><span class="rpa-val">' +
+                (current.planType === 'custom' ? current.customDays + ' days' : current.planType.replace('day', ' days')) +
+            '</span></div>' +
+            '<div class="rpa-row"><span class="rpa-key">Started:</span><span class="rpa-val">' + new Date(current.startDate).toLocaleDateString() + '</span></div>' +
+            '<div class="rpa-row"><span class="rpa-key">Progress:</span><span class="rpa-val">' + doneCount + ' / ' + cfg.totalDays + ' days</span></div>';
+        sec.appendChild(info);
+
+        var cancelBtn = document.createElement('button');
+        cancelBtn.className = 'mob-settings-btn';
+        cancelBtn.style.background = '#d9707018';
+        cancelBtn.style.borderColor = '#d9707040';
+        cancelBtn.style.color = '#e08585';
+        cancelBtn.textContent = '🗑 Cancel plan';
+        cancelBtn.addEventListener('click', function() {
+            if (typeof showConfirm === 'function') {
+                showConfirm('Cancel reading plan?', 'Your progress (' + doneCount + ' days) will be lost.', function() {
+                    clearReadingPlan();
+                    var card = document.getElementById('readingPlanCard');
+                    if (card) card.remove();
+                    showToast('Plan cancelled');
+                    // Refresh modal/sheet
+                    if (typeof openFeaturesModal === 'function' && document.getElementById('featuresModal').classList.contains('show')) {
+                        openFeaturesModal();
+                    }
+                });
+            } else if (confirm('Cancel reading plan? Your progress will be lost.')) {
+                clearReadingPlan();
+                var card2 = document.getElementById('readingPlanCard');
+                if (card2) card2.remove();
+            }
+        });
+        sec.appendChild(cancelBtn);
+    } else {
+        // No active plan — show plan picker
+        var presets = [
+            { id: '30day', label: '🌙 30 days', desc: '1 juz/day · Ramadan pace' },
+            { id: '60day', label: '📅 60 days', desc: 'Half a juz per day' },
+            { id: '90day', label: '📚 90 days', desc: 'Gentle pace · ~3 surahs/day' }
+        ];
+        presets.forEach(function(p) {
+            var btn = document.createElement('button');
+            btn.className = 'mob-settings-btn rp-preset-btn';
+            btn.innerHTML = '<span class="rpb-label">' + p.label + '</span><span class="rpb-desc">' + p.desc + '</span>';
+            btn.addEventListener('click', function() {
+                startPlan(p.id);
+            });
+            sec.appendChild(btn);
+        });
+
+        // Custom days input
+        var customRow = document.createElement('div');
+        customRow.className = 'rp-custom-row';
+        customRow.innerHTML =
+            '<span class="rpb-label">⚙ Custom:</span>' +
+            '<input type="number" min="2" max="365" placeholder="days" id="rpCustomInput">' +
+            '<button class="rp-custom-go">Start</button>';
+        sec.appendChild(customRow);
+        customRow.querySelector('.rp-custom-go').addEventListener('click', function() {
+            var v = parseInt(customRow.querySelector('#rpCustomInput').value, 10);
+            if (isNaN(v) || v < 2 || v > 365) {
+                showToast('Enter 2–365 days');
+                return;
+            }
+            startPlan('custom', v);
+        });
+    }
+
+    body.appendChild(sec);
+}
+
+function startPlan(planType, customDays) {
+    var plan = {
+        planType: planType,
+        customDays: customDays || null,
+        startDate: new Date().toISOString(),
+        completedDays: {}
+    };
+    saveReadingPlan(plan);
+    showToast('📖 Plan started!');
+    renderReadingPlanCard();
+    // Refresh the settings UI if open
+    if (typeof openFeaturesModal === 'function') {
+        var modal = document.getElementById('featuresModal');
+        if (modal && modal.classList.contains('show')) openFeaturesModal();
+    }
+    hapticTap(20);
+}
+
+// Hook into displaySingleSura to refresh card when surah changes
+(function hookReadingPlanCard() {
+    function tryHook() {
+        if (typeof displaySingleSura === 'undefined') return false;
+        if (window._planCardHooked) return true;
+        window._planCardHooked = true;
+        var orig = displaySingleSura;
+        window.displaySingleSura = displaySingleSura = function(suraId) {
+            orig(suraId);
+            // Re-render plan card after a tick (so it appears above the new sura)
+            setTimeout(renderReadingPlanCard, 100);
+        };
+        return true;
+    }
+    if (!tryHook()) {
+        var iv = setInterval(function() {
+            if (tryHook()) clearInterval(iv);
+        }, 200);
+    }
+}());
+
+// Show on initial load
+(function showPlanOnLoad() {
+    function tryShow() {
+        if (typeof quranData === 'undefined' || !quranData.length) return false;
+        renderReadingPlanCard();
+        return true;
+    }
+    if (!tryShow()) {
+        var iv = setInterval(function() {
+            if (tryShow()) clearInterval(iv);
+        }, 300);
+    }
+}());
+
+// Hook into the existing settings (mobile sheet & desktop modal)
+// We extend buildSheetSettings AND openFeaturesModal
+(function injectPlanIntoSettings() {
+    function tryInject() {
+        if (typeof buildSheetSettings === 'undefined') return false;
+        if (window._planUIInjected) return true;
+        window._planUIInjected = true;
+        var origSheet = buildSheetSettings;
+        window.buildSheetSettings = buildSheetSettings = function(body, title) {
+            origSheet(body, title);
+            appendReadingPlanUI(body);
+        };
+        // Also extend openFeaturesModal (desktop)
+        if (typeof openFeaturesModal === 'function') {
+            var origModal = openFeaturesModal;
+            window.openFeaturesModal = function() {
+                origModal();
+                var body = document.getElementById('featuresModalBody');
+                if (body) appendReadingPlanUI(body);
+            };
+        }
+        return true;
+    }
+    if (!tryInject()) {
+        var iv = setInterval(function() {
+            if (tryInject()) clearInterval(iv);
+        }, 200);
+    }
+}());
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.1 — PWA registration & install prompt
+// ═══════════════════════════════════════════════════════════════════
+(function pwaSetup() {
+    // Service worker registration
+    if ('serviceWorker' in navigator) {
+        // Wait for window load so SW registration doesn't compete with initial render
+        window.addEventListener('load', function() {
+            // Only register on http(s) — skip if running off file://
+            if (location.protocol === 'file:') {
+                console.info('[PWA] Skipping service worker — file:// not supported. Use Live Server or HTTPS.');
+                return;
+            }
+            navigator.serviceWorker.register('service-worker.js').then(function(reg) {
+                console.info('[PWA] Service worker registered, scope:', reg.scope);
+
+                // Check for updates periodically (every hour)
+                setInterval(function() { reg.update(); }, 60 * 60 * 1000);
+
+                // Listen for updates
+                reg.addEventListener('updatefound', function() {
+                    var newWorker = reg.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', function() {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // A new version is ready — notify user
+                            if (typeof showToast === 'function') {
+                                var bar = document.createElement('div');
+                                bar.className = 'pwa-update-bar';
+                                bar.innerHTML = '<span>📦 New version available</span><button class="pwa-update-btn">Reload</button><button class="pwa-update-dismiss">✕</button>';
+                                document.body.appendChild(bar);
+                                bar.querySelector('.pwa-update-btn').addEventListener('click', function() {
+                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                    location.reload();
+                                });
+                                bar.querySelector('.pwa-update-dismiss').addEventListener('click', function() {
+                                    bar.remove();
+                                });
+                            }
+                        }
+                    });
+                });
+            }).catch(function(err) {
+                console.warn('[PWA] Service worker registration failed:', err);
+            });
+
+            // Reload page when SW takes over (for skip-waiting flow)
+            var refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+                if (refreshing) return;
+                refreshing = true;
+                // Don't auto-reload here — let the explicit Reload button handle it
+            });
+        });
+    }
+
+    // Capture install prompt — show our own "Install" button
+    var deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        // Mark as available — install button in features modal will pick this up
+        window._pwaInstallable = true;
+    });
+
+    window.addEventListener('appinstalled', function() {
+        if (typeof showToast === 'function') showToast('🎉 App installed');
+        window._pwaInstallable = false;
+        deferredPrompt = null;
+    });
+
+    // Expose install trigger
+    window.triggerPWAInstall = function() {
+        if (!deferredPrompt) {
+            if (typeof showToast === 'function') {
+                showToast('💡 Use your browser\'s "Add to Home Screen" option');
+            }
+            return;
+        }
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function(result) {
+            if (result.outcome === 'accepted') {
+                if (typeof showToast === 'function') showToast('Installing…');
+            }
+            deferredPrompt = null;
+            window._pwaInstallable = false;
+        });
+    };
+}());
+
+// ── Install card in settings ──
+function appendInstallUI(body) {
+    var sec = document.createElement('div');
+    sec.className = 'mob-settings-section';
+    var lbl = document.createElement('div');
+    lbl.className = 'mob-settings-lbl';
+    lbl.textContent = 'Install as app';
+    sec.appendChild(lbl);
+
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--text-primary);margin-bottom:10px;opacity:0.78;line-height:1.4;';
+
+    // Detect install state
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       window.navigator.standalone === true;
+
+    if (isStandalone) {
+        hint.textContent = '✓ App is installed and running in standalone mode. Reading also works offline once you\'ve loaded each language at least once.';
+        sec.appendChild(hint);
+    } else if (window._pwaInstallable) {
+        hint.textContent = 'Install this app on your device for an icon on your home screen, faster startup, and full offline reading.';
+        sec.appendChild(hint);
+        var btn = document.createElement('button');
+        btn.className = 'mob-settings-btn';
+        btn.textContent = '📲 Install on this device';
+        btn.addEventListener('click', triggerPWAInstall);
+        sec.appendChild(btn);
+    } else {
+        // Show OS-specific guidance
+        var ua = navigator.userAgent.toLowerCase();
+        var isIOS = /iphone|ipad|ipod/.test(ua);
+        var isMobile = isIOS || /android/.test(ua);
+        if (isIOS) {
+            hint.innerHTML = 'On iPhone/iPad: tap the <strong>Share</strong> button (□↑) below, then <strong>Add to Home Screen</strong>.';
+        } else if (isMobile) {
+            hint.innerHTML = 'On Android: tap your browser\'s ⋮ menu, then <strong>Install app</strong> or <strong>Add to Home Screen</strong>.';
+        } else {
+            hint.innerHTML = 'In Chrome/Edge: look for the install icon (⊕) in the address bar. The app will work offline after first load.';
+        }
+        sec.appendChild(hint);
+    }
+
+    body.appendChild(sec);
+}
+
+// Inject install UI into settings (alongside reading plan)
+(function injectInstallIntoSettings() {
+    function tryInject() {
+        if (typeof buildSheetSettings === 'undefined') return false;
+        if (window._installUIInjected) return true;
+        window._installUIInjected = true;
+        var origSheet = buildSheetSettings;
+        window.buildSheetSettings = buildSheetSettings = function(body, title) {
+            origSheet(body, title);
+            appendInstallUI(body);
+        };
+        if (typeof openFeaturesModal === 'function') {
+            var origModal = openFeaturesModal;
+            window.openFeaturesModal = function() {
+                origModal();
+                var body = document.getElementById('featuresModalBody');
+                if (body) appendInstallUI(body);
+            };
+        }
+        return true;
+    }
+    if (!tryInject()) {
+        var iv = setInterval(function() {
+            if (tryInject()) clearInterval(iv);
+        }, 200);
+    }
+}());

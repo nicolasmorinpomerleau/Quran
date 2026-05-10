@@ -1,0 +1,27 @@
+{
+  "name": "Quran Display",
+  "short_name": "Quran",
+  "description": "A peaceful, elegant Quran reading experience.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a1208",
+  "theme_color": "#c9a444",
+  "lang": "en",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "img/Quran.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "img/Quran.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["books", "education", "lifestyle"]
+}

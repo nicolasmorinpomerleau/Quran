@@ -553,6 +553,27 @@ document.getElementById('noteModalSave').addEventListener('click', function() {
         if (dot) dot.remove();
     }
     lsSet(NOTES_KEY, notes);
+    // v10.5: Sync verse-has-saved class + rebuild verse-actions
+    // so the Save tag remains visible when the verse is collapsed
+    var verseEl = noteModalTarget.noteBtn.closest('.verse');
+    if (verseEl) {
+        var sId = noteModalTarget.suraId;
+        var vIdx = noteModalTarget.verseIdx;
+        var hasAny = isHighlighted(sId, vIdx) ||
+                     isBookmarked(sId, vIdx) ||
+                     !!getNotes()[verseKey(sId, vIdx)];
+        verseEl.classList.toggle('verse-has-saved', hasAny);
+        // Rebuild verse-actions to refresh button states
+        var oldActions = verseEl.querySelector('.verse-actions');
+        var sura = quranData.find(function(s){ return s.id === String(sId); });
+        if (oldActions && sura) {
+            oldActions.remove();
+            verseEl.appendChild(buildVerseActions(sId, vIdx, sura.verses[vIdx].text, sura.name));
+            if (typeof attachAudioButtons === 'function') {
+                setTimeout(attachAudioButtons, 10);
+            }
+        }
+    }
     closeNoteModal();
 });
 
@@ -565,6 +586,23 @@ document.getElementById('noteModalDelete').addEventListener('click', function() 
     noteModalTarget.noteBtn.classList.remove('active');
     const dot = noteModalTarget.noteBtn.querySelector('.note-dot');
     if (dot) dot.remove();
+    // v10.5: Sync verse-has-saved + rebuild verse-actions
+    var verseEl = noteModalTarget.noteBtn.closest('.verse');
+    if (verseEl) {
+        var sId = noteModalTarget.suraId;
+        var vIdx = noteModalTarget.verseIdx;
+        var hasAny = isHighlighted(sId, vIdx) || isBookmarked(sId, vIdx);
+        verseEl.classList.toggle('verse-has-saved', hasAny);
+        var oldActions = verseEl.querySelector('.verse-actions');
+        var sura = quranData.find(function(s){ return s.id === String(sId); });
+        if (oldActions && sura) {
+            oldActions.remove();
+            verseEl.appendChild(buildVerseActions(sId, vIdx, sura.verses[vIdx].text, sura.name));
+            if (typeof attachAudioButtons === 'function') {
+                setTimeout(attachAudioButtons, 10);
+            }
+        }
+    }
     closeNoteModal();
 });
 

@@ -55,31 +55,31 @@ html { font-size: 16px; }
     --bg-sidebar:      #ffffff;
     --bg-content:      #f8f7f4;
     --bg-toc:          #ffffff;
-    --bg-toc-active:   #edf4ec;
+    --bg-toc-active:   #f3ede0;
     --bg-input:        #f8f7f4;
-    --bg-btn:          #f0f7ef;
-    --bg-btn-hover:    #dceeda;
+    --bg-btn:          #f5f1e7;
+    --bg-btn-hover:    #ebe3d0;
     --bg-results:      #ffffff;
     --bg-header:       #ffffff;
-    --bg-footer:       #edf4ec;
+    --bg-footer:       #f3ede0;
     --accent:          #2d5a27;
     --accent-dim:      #2d5a2780;
     --accent-faint:    #2d5a2720;
     --accent-trace:    #2d5a2710;
-    --text-primary:    #1a2e18;
-    --text-secondary:  #4a6e45;
-    --text-muted:      #8aaa85;
-    --text-btn:        #2d5a27;
-    --text-toc:        #5a7a55;
+    --text-primary:    #1a1a1a;
+    --text-secondary:  #5a5040;
+    --text-muted:      #8a7e6a;
+    --text-btn:        #3d3528;
+    --text-toc:        #5a5040;
     --text-toc-active: #2d5a27;
     --text-verse:      #1a1a1a;
-    --text-hijri:      #2d5a27;
-    --text-result:     #4a6e45;
-    --text-result-h:   #2d5a27;
+    --text-hijri:      #5a5040;
+    --text-result:     #5a5040;
+    --text-result-h:   #3d3528;
     --border:          #e0dbd0;
     --border-mid:      #ccc8bc;
     --border-verse:    #e8e4dc;
-    --border-btn:      #b5d4b0;
+    --border-btn:      #d0c4a8;
     --border-input:    #d0ccc0;
     --border-toc:      #e8e4dc;
     --font-ui:         'Raleway', sans-serif;
@@ -931,10 +931,12 @@ footer {
 }
 
 .bnav-lbl {
-    font-size: 10px;
-    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
     font-family: var(--font-ui);
     white-space: nowrap;
+    letter-spacing: 0.02em;
 }
 
 .bnav-btn.bnav-active .bnav-lbl { color: var(--accent); }
@@ -1062,9 +1064,9 @@ footer {
     /* Verse action buttons bigger tap targets */
     .verse-action-btn { padding: 5px 14px; font-size: 15px; }
 
-    /* v10.4: Bottom nav labels readable at 10px on mobile */
-    .bnav-lbl { font-size: 10px; }
-    .bnav-ico { font-size: 18px; }
+    /* v10.5: Bottom nav labels readable on mobile */
+    .bnav-lbl { font-size: 12px; }
+    .bnav-ico { font-size: 20px; }
 
     /* font sliders full width */
     .font-slider-row { gap: 6px; }
@@ -1088,8 +1090,8 @@ footer {
     /* v9.11: verse font-size respects slider */
     #suraTitle { font-size: 0.95rem; }
     .bnav-btn { padding: 6px 2px 8px; }
-    .bnav-ico { font-size: 16px; }
-    .bnav-lbl { font-size: 10px; }
+    .bnav-ico { font-size: 18px; }
+    .bnav-lbl { font-size: 11px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════

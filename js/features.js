@@ -2062,32 +2062,97 @@ function startPlan(planType, customDays) {
 
     // Expose install trigger
     window.triggerPWAInstall = function() {
-        if (!deferredPrompt) {
-            // iOS or unsupported browser — show guidance
-            var ua = navigator.userAgent.toLowerCase();
-            var isIOS = /iphone|ipad|ipod/.test(ua);
-            if (isIOS) {
-                if (typeof showToast === 'function') {
-                    showToast('Tap Share → Add to Home Screen');
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(result) {
+                if (result.outcome === 'accepted') {
+                    if (typeof showToast === 'function') showToast('Installing…');
                 }
-            } else if (typeof showToast === 'function') {
-                showToast('Use your browser\'s "Add to Home Screen"');
-            }
+                deferredPrompt = null;
+                window._pwaInstallable = false;
+                if (typeof updateInstallPill === 'function') updateInstallPill();
+            });
             return;
         }
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function(result) {
-            if (result.outcome === 'accepted') {
-                if (typeof showToast === 'function') showToast('Installing…');
-            }
-            deferredPrompt = null;
-            window._pwaInstallable = false;
-            if (typeof updateInstallPill === 'function') updateInstallPill();
-        });
+        // v10.5: No native prompt available — show OS-specific instructions modal
+        showInstallInstructions();
     };
 }());
 
-// ── v10.4: Update visibility of install button — now lives in the header banner ──
+// v10.5: Step-by-step install instructions when native prompt isn't available
+function showInstallInstructions() {
+    var ua = navigator.userAgent.toLowerCase();
+    var isIOS = /iphone|ipad|ipod/.test(ua);
+    var isAndroid = /android/.test(ua);
+    var isSamsungInternet = /samsungbrowser/.test(ua);
+
+    var title = 'Install Quran Display';
+    var steps;
+    if (isIOS) {
+        steps = [
+            'Tap the <strong>Share</strong> button at the bottom of Safari (the square with the arrow)',
+            'Scroll down and tap <strong>Add to Home Screen</strong>',
+            'Tap <strong>Add</strong> in the top-right corner'
+        ];
+    } else if (isSamsungInternet) {
+        steps = [
+            'Tap the <strong>menu</strong> button (☰) at the bottom of Samsung Internet',
+            'Tap <strong>Add page to</strong>',
+            'Tap <strong>Home screen</strong>',
+            'Tap <strong>Add</strong>'
+        ];
+    } else if (isAndroid) {
+        steps = [
+            'Tap the <strong>menu</strong> button (⋮) in the top-right',
+            'Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>',
+            'Tap <strong>Install</strong>'
+        ];
+    } else {
+        steps = [
+            'Look for the <strong>install icon</strong> (⊕) in the address bar',
+            'Click it and confirm <strong>Install</strong>',
+            'The app will open in its own window'
+        ];
+    }
+
+    // Build modal
+    var existing = document.getElementById('installModal');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'installModal';
+    overlay.className = 'install-modal-overlay';
+    overlay.innerHTML =
+        '<div class="install-modal-box">' +
+            '<div class="install-modal-header">' +
+                '<span class="install-modal-icon">📲</span>' +
+                '<span class="install-modal-title">' + title + '</span>' +
+                '<button class="install-modal-close">✕</button>' +
+            '</div>' +
+            '<div class="install-modal-body">' +
+                '<ol class="install-steps">' +
+                    steps.map(function(s){ return '<li>' + s + '</li>'; }).join('') +
+                '</ol>' +
+                '<div class="install-benefits">' +
+                    '<div class="install-benefit">📖 Read offline once installed</div>' +
+                    '<div class="install-benefit">⚡ Launches instantly from home screen</div>' +
+                    '<div class="install-benefit">🧘 Fullscreen — no browser chrome</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.remove();
+    });
+    overlay.querySelector('.install-modal-close').addEventListener('click', function() {
+        overlay.remove();
+    });
+}
+
+// ── v10.5: Update visibility of install banner — show on ALL mobile devices ──
+// We don't wait for beforeinstallprompt because some browsers (Samsung Internet,
+// older Android Chrome) don't fire it reliably or don't fire it at all.
 window.updateInstallPill = function() {
     var btn = document.getElementById('headerInstallBtn');
     if (!btn) return;
@@ -2095,11 +2160,13 @@ window.updateInstallPill = function() {
                        window.navigator.standalone === true;
     var dismissed = false;
     try { dismissed = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
-    var shouldShow = !isStandalone && !dismissed && (window._pwaInstallable === true);
-    // On iOS, show even without beforeinstallprompt (iOS doesn't fire it but the app IS installable)
-    var ua = navigator.userAgent.toLowerCase();
-    var isIOS = /iphone|ipad|ipod/.test(ua);
-    if (isIOS && !isStandalone && !dismissed) shouldShow = true;
+    if (isStandalone || dismissed) {
+        btn.style.display = 'none';
+        return;
+    }
+    // Show on all phones AND when desktop has triggered beforeinstallprompt
+    var isMobile = window.innerWidth <= 900;
+    var shouldShow = isMobile || window._pwaInstallable === true;
     btn.style.display = shouldShow ? '' : 'none';
 };
 

@@ -2330,3 +2330,149 @@ header {
     opacity: 0.75;
     margin-left: 6px;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.5 — Readability fixes (feature hints, translation in light mode)
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Feature toggle subtitle — readable in all themes */
+.feature-toggle-sub {
+    font-size: 13px !important;
+    color: var(--text-secondary) !important;
+    opacity: 1 !important;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+/* Translation color in Minimal — muted warm brown, distinct from black Arabic */
+[data-theme="minimal"] .secondary-verse {
+    color: #6e5b3e !important;
+}
+[data-theme="minimal"] .secondary-verse::before {
+    color: #b8a37a !important;
+}
+
+/* Minimal install banner — accessible contrast */
+[data-theme="minimal"] .header-install-btn {
+    background: #f5f1e7;
+    border-color: #d0c4a8;
+}
+[data-theme="minimal"] .header-install-btn:hover {
+    background: #ebe3d0;
+}
+[data-theme="minimal"] .hib-line1 {
+    color: #5a4525;
+}
+[data-theme="minimal"] .hib-line2 {
+    color: #5a5040;
+    opacity: 0.85;
+}
+
+/* Settings hints — readable size in all themes */
+.mob-settings-section div[style*="opacity:0.78"],
+.mob-settings-section div[style*="opacity:0.85"],
+.mob-settings-section div[style*="opacity:0.7"] {
+    opacity: 1 !important;
+    font-size: 13px !important;
+    color: var(--text-secondary) !important;
+    line-height: 1.5 !important;
+}
+
+/* ── Install instructions modal (v10.5) ── */
+.install-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.install-modal-overlay.show { opacity: 1; }
+
+.install-modal-box {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border-mid);
+    border-radius: 14px;
+    max-width: 440px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: 0 16px 60px rgba(0,0,0,0.5);
+    transform: scale(0.95);
+    transition: transform 0.2s;
+}
+.install-modal-overlay.show .install-modal-box { transform: scale(1); }
+
+.install-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+}
+.install-modal-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+.install-modal-title {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 17px;
+}
+.install-modal-close {
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    font-size: 14px;
+    padding: 5px 11px;
+    border-radius: 99px;
+    cursor: pointer;
+    width: auto;
+    font-family: var(--font-ui);
+}
+.install-modal-close:hover { background: var(--accent-faint); }
+
+.install-modal-body {
+    padding: 16px 22px 18px;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
+.install-steps {
+    margin: 0 0 16px;
+    padding-left: 22px;
+    list-style: decimal;
+}
+.install-steps li {
+    margin-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+}
+.install-steps li strong {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.install-benefits {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+.install-benefit {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: 3px 0;
+    font-family: var(--font-ui);
+}

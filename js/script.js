@@ -1150,6 +1150,12 @@ function handleChooserAction(kind, action, ctx, anchorBtn) {
         const old = verseEl.querySelector('.verse-actions');
         if (old) old.remove();
         verseEl.appendChild(buildVerseActions(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName));
+        // v10.4: Sync verse-has-saved class on the verse element itself
+        // so the Save tag remains visible when collapsed
+        var hasAny = isHighlighted(ctx.suraId, ctx.verseIdx) ||
+                     isBookmarked(ctx.suraId, ctx.verseIdx) ||
+                     !!getNotes()[verseKey(ctx.suraId, ctx.verseIdx)];
+        verseEl.classList.toggle('verse-has-saved', hasAny);
         // v10.3: Audio button was lost in the rebuild — re-attach
         if (typeof attachAudioButtons === 'function') {
             setTimeout(attachAudioButtons, 10);
@@ -1201,19 +1207,7 @@ function buildSuraDOM(sura) {
     titleText.textContent = (parseInt(sura.id) + 1) + ' · ' + sura.name;
     sticky.appendChild(titleText);
 
-    // v10.3: Install pill — appears when PWA is installable + not yet installed
-    const installPill = document.createElement('button');
-    installPill.className = 'sura-install-pill';
-    installPill.title = 'Install app';
-    installPill.innerHTML = '📲';
-    installPill.style.display = 'none'; // Hidden by default — toggled by updateInstallPill()
-    installPill.addEventListener('click', function(e) {
-        e.stopPropagation();
-        if (typeof triggerPWAInstall === 'function') {
-            triggerPWAInstall();
-        }
-    });
-    sticky.appendChild(installPill);
+    // v10.4: Install pill removed from sticky title — replaced by header banner.
 
     // Focus pill (right) — only if focus mode feature is on
     const focusPill = document.createElement('button');
@@ -1262,7 +1256,7 @@ function buildSuraDOM(sura) {
         p.classList.add('verse');
         if (isArabic) p.classList.add('right-align');
         if (isHighlighted(sura.id, verseIdx)) p.classList.add('verse-highlighted');
-        // v10.3: Mark verse as "has-saved" if any save action is active
+        // v10.4: Mark verse so its Save tag stays visible when collapsed
         if (isHighlighted(sura.id, verseIdx) || isBookmarked(sura.id, verseIdx) || getNotes()[verseKey(sura.id, verseIdx)]) {
             p.classList.add('verse-has-saved');
         }

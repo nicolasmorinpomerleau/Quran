@@ -20,8 +20,15 @@
 
     <header>
         <div id="header-center">
-            <!-- v10.3: Bismillah logo + meditation verse removed from header.
-                 Bismillah is rendered per-surah; meditation verse moved to Settings. -->
+            <!-- v10.4: Prominent install banner — visible at the top so users notice it -->
+            <button id="headerInstallBtn" class="header-install-btn" style="display:none;" type="button">
+                <span class="hib-icon">📲</span>
+                <span class="hib-text">
+                    <span class="hib-line1">Install app</span>
+                    <span class="hib-line2">Adds to home screen · works offline</span>
+                </span>
+                <span class="hib-close" id="headerInstallClose" title="Dismiss">✕</span>
+            </button>
         </div>
         <div id="themeSwitcher">
             <button class="theme-btn active" data-theme="manuscript">
@@ -275,7 +282,7 @@
         </div>
     </div>
 
-    <footer>Quran Display v10.3 — May you read with a mindful heart</footer>
+    <footer>Quran Display v10.4 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

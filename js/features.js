@@ -887,31 +887,129 @@ function buildKhatmHeatmap() {
     if (!isFeatureOn('khatmTracker')) return null;
     var k = getKhatmData();
     var wrap = document.createElement('div');
-    wrap.className = 'khatm-heatmap';
+    wrap.className = 'khatm-heatmap khatm-calendar';
+
     var title = document.createElement('div');
     title.className = 'khatm-title';
-    title.innerHTML = '<span>Reading activity (last 90 days)</span><span class="khatm-completions">' + k.completions.length + ' khatm</span>';
+    title.innerHTML = '<span>Reading activity</span><span class="khatm-completions">' + k.completions.length + ' khatm</span>';
     wrap.appendChild(title);
-    var grid = document.createElement('div');
-    grid.className = 'khatm-grid';
+
+    // Build last 3 months as calendar grids
+    var monthsWrap = document.createElement('div');
+    monthsWrap.className = 'khatm-months';
     var today = new Date();
-    for (var i = 89; i >= 0; i--) {
-        var d = new Date(today);
-        d.setDate(d.getDate() - i);
-        var key = d.toISOString().slice(0, 10);
-        var count = k.daily[key] || 0;
-        var cell = document.createElement('div');
-        cell.className = 'khatm-cell';
-        cell.title = key + (count ? ' · ' + count + ' surahs read' : ' · no activity');
-        cell.setAttribute('data-level', count === 0 ? '0' : count < 3 ? '1' : count < 6 ? '2' : count < 10 ? '3' : '4');
-        grid.appendChild(cell);
+    var todayKey = today.toISOString().slice(0, 10);
+
+    // Show last 3 months (current + 2 prior)
+    var monthsToShow = [];
+    for (var m = 2; m >= 0; m--) {
+        var d = new Date(today.getFullYear(), today.getMonth() - m, 1);
+        monthsToShow.push(d);
     }
-    wrap.appendChild(grid);
+
+    var MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    var DAY_LABELS = ['M','T','W','T','F','S','S'];
+
+    monthsToShow.forEach(function(monthStart) {
+        var monthBox = document.createElement('div');
+        monthBox.className = 'khatm-month';
+        var year = monthStart.getFullYear();
+        var month = monthStart.getMonth();
+        var label = document.createElement('div');
+        label.className = 'khatm-month-label';
+        label.textContent = MONTH_NAMES[month] + ' ' + year;
+        monthBox.appendChild(label);
+
+        // Day-of-week header
+        var dowRow = document.createElement('div');
+        dowRow.className = 'khatm-dow';
+        DAY_LABELS.forEach(function(l) {
+            var c = document.createElement('span'); c.textContent = l; dowRow.appendChild(c);
+        });
+        monthBox.appendChild(dowRow);
+
+        // Grid: pad leading days for week start (Monday)
+        var grid = document.createElement('div');
+        grid.className = 'khatm-grid';
+        var firstDay = new Date(year, month, 1);
+        var firstDow = (firstDay.getDay() + 6) % 7; // Mon=0..Sun=6
+        for (var i = 0; i < firstDow; i++) {
+            var pad = document.createElement('div');
+            pad.className = 'khatm-cell khatm-pad';
+            grid.appendChild(pad);
+        }
+        // Number of days in this month
+        var daysInMonth = new Date(year, month + 1, 0).getDate();
+        for (var day = 1; day <= daysInMonth; day++) {
+            var cell = document.createElement('div');
+            var dateObj = new Date(year, month, day);
+            var key = dateObj.toISOString().slice(0, 10);
+            var count = k.daily[key] || 0;
+            cell.className = 'khatm-cell';
+            cell.setAttribute('data-level', count === 0 ? '0' : count < 3 ? '1' : count < 6 ? '2' : count < 10 ? '3' : '4');
+            cell.setAttribute('data-date', key);
+            cell.setAttribute('data-count', count);
+            cell.textContent = day;
+            if (key === todayKey) cell.classList.add('khatm-today');
+            if (dateObj > today) cell.classList.add('khatm-future');
+            cell.addEventListener('click', function(e) {
+                e.stopPropagation();
+                showKhatmCellDetail(this);
+            });
+            grid.appendChild(cell);
+        }
+        monthBox.appendChild(grid);
+        monthsWrap.appendChild(monthBox);
+    });
+    wrap.appendChild(monthsWrap);
+
+    // Detail banner — appears when a cell is tapped
+    var detail = document.createElement('div');
+    detail.className = 'khatm-detail';
+    detail.id = 'khatmDetailBanner';
+    detail.innerHTML = '<span class="khatm-detail-icon">📅</span><span class="khatm-detail-text">Tap any day to see details</span>';
+    wrap.appendChild(detail);
+
+    // Legend with contrasting boxes
     var legend = document.createElement('div');
     legend.className = 'khatm-legend';
-    legend.innerHTML = 'Less <span class="kl" data-level="0"></span><span class="kl" data-level="1"></span><span class="kl" data-level="2"></span><span class="kl" data-level="3"></span><span class="kl" data-level="4"></span> More';
+    legend.innerHTML =
+        '<span class="khatm-legend-label">Less</span>' +
+        '<span class="kl" data-level="0"></span>' +
+        '<span class="kl" data-level="1"></span>' +
+        '<span class="kl" data-level="2"></span>' +
+        '<span class="kl" data-level="3"></span>' +
+        '<span class="kl" data-level="4"></span>' +
+        '<span class="khatm-legend-label">More</span>';
     wrap.appendChild(legend);
+
     return wrap;
+}
+
+// v10.4: Show the date + count for a tapped cell
+function showKhatmCellDetail(cell) {
+    var banner = document.getElementById('khatmDetailBanner');
+    if (!banner) return;
+    var date = cell.getAttribute('data-date');
+    var count = parseInt(cell.getAttribute('data-count')) || 0;
+    var d = new Date(date + 'T00:00:00');
+    var formatted = d.toLocaleDateString(undefined, {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+    });
+    var msg;
+    if (cell.classList.contains('khatm-future')) {
+        msg = formatted + ' · upcoming';
+    } else if (count === 0) {
+        msg = formatted + ' · no reading';
+    } else {
+        msg = formatted + ' · ' + count + ' surah' + (count === 1 ? '' : 's') + ' opened';
+    }
+    banner.innerHTML = '<span class="khatm-detail-icon">📅</span><span class="khatm-detail-text">' + msg + '</span>';
+    // Highlight selected cell
+    document.querySelectorAll('.khatm-cell.khatm-selected').forEach(function(c) {
+        c.classList.remove('khatm-selected');
+    });
+    cell.classList.add('khatm-selected');
 }
 
 // ── v10: Reading streak — counts consecutive days with at least 1 read ──
@@ -1314,6 +1412,10 @@ function initFeatures() {
     loadArabicFontChoice();
     applyAutoTheme();
     applyBrowserLangDefault();
+    // v10.4: Show install banner immediately on iOS (which doesn't fire beforeinstallprompt)
+    setTimeout(function() {
+        if (typeof updateInstallPill === 'function') updateInstallPill();
+    }, 200);
 
     // Wait for quranData to be loaded (async), then run features that need it
     var tries = 0;
@@ -1985,23 +2087,45 @@ function startPlan(planType, customDays) {
     };
 }());
 
-// ── v10.3: Update visibility of install pill in sticky title ──
+// ── v10.4: Update visibility of install button — now lives in the header banner ──
 window.updateInstallPill = function() {
-    var pills = document.querySelectorAll('.sura-install-pill');
-    if (!pills.length) return;
+    var btn = document.getElementById('headerInstallBtn');
+    if (!btn) return;
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
     var dismissed = false;
-    try { dismissed = sessionStorage.getItem('installPillDismissed') === '1'; } catch(e) {}
+    try { dismissed = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
     var shouldShow = !isStandalone && !dismissed && (window._pwaInstallable === true);
-    // On iOS, show even without beforeinstallprompt (since iOS doesn't fire it)
+    // On iOS, show even without beforeinstallprompt (iOS doesn't fire it but the app IS installable)
     var ua = navigator.userAgent.toLowerCase();
     var isIOS = /iphone|ipad|ipod/.test(ua);
     if (isIOS && !isStandalone && !dismissed) shouldShow = true;
-    pills.forEach(function(p) {
-        p.style.display = shouldShow ? '' : 'none';
-    });
+    btn.style.display = shouldShow ? '' : 'none';
 };
+
+// Wire header install button + close button on DOM-ready
+(function wireHeaderInstall() {
+    function attach() {
+        var btn = document.getElementById('headerInstallBtn');
+        var close = document.getElementById('headerInstallClose');
+        if (!btn || btn._wired) return;
+        btn._wired = true;
+        btn.addEventListener('click', function(e) {
+            if (e.target.closest('#headerInstallClose')) return; // close handled below
+            if (typeof triggerPWAInstall === 'function') triggerPWAInstall();
+        });
+        if (close) close.addEventListener('click', function(e) {
+            e.stopPropagation();
+            try { localStorage.setItem('installBannerDismissed', '1'); } catch(err) {}
+            btn.style.display = 'none';
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+    } else {
+        attach();
+    }
+}());
 
 // ── Install card in settings ──
 function appendInstallUI(body) {
@@ -2277,17 +2401,13 @@ function onAudioEnded() {
     var prefs = getAudioPrefs();
     _audioState.playing = false;
 
-    // Handle repeat-verse
+    // v10.4: Repeat verse loops infinitely until mode changes or user stops
     if (prefs.repeat === 'verse') {
-        _audioState.currentRepeat = (_audioState.currentRepeat || 0) + 1;
-        if (_audioState.currentRepeat < prefs.repeatCount) {
-            var a = getAudioEl();
-            a.currentTime = 0;
-            var p = a.play();
-            if (p && p.catch) p.catch(function(){});
-            return;
-        }
-        _audioState.currentRepeat = 0;
+        var a = getAudioEl();
+        a.currentTime = 0;
+        var p = a.play();
+        if (p && p.catch) p.catch(function(){});
+        return;
     }
 
     // Repeat-surah: restart from verse 0 when reached end of surah
@@ -2781,22 +2901,48 @@ function loadTafsirContent(tafsirId, verseKey) {
     fetchTafsir(tafsirId, verseKey).then(function(text) {
         var bodyEl = document.getElementById('tafsirBody');
         if (!bodyEl) return;
-        // The API returns HTML — render it but strip any scripts
         var safe = sanitizeTafsirHtml(text);
         bodyEl.innerHTML = safe;
     }).catch(function(err) {
         console.warn('[Tafsir] Failed:', err);
         var bodyEl = document.getElementById('tafsirBody');
         if (!bodyEl) return;
+        // v10.4: Offer quick-pick of OTHER tafsirs (not the failed one)
+        var alternatives = TAFSIRS.filter(function(t){ return t.id !== tafsirId; });
+        var altHtml = '<div class="tafsir-error-alts">' +
+                        '<div class="tafsir-error-alts-label">Try a different tafsir:</div>' +
+                        alternatives.map(function(t) {
+                            return '<button class="tafsir-alt-btn" data-tid="' + t.id + '">' +
+                                       t.name + ' <span class="tafsir-alt-lang">' + t.lang + '</span>' +
+                                   '</button>';
+                        }).join('') +
+                      '</div>';
         bodyEl.innerHTML =
             '<div class="tafsir-error">' +
                 '<div class="tafsir-error-icon">⚠️</div>' +
-                '<div class="tafsir-error-msg">Couldn\'t load tafsir.</div>' +
-                '<div class="tafsir-error-detail">Check your internet connection, or try a different tafsir.</div>' +
+                '<div class="tafsir-error-msg">Couldn\'t load this tafsir for this verse.</div>' +
+                '<div class="tafsir-error-detail">It may not have content for this verse, or your network may be offline.</div>' +
                 '<button class="tafsir-retry-btn">Retry</button>' +
+                altHtml +
             '</div>';
         bodyEl.querySelector('.tafsir-retry-btn').addEventListener('click', function() {
             loadTafsirContent(tafsirId, verseKey);
+        });
+        // Wire alternative tafsir picker buttons
+        bodyEl.querySelectorAll('.tafsir-alt-btn').forEach(function(b) {
+            b.addEventListener('click', function() {
+                var newId = this.getAttribute('data-tid');
+                // Update the picker select to match
+                var picker = document.getElementById('tafsirPicker');
+                if (picker) picker.value = newId;
+                setTafsirChoice(newId);
+                var t2 = TAFSIRS.find(function(x){ return x.id === newId; });
+                var src = document.getElementById('tafsirSourceLabel');
+                if (src && t2) src.textContent = t2.name + ' · ' + t2.lang;
+                var bodyEl2 = document.getElementById('tafsirBody');
+                if (bodyEl2 && t2) bodyEl2.dir = t2.rtl ? 'rtl' : 'ltr';
+                loadTafsirContent(newId, verseKey);
+            });
         });
     });
 }

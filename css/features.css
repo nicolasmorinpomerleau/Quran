@@ -1970,3 +1970,363 @@ header {
     background: var(--accent);
 }
 .bottom-nav .bnav-btn { position: relative; }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.4 — Bug fixes + Frame A (hairline cards) + calendar
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Verse number circle: stays neutral always (no gold fill) ── */
+.verse-has-saved .verse-icon {
+    background: transparent !important;
+    color: var(--accent-dim) !important;
+    border-color: var(--accent-faint) !important;
+}
+
+/* ── Save button stays visible when verse has any save action ── */
+.verse-has-saved .verse-action-save {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+.verse-has-saved .verse-actions {
+    opacity: 1;
+    max-height: 80px;
+    margin-top: 10px;
+    pointer-events: auto;
+}
+.verse-has-saved .verse-action-share,
+.verse-has-saved .verse-action-tafsir,
+.verse-has-saved .verse-audio-btn {
+    opacity: 0.55;
+    transition: opacity 0.2s;
+}
+.verse-has-saved:hover .verse-action-share,
+.verse-has-saved:hover .verse-action-tafsir,
+.verse-has-saved:hover .verse-audio-btn,
+.verse-has-saved.verse-actions-open .verse-action-share,
+.verse-has-saved.verse-actions-open .verse-action-tafsir,
+.verse-has-saved.verse-actions-open .verse-audio-btn {
+    opacity: 1;
+}
+
+/* ── Frame A: Hairline card around each verse ── */
+.verse {
+    background: rgba(184, 152, 90, 0.025);
+    border: 0.5px solid rgba(184, 152, 90, 0.18);
+    border-radius: 10px;
+    padding: 14px 16px 12px !important;
+    margin-bottom: 10px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.verse:hover {
+    background: rgba(184, 152, 90, 0.045);
+    border-color: rgba(184, 152, 90, 0.28);
+}
+.verse.verse-has-saved {
+    background: rgba(184, 152, 90, 0.07);
+    border-color: rgba(184, 152, 90, 0.35);
+}
+.verse.verse-highlighted {
+    background: rgba(184, 152, 90, 0.10) !important;
+    border-color: rgba(184, 152, 90, 0.45) !important;
+}
+.verse:last-of-type::after { display: none; }
+.verse:last-of-type { border-bottom: 0.5px solid rgba(184, 152, 90, 0.18); }
+.verse.verse-has-saved:last-of-type { border-bottom-color: rgba(184, 152, 90, 0.35); }
+
+/* Scholar theme — slightly more visible cards on dark navy */
+[data-theme="scholar"] .verse {
+    background: rgba(208, 176, 112, 0.03);
+    border-color: rgba(208, 176, 112, 0.2);
+}
+[data-theme="scholar"] .verse:hover {
+    background: rgba(208, 176, 112, 0.05);
+    border-color: rgba(208, 176, 112, 0.3);
+}
+[data-theme="scholar"] .verse.verse-has-saved {
+    background: rgba(208, 176, 112, 0.08);
+    border-color: rgba(208, 176, 112, 0.4);
+}
+
+/* Minimal theme — softer cards on white */
+[data-theme="minimal"] .verse {
+    background: rgba(139, 110, 58, 0.02);
+    border-color: rgba(139, 110, 58, 0.15);
+}
+[data-theme="minimal"] .verse:hover {
+    background: rgba(139, 110, 58, 0.04);
+    border-color: rgba(139, 110, 58, 0.22);
+}
+[data-theme="minimal"] .verse.verse-has-saved {
+    background: rgba(139, 110, 58, 0.05);
+    border-color: rgba(139, 110, 58, 0.3);
+}
+
+/* ── Header install banner ── */
+.header-install-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+    cursor: pointer;
+    width: auto;
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    text-align: left;
+}
+.header-install-btn:hover {
+    background: var(--accent-faint);
+    border-color: var(--accent-dim);
+}
+.header-install-btn:active { transform: scale(0.98); }
+
+.hib-icon {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.hib-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.hib-line1 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    line-height: 1.2;
+}
+
+.hib-line2 {
+    font-size: 10px;
+    color: var(--text-primary);
+    opacity: 0.72;
+    line-height: 1.2;
+}
+
+.hib-close {
+    margin-left: 6px;
+    padding: 2px 6px;
+    color: var(--text-primary);
+    opacity: 0.55;
+    font-size: 12px;
+    border-radius: 99px;
+    transition: opacity 0.15s, background 0.15s;
+    flex-shrink: 0;
+}
+.hib-close:hover {
+    opacity: 1;
+    background: rgba(0,0,0,0.1);
+}
+
+@media (max-width: 600px) {
+    .header-install-btn {
+        padding: 6px 9px;
+        gap: 8px;
+    }
+    .hib-icon { font-size: 19px; }
+    .hib-line1 { font-size: 12px; }
+    .hib-line2 { font-size: 9px; }
+}
+
+/* ── Khatm calendar (replaces flat grid) ── */
+.khatm-calendar { padding: 4px 0 10px; }
+
+.khatm-months {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 10px 0;
+}
+
+.khatm-month {
+    padding: 8px 0 4px;
+}
+
+.khatm-month-label {
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-family: var(--font-ui);
+    margin-bottom: 6px;
+}
+
+.khatm-dow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-align: center;
+    font-family: var(--font-ui);
+    opacity: 0.7;
+    font-weight: 600;
+}
+
+.khatm-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: 0;
+}
+
+.khatm-cell {
+    aspect-ratio: 1;
+    background: var(--accent-trace);
+    border: 0.5px solid var(--accent-faint);
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.15s;
+    min-height: 24px;
+}
+
+.khatm-cell.khatm-pad {
+    background: transparent;
+    border: none;
+    cursor: default;
+}
+
+.khatm-cell.khatm-future {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.khatm-cell[data-level="0"] {
+    background: var(--accent-trace);
+    color: var(--text-secondary);
+}
+.khatm-cell[data-level="1"] {
+    background: var(--accent-faint);
+    color: var(--accent-dim);
+    font-weight: 600;
+}
+.khatm-cell[data-level="2"] {
+    background: var(--accent-dim);
+    color: var(--bg-content);
+    font-weight: 600;
+    border-color: var(--accent-dim);
+}
+.khatm-cell[data-level="3"] {
+    background: var(--accent);
+    opacity: 0.82;
+    color: var(--bg-content);
+    font-weight: 600;
+    border-color: var(--accent);
+}
+.khatm-cell[data-level="4"] {
+    background: var(--accent);
+    color: var(--bg-content);
+    font-weight: 700;
+    border-color: var(--accent);
+}
+
+.khatm-cell.khatm-today {
+    box-shadow: 0 0 0 1.5px var(--accent);
+    z-index: 1;
+}
+.khatm-cell.khatm-selected {
+    box-shadow: 0 0 0 2px var(--text-primary);
+    z-index: 2;
+    transform: scale(1.05);
+}
+.khatm-cell:not(.khatm-pad):not(.khatm-future):active {
+    transform: scale(0.94);
+}
+
+/* Detail banner (shows date + count on tap) */
+.khatm-detail {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 8px 10px;
+    background: var(--accent-trace);
+    border: 0.5px solid var(--accent-faint);
+    border-radius: 7px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    color: var(--text-primary);
+    min-height: 32px;
+}
+.khatm-detail-icon { font-size: 13px; flex-shrink: 0; }
+.khatm-detail-text { line-height: 1.4; flex: 1; }
+
+/* Legend with contrasting boxes that are visible in all themes */
+.khatm-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    font-size: 10px;
+    color: var(--text-primary);
+    opacity: 0.85;
+    margin-top: 10px;
+    font-family: var(--font-ui);
+}
+.khatm-legend-label { font-size: 10px; }
+.khatm-legend .kl {
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    display: inline-block;
+    border: 0.5px solid var(--accent-faint);
+}
+.khatm-legend .kl[data-level="0"] { background: var(--accent-trace); }
+.khatm-legend .kl[data-level="1"] { background: var(--accent-faint); }
+.khatm-legend .kl[data-level="2"] { background: var(--accent-dim); border-color: var(--accent-dim); }
+.khatm-legend .kl[data-level="3"] { background: var(--accent); opacity: 0.82; border-color: var(--accent); }
+.khatm-legend .kl[data-level="4"] { background: var(--accent); border-color: var(--accent); }
+
+/* ── Tafsir error alternatives (quick-pick) ── */
+.tafsir-error-alts {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 0.5px solid var(--border);
+}
+.tafsir-error-alts-label {
+    font-size: 12px;
+    color: var(--text-primary);
+    opacity: 0.75;
+    margin-bottom: 8px;
+    font-family: var(--font-ui);
+}
+.tafsir-alt-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--accent-trace);
+    border: 0.5px solid var(--accent-faint);
+    color: var(--text-primary);
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: background 0.15s, border-color 0.15s;
+}
+.tafsir-alt-btn:hover {
+    background: var(--accent-faint);
+    border-color: var(--accent-dim);
+}
+.tafsir-alt-lang {
+    font-size: 11px;
+    color: var(--accent);
+    opacity: 0.75;
+    margin-left: 6px;
+}

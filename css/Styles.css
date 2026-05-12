@@ -1062,8 +1062,8 @@ footer {
     /* Verse action buttons bigger tap targets */
     .verse-action-btn { padding: 5px 14px; font-size: 15px; }
 
-    /* Bottom nav labels slightly smaller */
-    .bnav-lbl { font-size: 9px; }
+    /* v10.4: Bottom nav labels readable at 10px on mobile */
+    .bnav-lbl { font-size: 10px; }
     .bnav-ico { font-size: 18px; }
 
     /* font sliders full width */
@@ -1089,7 +1089,7 @@ footer {
     #suraTitle { font-size: 0.95rem; }
     .bnav-btn { padding: 6px 2px 8px; }
     .bnav-ico { font-size: 16px; }
-    .bnav-lbl { font-size: 8px; }
+    .bnav-lbl { font-size: 10px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -2096,7 +2096,7 @@ input[type="range"] {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.6);
-    z-index: 600;
+    z-index: 1100;
     display: none;
     align-items: center;
     justify-content: center;

@@ -1699,3 +1699,274 @@ body.focus-mode::after {
     .tafsir-modal-verse-preview { padding: 12px 14px; font-size: 1.25rem; max-height: 25vh; }
     .tafsir-modal-body { padding: 14px 16px; font-size: 13px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.3 — MODERN REVERENT REDESIGN
+   Muted scholarly gold · on-tap actions · refined editorial feel
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Color refinement: muted gold replaces the bright gold app-wide */
+:root {
+    --accent-warm: #c89a4a; /* warm streak amber */
+}
+[data-theme="manuscript"] {
+    --accent:       #b8985a;
+    --accent-dim:   #98794a;
+    --accent-faint: #b8985a40;
+    --accent-trace: #b8985a18;
+}
+[data-theme="scholar"] {
+    --accent:       #d0b070;
+    --accent-dim:   #b09060;
+    --accent-faint: #d0b07040;
+    --accent-trace: #d0b07018;
+}
+[data-theme="minimal"] {
+    --accent:       #8b6e3a;
+    --accent-dim:   #6e5630;
+    --accent-faint: #8b6e3a30;
+    --accent-trace: #8b6e3a12;
+}
+
+/* Refined header — Bismillah/intro moved away, just theme switcher + spacing */
+header {
+    min-height: 60px;
+    padding: 8px 16px !important;
+}
+#header-center {
+    flex: 0;
+    min-height: 0 !important;
+}
+#header-center:empty {
+    display: none;
+}
+
+/* ── Bismillah panel (top of each surah, except 1 and 9) ── */
+.bismillah-panel {
+    margin: 18px auto 26px;
+    max-width: 560px;
+    padding: 0 20px;
+    text-align: center;
+    position: relative;
+}
+.bismillah-rule {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--accent-faint) 20%, var(--accent) 50%, var(--accent-faint) 80%, transparent 100%);
+    opacity: 0.7;
+}
+.bismillah-text {
+    font-family: var(--font-arabic);
+    font-size: 1.5rem;
+    color: var(--accent);
+    padding: 18px 12px;
+    letter-spacing: 0.5px;
+    font-weight: 400;
+    line-height: 1.6;
+}
+@media (max-width: 600px) {
+    .bismillah-panel { margin: 14px 0 22px; padding: 0 12px; }
+    .bismillah-text { font-size: 1.25rem; padding: 14px 6px; }
+}
+
+/* ── Streak pill: warm amber tint ── */
+.sura-streak-pill {
+    background: rgba(200, 154, 74, 0.12) !important;
+    border-color: rgba(200, 154, 74, 0.42) !important;
+    color: var(--accent-warm) !important;
+}
+.sura-streak-pill:hover {
+    background: rgba(200, 154, 74, 0.22) !important;
+}
+
+/* ── Install pill in sticky title ── */
+.sura-install-pill {
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: background 0.15s, transform 0.1s;
+    width: auto;
+    height: auto;
+    font-family: inherit;
+    margin-right: 4px;
+}
+.sura-install-pill:hover {
+    background: var(--accent-faint);
+    transform: scale(1.05);
+}
+.sura-install-pill:active { transform: scale(0.92); }
+
+/* ── Verse actions: hidden by default, appear on verse tap/focus ── */
+.verse-actions {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: opacity 0.18s ease, max-height 0.22s ease, margin-top 0.18s ease;
+    margin-top: 0;
+    pointer-events: none;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.verse.verse-actions-open .verse-actions,
+.verse:hover .verse-actions {
+    opacity: 1;
+    max-height: 80px;
+    margin-top: 10px;
+    pointer-events: auto;
+}
+/* Always show on mobile when verse is tapped; hover won't work on touch */
+@media (hover: none) {
+    .verse:hover .verse-actions {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        pointer-events: none;
+    }
+    .verse.verse-actions-open .verse-actions {
+        opacity: 1;
+        max-height: 80px;
+        margin-top: 10px;
+        pointer-events: auto;
+    }
+}
+
+/* Verse number circle: filled when saved */
+.verse-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 0.5px solid var(--accent-faint);
+    background: transparent;
+    color: var(--accent-dim) !important;
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 11px !important;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.verse-has-saved .verse-icon {
+    background: var(--accent);
+    color: var(--bg-content) !important;
+    border-color: var(--accent);
+}
+.verse-icon .icon-number {
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+}
+
+/* Refined verse action pill — Tafsir uses same style as Save/Share */
+.verse-action-btn.verse-action-tafsir {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 99px;
+    color: var(--accent);
+    font-size: 13px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    width: auto;
+    transition: background 0.15s, border-color 0.15s;
+}
+.verse-action-btn.verse-action-tafsir:hover {
+    background: var(--accent-faint);
+    border-color: var(--accent-dim);
+}
+
+/* Refined translation: flush-left (no 30px indent), subtle prefix */
+.secondary-verse {
+    margin-top: 8px;
+    padding-left: 0 !important;
+    color: var(--text-secondary, var(--accent));
+    font-style: italic;
+    font-size: var(--trans-font-size, 0.95rem);
+    line-height: 1.7;
+    opacity: 0.95;
+}
+.secondary-verse::before {
+    content: "· ";
+    color: var(--accent-faint);
+    font-style: normal;
+    margin-right: 4px;
+}
+
+/* ── Settings meditation banner (Option B: spacious frontispiece) ── */
+.settings-meditation {
+    margin: 0 0 16px;
+    padding: 22px 24px 18px;
+    text-align: center;
+    border-top: 1px solid var(--accent-faint);
+    border-bottom: 1px solid var(--accent-faint);
+    background: var(--accent-trace);
+    position: relative;
+}
+.med-ornament {
+    color: var(--accent);
+    font-size: 13px;
+    opacity: 0.65;
+    margin-bottom: 12px;
+    letter-spacing: 8px;
+}
+.med-arabic {
+    font-family: var(--font-arabic);
+    font-size: 1.25rem;
+    color: var(--accent);
+    line-height: 1.85;
+    padding: 0 4px;
+    font-weight: 400;
+}
+.med-translation {
+    margin-top: 14px;
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    opacity: 0.82;
+    line-height: 1.55;
+    padding: 0 8px;
+}
+.med-citation {
+    margin-top: 12px;
+    font-family: var(--font-ui);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.75;
+}
+@media (max-width: 600px) {
+    .settings-meditation { padding: 18px 16px 14px; }
+    .med-arabic { font-size: 1.1rem; }
+    .med-translation { font-size: 0.85rem; }
+}
+/* In the desktop Features modal (which uses .features-modal-body), banner spans full width */
+.features-modal-body .settings-meditation {
+    margin: -4px 0 8px;
+    border-top: none;
+}
+
+/* Active bottom nav indicator dot */
+.bottom-nav .bnav-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+.bottom-nav .bnav-btn { position: relative; }

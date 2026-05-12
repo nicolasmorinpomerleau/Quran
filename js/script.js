@@ -1022,17 +1022,34 @@ function buildVerseActions(suraId, verseIdx, verseText, suraName) {
         openVerseChooser('save', saveBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
     });
 
-    // ── SHARE button (groups Copy, Share, Link) ──
-    const shareBtn = document.createElement('button');
-    shareBtn.className = 'verse-action-btn verse-action-share';
-    shareBtn.innerHTML = '<span class="va-icon">↗</span><span class="va-label">Share</span>';
-    shareBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        openVerseChooser('share', shareBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
-    });
-
     actions.appendChild(saveBtn);
-    actions.appendChild(shareBtn);
+
+    // ── SHARE button (groups Copy, Share, Link) — gated by copyShareVerse feature ──
+    if (typeof isFeatureOn !== 'function' || isFeatureOn('copyShareVerse')) {
+        const shareBtn = document.createElement('button');
+        shareBtn.className = 'verse-action-btn verse-action-share';
+        shareBtn.innerHTML = '<span class="va-icon">↗</span><span class="va-label">Share</span>';
+        shareBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openVerseChooser('share', shareBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
+        });
+        actions.appendChild(shareBtn);
+    }
+
+    // ── TAFSIR button (standalone, opens commentary modal directly) ──
+    if (typeof isFeatureOn !== 'function' || isFeatureOn('tafsir')) {
+        const tafsirBtn = document.createElement('button');
+        tafsirBtn.className = 'verse-action-btn verse-action-tafsir';
+        tafsirBtn.innerHTML = '<span class="va-icon">📚</span><span class="va-label">Tafsir</span>';
+        tafsirBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof openTafsirModal === 'function') {
+                openTafsirModal(suraId, verseIdx, verseText, suraName);
+            }
+        });
+        actions.appendChild(tafsirBtn);
+    }
+
     return actions;
 }
 
@@ -1054,6 +1071,10 @@ document.addEventListener('keydown', function(e) {
 });
 
 function openVerseChooser(kind, anchorBtn, ctx) {
+    // v10.3: Block share chooser entirely if copyShareVerse is disabled
+    if (kind === 'share' && typeof isFeatureOn === 'function' && !isFeatureOn('copyShareVerse')) {
+        return;
+    }
     closeVerseChooser();
     const chooser = document.createElement('div');
     chooser.className = 'verse-chooser';
@@ -1129,6 +1150,10 @@ function handleChooserAction(kind, action, ctx, anchorBtn) {
         const old = verseEl.querySelector('.verse-actions');
         if (old) old.remove();
         verseEl.appendChild(buildVerseActions(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName));
+        // v10.3: Audio button was lost in the rebuild — re-attach
+        if (typeof attachAudioButtons === 'function') {
+            setTimeout(attachAudioButtons, 10);
+        }
     } else if (kind === 'share') {
         if (typeof copyVerseToClipboard === 'function' && action === 'copy') {
             copyVerseToClipboard(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName);
@@ -1176,6 +1201,20 @@ function buildSuraDOM(sura) {
     titleText.textContent = (parseInt(sura.id) + 1) + ' · ' + sura.name;
     sticky.appendChild(titleText);
 
+    // v10.3: Install pill — appears when PWA is installable + not yet installed
+    const installPill = document.createElement('button');
+    installPill.className = 'sura-install-pill';
+    installPill.title = 'Install app';
+    installPill.innerHTML = '📲';
+    installPill.style.display = 'none'; // Hidden by default — toggled by updateInstallPill()
+    installPill.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (typeof triggerPWAInstall === 'function') {
+            triggerPWAInstall();
+        }
+    });
+    sticky.appendChild(installPill);
+
     // Focus pill (right) — only if focus mode feature is on
     const focusPill = document.createElement('button');
     focusPill.className = 'sura-focus-pill';
@@ -1194,15 +1233,39 @@ function buildSuraDOM(sura) {
 
     wrapper.appendChild(sticky);
 
+    // v10.3: Refresh install pill visibility after rendering
+    setTimeout(function() {
+        if (typeof updateInstallPill === 'function') updateInstallPill();
+    }, 50);
+
     const title = document.createElement('h2');
     title.id = 'suraTitle';
     title.textContent = (parseInt(sura.id) + 1) + ' — ' + sura.name;
     wrapper.appendChild(title);
+
+    // v10.3: Modern Reverent — Bismillah panel at the start of each surah
+    // (except Surah 9 At-Tawbah, which traditionally has no Bismillah,
+    //  and Surah 1 Al-Fatiha, whose first verse already IS the Bismillah)
+    var sNum = parseInt(sura.id, 10) + 1;
+    if (sNum !== 1 && sNum !== 9) {
+        var bismillahPanel = document.createElement('div');
+        bismillahPanel.className = 'bismillah-panel';
+        bismillahPanel.innerHTML =
+            '<div class="bismillah-rule bismillah-rule-top"></div>' +
+            '<div class="bismillah-text" dir="rtl">بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>' +
+            '<div class="bismillah-rule bismillah-rule-bottom"></div>';
+        wrapper.appendChild(bismillahPanel);
+    }
+
     sura.verses.forEach(function(verse, verseIdx) {
         const p = document.createElement('p');
         p.classList.add('verse');
         if (isArabic) p.classList.add('right-align');
         if (isHighlighted(sura.id, verseIdx)) p.classList.add('verse-highlighted');
+        // v10.3: Mark verse as "has-saved" if any save action is active
+        if (isHighlighted(sura.id, verseIdx) || isBookmarked(sura.id, verseIdx) || getNotes()[verseKey(sura.id, verseIdx)]) {
+            p.classList.add('verse-has-saved');
+        }
         p.innerHTML = highlightText(verse.text, '');
         const icon = document.createElement('span');
         icon.classList.add('verse-icon');
@@ -2285,6 +2348,26 @@ function renderHighlightsInBody(body, hlArr) {
 // ── Settings sheet ────────────────────────────────────────────────
 function buildSheetSettings(body, title) {
     title.textContent = '⚙️ Settings';
+
+    // v10.3: Meditation banner — frontispiece quote from Surah Muhammad (47:24)
+    var med = document.createElement('div');
+    med.className = 'settings-meditation';
+    // Translation in current primary language (default: French)
+    var medTranslations = {
+        french:  "Ne méditent-ils donc pas sur le Coran ? Ou y a-t-il des cadenas sur leurs cœurs ?",
+        english: "Then do they not reflect upon the Quran, or are there locks upon their hearts?",
+        spanish: "¿Es que no meditan en el Corán? ¿O es que hay candados en sus corazones?",
+        arabic:  "أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا"
+    };
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'french';
+    var translation = medTranslations[lang] || medTranslations.french;
+    var showTranslation = (lang !== 'arabic'); // skip duplicate when primary IS Arabic
+    med.innerHTML =
+        '<div class="med-ornament">✦</div>' +
+        '<div class="med-arabic" dir="rtl">أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا</div>' +
+        (showTranslation ? '<div class="med-translation">' + translation + '</div>' : '') +
+        '<div class="med-citation">— Quran 47:24</div>';
+    body.appendChild(med);
 
     // Theme section
     var themeSection = document.createElement('div');

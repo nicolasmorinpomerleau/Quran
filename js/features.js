@@ -488,13 +488,17 @@ function buildShareableText(suraId, verseIdx, verseText, suraName) {
         '',
         '— ' + suraName + ' (' + sNum + ':' + vNum + ')'
     ];
-    // Add additional translations if any
-    var verses = document.querySelectorAll('#' + suraId + ' .verse');
-    if (verses[verseIdx]) {
-        var secondaries = verses[verseIdx].querySelectorAll('.secondary-verse');
-        if (secondaries.length > 0) {
-            lines.push('');
-            secondaries.forEach(function(s) { lines.push(s.textContent); });
+    // v10.3: Use getElementById (numeric IDs are illegal in CSS selectors).
+    // This fixes the bug where translations were never included in Copy.
+    var suraEl = document.getElementById(String(suraId));
+    if (suraEl) {
+        var verses = suraEl.querySelectorAll('.verse');
+        if (verses[verseIdx]) {
+            var secondaries = verses[verseIdx].querySelectorAll('.secondary-verse');
+            if (secondaries.length > 0) {
+                lines.push('');
+                secondaries.forEach(function(s) { lines.push(s.textContent); });
+            }
         }
     }
     return lines.join('\n');
@@ -1222,14 +1226,83 @@ function appendKhatmUI(body) {
     lbl.textContent = 'Khatm tracker';
     sec.appendChild(lbl);
 
-    var heatmap = buildKhatmHeatmap();
-    if (heatmap) sec.appendChild(heatmap);
+    // v10.3: Explanatory hint so users understand what this is
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:12px;color:var(--text-primary);margin-bottom:10px;opacity:0.78;line-height:1.5;';
+    hint.innerHTML =
+        '<strong>Khatm</strong> (ختم) means completing a full reading of the Quran. ' +
+        'The heatmap shows your daily reading activity — darker squares mean more surahs opened that day. ' +
+        'When you finish the entire Quran, tap "Mark Khatm" to log a completion.';
+    sec.appendChild(hint);
 
+    // Heatmap — or empty-state hint if no activity yet
+    var k = getKhatmData();
+    var dailyKeys = Object.keys(k.daily || {});
+    if (dailyKeys.length === 0) {
+        var emptyState = document.createElement('div');
+        emptyState.style.cssText = 'padding:18px 14px;text-align:center;background:var(--accent-trace);border-radius:8px;font-size:12px;color:var(--text-primary);opacity:0.7;font-style:italic;margin-bottom:10px;';
+        emptyState.textContent = '📖 Read your first surah to see activity here.';
+        sec.appendChild(emptyState);
+    } else {
+        var heatmap = buildKhatmHeatmap();
+        if (heatmap) sec.appendChild(heatmap);
+    }
+
+    // Streak summary line
+    if (typeof getCurrentReadingStreak === 'function') {
+        var streak = getCurrentReadingStreak();
+        if (streak > 0) {
+            var streakLine = document.createElement('div');
+            streakLine.style.cssText = 'font-size:12px;color:var(--accent);margin:8px 0 12px;text-align:center;font-weight:600;';
+            streakLine.innerHTML = '🔥 Current streak: ' + streak + ' day' + (streak === 1 ? '' : 's');
+            sec.appendChild(streakLine);
+        }
+    }
+
+    // Mark Khatm button
     var btn = document.createElement('button');
     btn.className = 'mob-settings-btn';
     btn.textContent = '🎉 Mark Khatm as completed';
-    btn.addEventListener('click', recordKhatmCompletion);
+    btn.addEventListener('click', function() {
+        if (typeof showConfirm === 'function') {
+            showConfirm('Mark Khatm complete?', 'Log that you have finished a full reading of the Quran. This will be recorded with today\'s date.', function() {
+                recordKhatmCompletion();
+                // Refresh the settings UI to show new completion count
+                if (document.getElementById('featuresModal') && document.getElementById('featuresModal').classList.contains('show')) {
+                    if (typeof openFeaturesModal === 'function') openFeaturesModal();
+                }
+            });
+        } else {
+            recordKhatmCompletion();
+        }
+    });
     sec.appendChild(btn);
+
+    // v10.3: Reset button — danger-styled
+    var resetBtn = document.createElement('button');
+    resetBtn.className = 'mob-settings-btn';
+    resetBtn.style.cssText = 'margin-top:8px;background:#d9707018;border-color:#d9707040;color:#e08585;';
+    resetBtn.textContent = '🗑 Reset tracker';
+    resetBtn.addEventListener('click', function() {
+        var data = getKhatmData();
+        var dCount = Object.keys(data.daily || {}).length;
+        var cCount = (data.completions || []).length;
+        var msg = 'This will erase your reading activity (' + dCount + ' day' + (dCount === 1 ? '' : 's') +
+                  ') and Khatm completions (' + cCount + '). This cannot be undone.';
+        if (typeof showConfirm === 'function') {
+            showConfirm('Reset Khatm tracker?', msg, function() {
+                try { localStorage.removeItem('quranKhatm'); } catch(e) {}
+                showToast('Tracker reset');
+                if (document.getElementById('featuresModal') && document.getElementById('featuresModal').classList.contains('show')) {
+                    if (typeof openFeaturesModal === 'function') openFeaturesModal();
+                }
+            });
+        } else if (confirm(msg)) {
+            try { localStorage.removeItem('quranKhatm'); } catch(e) {}
+            showToast('Tracker reset');
+        }
+    });
+    sec.appendChild(resetBtn);
 
     body.appendChild(sec);
 }
@@ -1305,6 +1378,24 @@ window.openFeaturesModal = function() {
     var body    = document.getElementById('featuresModalBody');
     if (!overlay || !body) return;
     body.innerHTML = '';
+    // v10.3: Meditation banner at the top (matches mobile sheet)
+    var med = document.createElement('div');
+    med.className = 'settings-meditation';
+    var medTranslations = {
+        french:  "Ne méditent-ils donc pas sur le Coran ? Ou y a-t-il des cadenas sur leurs cœurs ?",
+        english: "Then do they not reflect upon the Quran, or are there locks upon their hearts?",
+        spanish: "¿Es que no meditan en el Corán? ¿O es que hay candados en sus corazones?",
+        arabic:  "أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا"
+    };
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'french';
+    var translation = medTranslations[lang] || medTranslations.french;
+    var showTranslation = (lang !== 'arabic');
+    med.innerHTML =
+        '<div class="med-ornament">✦</div>' +
+        '<div class="med-arabic" dir="rtl">أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا</div>' +
+        (showTranslation ? '<div class="med-translation">' + translation + '</div>' : '') +
+        '<div class="med-citation">— Quran 47:24</div>';
+    body.appendChild(med);
     // Reuse the same UI builders the mobile sheet uses
     if (typeof appendFeaturesUI      === 'function') appendFeaturesUI(body);
     if (typeof appendFocusModeButton === 'function') appendFocusModeButton(body);
@@ -1856,19 +1947,29 @@ function startPlan(planType, customDays) {
         deferredPrompt = e;
         // Mark as available — install button in features modal will pick this up
         window._pwaInstallable = true;
+        // v10.3: Update the pill in sticky title
+        if (typeof updateInstallPill === 'function') updateInstallPill();
     });
 
     window.addEventListener('appinstalled', function() {
         if (typeof showToast === 'function') showToast('🎉 App installed');
         window._pwaInstallable = false;
         deferredPrompt = null;
+        if (typeof updateInstallPill === 'function') updateInstallPill();
     });
 
     // Expose install trigger
     window.triggerPWAInstall = function() {
         if (!deferredPrompt) {
-            if (typeof showToast === 'function') {
-                showToast('💡 Use your browser\'s "Add to Home Screen" option');
+            // iOS or unsupported browser — show guidance
+            var ua = navigator.userAgent.toLowerCase();
+            var isIOS = /iphone|ipad|ipod/.test(ua);
+            if (isIOS) {
+                if (typeof showToast === 'function') {
+                    showToast('Tap Share → Add to Home Screen');
+                }
+            } else if (typeof showToast === 'function') {
+                showToast('Use your browser\'s "Add to Home Screen"');
             }
             return;
         }
@@ -1879,9 +1980,28 @@ function startPlan(planType, customDays) {
             }
             deferredPrompt = null;
             window._pwaInstallable = false;
+            if (typeof updateInstallPill === 'function') updateInstallPill();
         });
     };
 }());
+
+// ── v10.3: Update visibility of install pill in sticky title ──
+window.updateInstallPill = function() {
+    var pills = document.querySelectorAll('.sura-install-pill');
+    if (!pills.length) return;
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       window.navigator.standalone === true;
+    var dismissed = false;
+    try { dismissed = sessionStorage.getItem('installPillDismissed') === '1'; } catch(e) {}
+    var shouldShow = !isStandalone && !dismissed && (window._pwaInstallable === true);
+    // On iOS, show even without beforeinstallprompt (since iOS doesn't fire it)
+    var ua = navigator.userAgent.toLowerCase();
+    var isIOS = /iphone|ipad|ipod/.test(ua);
+    if (isIOS && !isStandalone && !dismissed) shouldShow = true;
+    pills.forEach(function(p) {
+        p.style.display = shouldShow ? '' : 'none';
+    });
+};
 
 // ── Install card in settings ──
 function appendInstallUI(body) {
@@ -2466,20 +2586,40 @@ const TAFSIR_KEY    = 'quranTafsirChoice';
 const TAFSIR_CACHE  = 'quranTafsirCache';
 const TAFSIR_CACHE_MAX = 200;  // max entries before LRU eviction
 
-// Tafsir catalog — Quran.com API IDs
-// Source: https://api.quran.com/api/v4/resources/tafsirs
+// v10.3: Migrated from api.quran.com (deprecated, required auth) to api.alquran.cloud
+// (free, no auth, stable edition slugs). Old cached entries from v10.2 are stale
+// (wrong content per ID) so we clear them once on v10.3 first load.
+const TAFSIR_MIGRATION_KEY = 'quranTafsirMigratedToV103';
+(function migrateTafsirCache() {
+    try {
+        if (localStorage.getItem(TAFSIR_MIGRATION_KEY) === '1') return;
+        localStorage.removeItem(TAFSIR_CACHE);
+        // Reset choice if it's an old numeric ID (the new IDs are string slugs)
+        var choice = localStorage.getItem(TAFSIR_KEY);
+        if (choice && /^\d+$/.test(choice)) {
+            localStorage.removeItem(TAFSIR_KEY);
+        }
+        localStorage.setItem(TAFSIR_MIGRATION_KEY, '1');
+    } catch(e) {}
+}());
+
+// Tafsir catalog — alquran.cloud edition slugs (stable, no auth required)
 const TAFSIRS = [
-    { id: 169, name: 'Tafsir Ibn Kathir',   lang: 'English', rtl: false },
-    { id: 168, name: 'Maududi',             lang: 'English', rtl: false },
-    { id: 165, name: 'Maarif-ul-Quran',     lang: 'English', rtl: false },
-    { id: 14,  name: 'Tafsir al-Tabari',    lang: 'العربية', rtl: true  },
-    { id: 16,  name: 'Tafsir Ibn Kathir',   lang: 'العربية', rtl: true  },
-    { id: 90,  name: 'Tafsir al-Saadi',     lang: 'العربية', rtl: true  }
+    { id: 'ar.muyassar', name: 'Tafsir al-Muyassar',  lang: 'العربية', rtl: true,  desc: 'Modern, easy Arabic'   },
+    { id: 'ar.jalalayn', name: 'Tafsir al-Jalalayn',  lang: 'العربية', rtl: true,  desc: 'Classical, concise'    },
+    { id: 'ar.qurtubi',  name: 'Tafsir al-Qurtubi',   lang: 'العربية', rtl: true,  desc: 'Fiqh-focused, classical' },
+    { id: 'en.jalalayn', name: 'Tafsir al-Jalalayn',  lang: 'English', rtl: false, desc: 'Classical, in English' },
+    { id: 'en.maududi',  name: 'Tafhim-ul-Quran',     lang: 'English', rtl: false, desc: 'Maududi · accessible'  }
 ];
 
 function getTafsirChoice() {
-    try { return parseInt(localStorage.getItem(TAFSIR_KEY)) || 169; }
-    catch(e) { return 169; }
+    try {
+        var saved = localStorage.getItem(TAFSIR_KEY);
+        if (!saved) return 'ar.muyassar';
+        // Validate that it's still in our catalog
+        if (TAFSIRS.find(function(t){ return t.id === saved; })) return saved;
+        return 'ar.muyassar';
+    } catch(e) { return 'ar.muyassar'; }
 }
 
 function setTafsirChoice(id) {
@@ -2519,8 +2659,9 @@ function stripHtml(html) {
 }
 
 function fetchTafsir(tafsirId, verseKey) {
-    // verseKey format: "2:255" — but our app uses 0-indexed sura
-    // so we ensure 1-indexed conversion at call site
+    // verseKey format: "S:V" (1-indexed)
+    // alquran.cloud endpoint: https://api.alquran.cloud/v1/ayah/{S:V}/{edition_slug}
+    // Response: { code: 200, status: "OK", data: { number, text, edition, ... } }
     var cacheKey = tafsirId + '|' + verseKey;
     var cache = getTafsirCache();
     if (cache[cacheKey]) {
@@ -2528,21 +2669,18 @@ function fetchTafsir(tafsirId, verseKey) {
         saveTafsirCache(cache);
         return Promise.resolve(cache[cacheKey].text);
     }
-    var url = 'https://api.quran.com/api/v4/quran/tafsirs/' + tafsirId + '?verse_key=' + encodeURIComponent(verseKey);
+    var url = 'https://api.alquran.cloud/v1/ayah/' + encodeURIComponent(verseKey) + '/' + encodeURIComponent(tafsirId);
     return fetch(url, { headers: { 'Accept': 'application/json' } })
         .then(function(resp) {
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
             return resp.json();
         })
         .then(function(data) {
-            // Response shape: { tafsirs: [{ text: '...' }] } OR { tafsir: {...} } depending on endpoint
-            var text = '';
-            if (data.tafsirs && data.tafsirs.length) {
-                text = data.tafsirs[0].text || '';
-            } else if (data.tafsir) {
-                text = data.tafsir.text || '';
+            if (!data || data.code !== 200 || !data.data) {
+                throw new Error('Tafsir not available for this verse');
             }
-            if (!text) throw new Error('No tafsir content');
+            var text = data.data.text || '';
+            if (!text) throw new Error('Empty tafsir response');
             cache[cacheKey] = { text: text, t: Date.now() };
             saveTafsirCache(cache);
             return text;
@@ -2605,7 +2743,7 @@ function openTafsirModal(suraId, verseIdx, verseText, suraName) {
 
     // Picker change
     document.getElementById('tafsirPicker').addEventListener('change', function() {
-        var newId = parseInt(this.value);
+        var newId = this.value;  // v10.3: string slug, not int
         setTafsirChoice(newId);
         var t2 = TAFSIRS.find(function(x){ return x.id === newId; });
         var src = document.getElementById('tafsirSourceLabel');
@@ -2722,7 +2860,7 @@ function appendTafsirUI(body) {
     });
     sel.value = getTafsirChoice();
     sel.addEventListener('change', function() {
-        setTafsirChoice(parseInt(this.value));
+        setTafsirChoice(this.value);
         showToast('Tafsir preference saved');
     });
     row.appendChild(l); row.appendChild(sel);
@@ -2742,41 +2880,8 @@ function appendTafsirUI(body) {
     body.appendChild(sec);
 }
 
-// ── Extend the Save chooser to include Tafsir option ──
-// Hook into openVerseChooser by wrapping it
-(function injectTafsirIntoChooser() {
-    function tryInject() {
-        if (typeof openVerseChooser === 'undefined') return false;
-        if (window._tafsirChooserInjected) return true;
-        window._tafsirChooserInjected = true;
-
-        var orig = openVerseChooser;
-        window.openVerseChooser = openVerseChooser = function(kind, anchorBtn, ctx) {
-            orig(kind, anchorBtn, ctx);
-            // After orig builds the chooser, add Tafsir item to 'save' chooser
-            if (kind !== 'save') return;
-            if (!isFeatureOn('tafsir')) return;
-            var chooser = document.querySelector('.verse-chooser');
-            if (!chooser) return;
-            // Build Tafsir item
-            var item = document.createElement('button');
-            item.className = 'verse-chooser-item';
-            item.innerHTML = '<span class="vci-icon">📚</span><span class="vci-label">Tafsir</span>';
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (typeof closeVerseChooser === 'function') closeVerseChooser();
-                openTafsirModal(ctx.suraId, ctx.verseIdx, ctx.verseText, ctx.suraName);
-            });
-            chooser.appendChild(item);
-        };
-        return true;
-    }
-    if (!tryInject()) {
-        var iv = setInterval(function() {
-            if (tryInject()) clearInterval(iv);
-        }, 200);
-    }
-}());
+// ── v10.3: Tafsir is now a standalone verse-action button (📚 Tafsir),
+// no longer injected into the Save chooser. See buildVerseActions in script.js.
 
 // ═══════════════════════════════════════════════════════════════════
 // Inject Audio + Tafsir UI into settings (mobile sheet + desktop modal)
@@ -2810,4 +2915,30 @@ function appendTafsirUI(body) {
             if (tryInject()) clearInterval(iv);
         }, 200);
     }
+}());
+
+// ═══════════════════════════════════════════════════════════════════
+// v10.3 — Verse tap-to-show actions (mobile-friendly hover replacement)
+// ═══════════════════════════════════════════════════════════════════
+(function verseTapToOpen() {
+    document.addEventListener('click', function(e) {
+        // Ignore clicks on buttons inside the verse — those have their own handlers
+        if (e.target.closest('.verse-action-btn')) return;
+        if (e.target.closest('.verse-chooser')) return;
+        var verse = e.target.closest('.verse');
+        if (!verse) {
+            // Click outside any verse — close all open ones
+            document.querySelectorAll('.verse.verse-actions-open').forEach(function(v) {
+                v.classList.remove('verse-actions-open');
+            });
+            return;
+        }
+        // Toggle this verse, close others
+        var isOpen = verse.classList.contains('verse-actions-open');
+        document.querySelectorAll('.verse.verse-actions-open').forEach(function(v) {
+            if (v !== verse) v.classList.remove('verse-actions-open');
+        });
+        if (!isOpen) verse.classList.add('verse-actions-open');
+        else verse.classList.remove('verse-actions-open');
+    });
 }());

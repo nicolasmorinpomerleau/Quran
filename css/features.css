@@ -2460,7 +2460,6 @@ header {
     padding: 3px 0;
     font-family: var(--font-ui);
 }
-<<<<<<< HEAD
 
 /* ════════════════════════════════════════════════════════════════════
    v10.7 — Eight new features
@@ -3044,5 +3043,3 @@ header {
     }
 }
 .print-only-block { display: none; }
-=======
->>>>>>> 9aa5794e198c85276049aaf81ce12bba1971155f

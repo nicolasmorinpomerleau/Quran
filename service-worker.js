@@ -2,7 +2,7 @@
 'use strict';
 
 // Bump this version string whenever you ship updates so the SW activates fresh.
-const CACHE_VERSION = 'v10.5.0';
+const CACHE_VERSION = 'v10.6.0';
 const SHELL_CACHE   = 'quran-shell-' + CACHE_VERSION;
 const DATA_CACHE    = 'quran-data-' + CACHE_VERSION;
 
@@ -19,7 +19,9 @@ const SHELL_FILES = [
     './img/Besmeleh4.png',
     './img/makkah-icon1.png',
     './img/madinah-icon.png',
-    './img/Quran.png',
+    './img/icon-64.png',
+    './img/icon-192.png',
+    './img/icon-512.png',
     './img/Banner2.jpg'
 ];
 

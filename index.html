@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Quran Display</title>
-    <link rel="icon" type="image/x-icon" href="img/Quran.png">
+    <link rel="icon" type="image/x-icon" href="img/icon-192.png">
     <link rel="stylesheet" href="css/Styles.css">
     <link rel="stylesheet" href="css/features.css">
     <!-- v10.1: PWA — installable & offline-capable -->
@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Quran">
-    <link rel="apple-touch-icon" href="img/Quran.png">
+    <link rel="apple-touch-icon" href="img/icon-192.png">
 </head>
 <body>
     <div class="burger-menu" id="burgerMenu">☰</div>
@@ -22,11 +22,13 @@
         <div id="header-center">
             <!-- v10.4: Prominent install banner — visible at the top so users notice it -->
             <button id="headerInstallBtn" class="header-install-btn" style="display:none;" type="button">
-                <span class="hib-icon">📲</span>
-                <span class="hib-text">
-                    <span class="hib-line1">Install app</span>
-                    <span class="hib-line2">Adds to home screen · works offline</span>
+                <span class="hib-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 3v11.59l-3.3-3.3a1 1 0 0 0-1.4 1.42l5 5a1 1 0 0 0 1.4 0l5-5a1 1 0 0 0-1.4-1.42L13 14.59V3a1 1 0 0 0-2 0z"/>
+                        <path d="M5 19a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2H5z"/>
+                    </svg>
                 </span>
+                <span class="hib-text">Install App</span>
                 <span class="hib-close" id="headerInstallClose" title="Dismiss">✕</span>
             </button>
         </div>
@@ -282,7 +284,7 @@
         </div>
     </div>
 
-    <footer>Quran Display v10.4 — May you read with a mindful heart</footer>
+    <footer>Quran Display v10.7 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

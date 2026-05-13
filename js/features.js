@@ -31,7 +31,16 @@ const DEFAULT_FEATURES = {
     notesExportImport: true,         // #7
     betterErrorStates: true,         // #16
     audioRecitation:   true,         // v10.2 — Phase 2b
-    tafsir:            true          // v10.2 — Phase 2b
+    tafsir:            true,         // v10.2 — Phase 2b
+    // v10.7 — eight new features
+    topicsIndex:           true,
+    dailyVerse:            true,
+    reflectionPrompts:     true,
+    hijriAwareness:        true,
+    verseComparison:       true,
+    pdfExport:             true,
+    readingTimeAnalytics:  true,
+    voiceSearch:           true
 };
 
 function getFeatures() {
@@ -1158,7 +1167,15 @@ function appendFeaturesUI(body) {
         notesExportImport:  ['💾 Backup / restore data',   'Adds export / import buttons in settings'],
         betterErrorStates:  ['⚠️ Friendly error messages', 'Replaces blank failures with helpful retry'],
         audioRecitation:    ['🔊 Audio recitation',         'Play verses with multiple reciters · needs internet'],
-        tafsir:             ['📚 Tafsir (commentary)',      'Tap a verse to read classical commentary · needs internet']
+        tafsir:             ['📚 Tafsir (commentary)',      'Tap a verse to read classical commentary · needs internet'],
+        topicsIndex:           ['💡 Topics index',           'Browse verses by theme — patience, mercy, gratitude…'],
+        dailyVerse:            ['🌅 Daily verse',            'A contemplative verse shown once per day on open'],
+        reflectionPrompts:     ['✍️ Reflection prompts',     'Optional reflection question after finishing a surah'],
+        hijriAwareness:        ['🌙 Hijri calendar',         'Marks special Islamic dates (Ramadan, Laylat al-Qadr…)'],
+        verseComparison:       ['🔀 Compare tafsirs',         'Adds "Compare all" button in the tafsir modal'],
+        pdfExport:             ['🖨 Print / PDF export',     'Print the current surah with your notes'],
+        readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in Khatm tracker'],
+        voiceSearch:           ['🎤 Voice search',           'Tap the mic to speak a search query']
     };
 
     Object.keys(FEATURE_LABELS).forEach(function(key) {
@@ -1206,6 +1223,34 @@ function appendFeaturesUI(body) {
             }
             if (key === 'tafsir' && !this.checked) {
                 if (typeof closeTafsirModal === 'function') closeTafsirModal();
+            }
+            // v10.7 reactive toggles
+            if (key === 'hijriAwareness') {
+                var existing = document.querySelector('.hijri-badge');
+                if (existing) existing.remove();
+                if (this.checked && typeof appendHijriBadge === 'function') {
+                    setTimeout(appendHijriBadge, 100);
+                }
+            }
+            if (key === 'voiceSearch') {
+                if (this.checked && typeof attachVoiceSearchButton === 'function') {
+                    ['search-input', 'mob-search-input'].forEach(function(id) {
+                        var el = document.getElementById(id);
+                        if (el) { delete el._voiceAttached; attachVoiceSearchButton(el); }
+                    });
+                } else {
+                    document.querySelectorAll('.voice-search-btn').forEach(function(b){ b.remove(); });
+                    ['search-input', 'mob-search-input'].forEach(function(id) {
+                        var el = document.getElementById(id);
+                        if (el) delete el._voiceAttached;
+                    });
+                }
+            }
+            if (key === 'topicsIndex' && !this.checked) {
+                if (typeof closeTopicsModal === 'function') closeTopicsModal();
+            }
+            if (key === 'verseComparison' && !this.checked) {
+                if (typeof closeTafsirCompare === 'function') closeTafsirCompare();
             }
             showToast(this.checked ? '✓ Enabled' : '✗ Disabled');
             hapticTap(10);
@@ -2062,32 +2107,97 @@ function startPlan(planType, customDays) {
 
     // Expose install trigger
     window.triggerPWAInstall = function() {
-        if (!deferredPrompt) {
-            // iOS or unsupported browser — show guidance
-            var ua = navigator.userAgent.toLowerCase();
-            var isIOS = /iphone|ipad|ipod/.test(ua);
-            if (isIOS) {
-                if (typeof showToast === 'function') {
-                    showToast('Tap Share → Add to Home Screen');
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(result) {
+                if (result.outcome === 'accepted') {
+                    if (typeof showToast === 'function') showToast('Installing…');
                 }
-            } else if (typeof showToast === 'function') {
-                showToast('Use your browser\'s "Add to Home Screen"');
-            }
+                deferredPrompt = null;
+                window._pwaInstallable = false;
+                if (typeof updateInstallPill === 'function') updateInstallPill();
+            });
             return;
         }
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function(result) {
-            if (result.outcome === 'accepted') {
-                if (typeof showToast === 'function') showToast('Installing…');
-            }
-            deferredPrompt = null;
-            window._pwaInstallable = false;
-            if (typeof updateInstallPill === 'function') updateInstallPill();
-        });
+        // v10.5: No native prompt available — show OS-specific instructions modal
+        showInstallInstructions();
     };
 }());
 
-// ── v10.4: Update visibility of install button — now lives in the header banner ──
+// v10.5: Step-by-step install instructions when native prompt isn't available
+function showInstallInstructions() {
+    var ua = navigator.userAgent.toLowerCase();
+    var isIOS = /iphone|ipad|ipod/.test(ua);
+    var isAndroid = /android/.test(ua);
+    var isSamsungInternet = /samsungbrowser/.test(ua);
+
+    var title = 'Install Quran Display';
+    var steps;
+    if (isIOS) {
+        steps = [
+            'Tap the <strong>Share</strong> button at the bottom of Safari (the square with the arrow)',
+            'Scroll down and tap <strong>Add to Home Screen</strong>',
+            'Tap <strong>Add</strong> in the top-right corner'
+        ];
+    } else if (isSamsungInternet) {
+        steps = [
+            'Tap the <strong>menu</strong> button (☰) at the bottom of Samsung Internet',
+            'Tap <strong>Add page to</strong>',
+            'Tap <strong>Home screen</strong>',
+            'Tap <strong>Add</strong>'
+        ];
+    } else if (isAndroid) {
+        steps = [
+            'Tap the <strong>menu</strong> button (⋮) in the top-right',
+            'Tap <strong>Install app</strong> or <strong>Add to Home screen</strong>',
+            'Tap <strong>Install</strong>'
+        ];
+    } else {
+        steps = [
+            'Look for the <strong>install icon</strong> (⊕) in the address bar',
+            'Click it and confirm <strong>Install</strong>',
+            'The app will open in its own window'
+        ];
+    }
+
+    // Build modal
+    var existing = document.getElementById('installModal');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'installModal';
+    overlay.className = 'install-modal-overlay';
+    overlay.innerHTML =
+        '<div class="install-modal-box">' +
+            '<div class="install-modal-header">' +
+                '<span class="install-modal-icon">📲</span>' +
+                '<span class="install-modal-title">' + title + '</span>' +
+                '<button class="install-modal-close">✕</button>' +
+            '</div>' +
+            '<div class="install-modal-body">' +
+                '<ol class="install-steps">' +
+                    steps.map(function(s){ return '<li>' + s + '</li>'; }).join('') +
+                '</ol>' +
+                '<div class="install-benefits">' +
+                    '<div class="install-benefit">📖 Read offline once installed</div>' +
+                    '<div class="install-benefit">⚡ Launches instantly from home screen</div>' +
+                    '<div class="install-benefit">🧘 Fullscreen — no browser chrome</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) overlay.remove();
+    });
+    overlay.querySelector('.install-modal-close').addEventListener('click', function() {
+        overlay.remove();
+    });
+}
+
+// ── v10.5: Update visibility of install banner — show on ALL mobile devices ──
+// We don't wait for beforeinstallprompt because some browsers (Samsung Internet,
+// older Android Chrome) don't fire it reliably or don't fire it at all.
 window.updateInstallPill = function() {
     var btn = document.getElementById('headerInstallBtn');
     if (!btn) return;
@@ -2095,11 +2205,13 @@ window.updateInstallPill = function() {
                        window.navigator.standalone === true;
     var dismissed = false;
     try { dismissed = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
-    var shouldShow = !isStandalone && !dismissed && (window._pwaInstallable === true);
-    // On iOS, show even without beforeinstallprompt (iOS doesn't fire it but the app IS installable)
-    var ua = navigator.userAgent.toLowerCase();
-    var isIOS = /iphone|ipad|ipod/.test(ua);
-    if (isIOS && !isStandalone && !dismissed) shouldShow = true;
+    if (isStandalone || dismissed) {
+        btn.style.display = 'none';
+        return;
+    }
+    // Show on all phones AND when desktop has triggered beforeinstallprompt
+    var isMobile = window.innerWidth <= 900;
+    var shouldShow = isMobile || window._pwaInstallable === true;
     btn.style.display = shouldShow ? '' : 'none';
 };
 
@@ -3086,5 +3198,826 @@ function appendTafsirUI(body) {
         });
         if (!isOpen) verse.classList.add('verse-actions-open');
         else verse.classList.remove('verse-actions-open');
+    });
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.7 — EIGHT NEW FEATURES
+// ════════════════════════════════════════════════════════════════════
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 1: TOPICS / THEMES INDEX
+// ──────────────────────────────────────────────────────────────────
+// Curated list of themes with verse references (S:V format, 1-indexed)
+const TOPICS = [
+    { name: 'Patience (Sabr)',      icon: '🌱', verses: ['2:153', '2:155', '3:200', '8:46', '39:10', '94:5', '94:6', '70:5'] },
+    { name: 'Mercy',                icon: '🕊', verses: ['6:54', '7:156', '21:107', '39:53', '42:5', '17:24'] },
+    { name: 'Gratitude (Shukr)',    icon: '🌾', verses: ['2:152', '14:7', '16:78', '31:12', '39:7', '46:15'] },
+    { name: 'Forgiveness',          icon: '🤲', verses: ['7:199', '24:22', '39:53', '42:40', '64:14', '3:135'] },
+    { name: 'Charity (Sadaqah)',    icon: '🎁', verses: ['2:261', '2:267', '2:271', '9:60', '57:7', '64:16'] },
+    { name: 'Parents',              icon: '👨\u200d👩\u200d👧', verses: ['17:23', '17:24', '29:8', '31:14', '31:15', '46:15'] },
+    { name: 'Prayer (Salah)',       icon: '🕌', verses: ['2:43', '2:238', '4:103', '20:14', '29:45', '70:34'] },
+    { name: 'Repentance (Tawbah)',  icon: '↩', verses: ['2:222', '4:17', '9:104', '24:31', '39:53', '66:8'] },
+    { name: 'Hope',                 icon: '✨', verses: ['12:87', '15:56', '39:53', '94:5', '94:6', '65:7'] },
+    { name: 'Trust in Allah',       icon: '⛰', verses: ['3:159', '8:2', '9:51', '11:123', '14:11', '65:3'] },
+    { name: 'Knowledge',            icon: '📖', verses: ['20:114', '39:9', '58:11', '96:1', '96:4', '96:5'] },
+    { name: 'Death & Afterlife',    icon: '🌌', verses: ['2:281', '3:185', '21:35', '29:57', '50:19', '56:60'] },
+    { name: 'Justice',              icon: '⚖', verses: ['4:58', '4:135', '5:8', '5:42', '16:90', '49:9'] },
+    { name: 'Honesty',              icon: '💬', verses: ['9:119', '33:70', '49:6', '49:12'] },
+    { name: 'Trials & Tests',       icon: '🔥', verses: ['2:155', '2:156', '2:157', '29:2', '29:3', '67:2'] },
+    { name: 'Faith (Iman)',         icon: '☀', verses: ['2:177', '49:14', '49:15', '8:2', '9:71'] },
+    { name: 'Good Deeds',           icon: '🌿', verses: ['2:25', '2:82', '4:124', '16:97', '18:30', '99:7', '99:8'] },
+    { name: 'Modesty (Haya)',       icon: '🕯', verses: ['24:30', '24:31', '33:32', '33:33'] },
+    { name: 'Brotherhood',          icon: '🤝', verses: ['3:103', '49:10', '49:11', '49:13'] },
+    { name: 'Wealth & Possessions', icon: '⚜', verses: ['18:46', '57:20', '63:9', '64:15', '102:1'] },
+    { name: 'Marriage',             icon: '💍', verses: ['2:187', '4:19', '4:21', '7:189', '25:74', '30:21'] },
+    { name: 'Orphans',              icon: '🌷', verses: ['2:220', '4:2', '4:6', '4:10', '93:9', '107:2'] },
+    { name: 'Reflection (Tadabbur)',icon: '🧘', verses: ['3:191', '38:29', '47:24', '59:21'] },
+    { name: 'Time',                 icon: '⏳', verses: ['3:185', '103:1', '103:2', '103:3'] },
+    { name: 'Creation',             icon: '🌍', verses: ['2:117', '3:190', '36:36', '50:38', '51:47'] },
+    { name: 'Allah\'s Names',       icon: '✦', verses: ['7:180', '20:8', '59:22', '59:23', '59:24'] },
+    { name: 'Heart (Qalb)',         icon: '💛', verses: ['2:74', '13:28', '22:46', '47:24', '50:37'] },
+    { name: 'Truth & Falsehood',    icon: '⚡', verses: ['17:81', '21:18', '34:49', '8:8'] },
+    { name: 'Light (Nur)',          icon: '🌟', verses: ['24:35', '5:15', '5:16', '57:9', '57:28'] },
+    { name: 'Paradise (Jannah)',    icon: '🌺', verses: ['2:25', '13:35', '32:17', '47:15', '56:10', '56:11', '56:12'] }
+];
+
+function openTopicsModal() {
+    if (!isFeatureOn('topicsIndex')) return;
+    var existing = document.getElementById('topicsModal');
+    if (existing) existing.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'topicsModal';
+    overlay.className = 'topics-modal-overlay';
+    overlay.innerHTML =
+        '<div class="topics-modal-box">' +
+            '<div class="topics-modal-header">' +
+                '<div class="topics-modal-title">' +
+                    '<span class="topics-modal-icon">💡</span>' +
+                    '<span>Topics</span>' +
+                '</div>' +
+                '<button class="topics-modal-close" id="topicsClose">✕</button>' +
+            '</div>' +
+            '<div class="topics-modal-subtitle">Browse verses by theme. Tap a topic to see its verses.</div>' +
+            '<div class="topics-list" id="topicsList"></div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeTopicsModal();
+    });
+    document.getElementById('topicsClose').addEventListener('click', closeTopicsModal);
+
+    var list = document.getElementById('topicsList');
+    TOPICS.forEach(function(t, idx) {
+        var item = document.createElement('button');
+        item.className = 'topic-item';
+        item.innerHTML =
+            '<span class="topic-icon">' + t.icon + '</span>' +
+            '<span class="topic-name">' + t.name + '</span>' +
+            '<span class="topic-count">' + t.verses.length + ' verses</span>';
+        item.addEventListener('click', function() { openTopicVerses(idx); });
+        list.appendChild(item);
+    });
+}
+
+function closeTopicsModal() {
+    var m = document.getElementById('topicsModal');
+    if (m) {
+        m.classList.remove('show');
+        setTimeout(function(){ if (m.parentNode) m.remove(); }, 200);
+    }
+}
+
+function openTopicVerses(topicIdx) {
+    var topic = TOPICS[topicIdx]; if (!topic) return;
+    // Replace the list with verse details for this topic
+    var box = document.querySelector('#topicsModal .topics-modal-box');
+    if (!box) return;
+    var list = document.getElementById('topicsList');
+    list.innerHTML = '<button class="topic-back" id="topicBackBtn">← All topics</button>' +
+                     '<div class="topic-detail-title">' + topic.icon + ' ' + topic.name + '</div>';
+    topic.verses.forEach(function(ref) {
+        var parts = ref.split(':');
+        var sNum = parseInt(parts[0]);
+        var vNum = parseInt(parts[1]);
+        if (!sNum || !vNum) return;
+        var sura = quranData.find(function(s){ return s.id === String(sNum - 1); });
+        if (!sura || !sura.verses[vNum - 1]) return;
+        var verse = sura.verses[vNum - 1];
+        var card = document.createElement('button');
+        card.className = 'topic-verse-card';
+        card.innerHTML =
+            '<div class="tvc-ref">' + sura.name + ' · ' + vNum + '</div>' +
+            '<div class="tvc-text">' + escapeHtml(verse.text.length > 200 ? verse.text.slice(0, 200) + '…' : verse.text) + '</div>';
+        card.addEventListener('click', function() {
+            closeTopicsModal();
+            if (typeof displaySingleSura === 'function') {
+                displaySingleSura(sura.id);
+                setTimeout(function() {
+                    var verses = document.querySelectorAll('.sura .verse');
+                    if (verses[vNum - 1]) {
+                        verses[vNum - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        verses[vNum - 1].classList.add('verse-flash');
+                        setTimeout(function(){ verses[vNum - 1].classList.remove('verse-flash'); }, 1500);
+                    }
+                }, 300);
+            }
+        });
+        list.appendChild(card);
+    });
+    document.getElementById('topicBackBtn').addEventListener('click', function() {
+        openTopicsModal();
+    });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 2: DAILY VERSE ON OPEN
+// ──────────────────────────────────────────────────────────────────
+const DAILY_VERSES = [
+    '2:255',  // Ayat al-Kursi
+    '2:286',  // Last verse of Al-Baqarah
+    '13:28',  // Hearts find rest in remembrance of Allah
+    '94:5',   // With hardship comes ease
+    '39:53',  // Don't despair of Allah's mercy
+    '65:2',   // Whoever fears Allah, He makes a way out
+    '2:155',  // We will test you with fear and hunger
+    '3:8',    // Don't let our hearts deviate
+    '17:23',  // Don't say 'uff' to your parents
+    '49:13',  // We made you nations to know each other
+    '64:11',  // No calamity strikes except by Allah's permission
+    '24:35',  // Allah is the Light of the heavens and earth
+    '9:51',   // Nothing will befall us except what Allah has decreed
+    '13:11',  // Allah doesn't change a people until they change themselves
+    '2:152',  // Remember Me and I will remember you
+    '7:199',  // Show forgiveness
+    '20:114', // My Lord, increase me in knowledge
+    '29:45',  // Prayer prevents immorality
+    '2:286',  // Allah doesn't burden a soul beyond capacity
+    '3:159',  // Be lenient
+    '17:81',  // Truth has come and falsehood has perished
+    '50:16',  // We are closer to him than his jugular vein
+    '21:107', // We sent you only as mercy
+    '6:54',   // Your Lord has prescribed mercy upon Himself
+    '93:7',   // He found you lost and guided
+    '93:11',  // Speak of the blessings of your Lord
+    '2:216',  // You may dislike something that is good for you
+    '57:20',  // Worldly life is play and amusement
+    '3:185',  // Every soul will taste death
+    '67:2'    // Created death and life to test you
+];
+const DAILY_VERSE_LAST_KEY = 'quranDailyVerseLast';
+
+function maybeShowDailyVerse() {
+    if (!isFeatureOn('dailyVerse')) return;
+    var todayKey;
+    try { todayKey = new Date().toISOString().slice(0, 10); } catch(e) { return; }
+    var last;
+    try { last = localStorage.getItem(DAILY_VERSE_LAST_KEY); } catch(e) {}
+    if (last === todayKey) return; // already shown today
+
+    // Deterministic verse per day
+    var dayNum = parseInt(todayKey.replace(/-/g, ''), 10);
+    var verseRef = DAILY_VERSES[dayNum % DAILY_VERSES.length];
+    var parts = verseRef.split(':');
+    var sNum = parseInt(parts[0]);
+    var vNum = parseInt(parts[1]);
+    var sura = quranData.find(function(s){ return s.id === String(sNum - 1); });
+    if (!sura || !sura.verses[vNum - 1]) return;
+    var verse = sura.verses[vNum - 1];
+
+    try { localStorage.setItem(DAILY_VERSE_LAST_KEY, todayKey); } catch(e) {}
+
+    var overlay = document.createElement('div');
+    overlay.id = 'dailyVerseModal';
+    overlay.className = 'daily-verse-overlay';
+    overlay.innerHTML =
+        '<div class="daily-verse-box">' +
+            '<div class="daily-verse-header">' +
+                '<span class="dv-ornament">✦</span>' +
+                '<span class="dv-label">Today\'s verse</span>' +
+                '<span class="dv-ornament">✦</span>' +
+            '</div>' +
+            '<div class="daily-verse-text" dir="rtl">' + verse.text + '</div>' +
+            '<div class="daily-verse-ref">' + sura.name + ' · ' + sNum + ':' + vNum + '</div>' +
+            '<div class="daily-verse-actions">' +
+                '<button class="dv-btn-secondary" id="dvDismiss">Maybe later</button>' +
+                '<button class="dv-btn-primary" id="dvGoToVerse">Read this verse →</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 200);
+    }
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) close();
+    });
+    document.getElementById('dvDismiss').addEventListener('click', close);
+    document.getElementById('dvGoToVerse').addEventListener('click', function() {
+        close();
+        if (typeof displaySingleSura === 'function') {
+            displaySingleSura(sura.id);
+            setTimeout(function() {
+                var verses = document.querySelectorAll('.sura .verse');
+                if (verses[vNum - 1]) {
+                    verses[vNum - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    verses[vNum - 1].classList.add('verse-flash');
+                    setTimeout(function(){ verses[vNum - 1].classList.remove('verse-flash'); }, 1500);
+                }
+            }, 300);
+        }
+    });
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 3: REFLECTION PROMPTS (end of surah)
+// ──────────────────────────────────────────────────────────────────
+const REFLECTION_QUESTIONS = [
+    'What stood out to you in this surah?',
+    'Which verse would you like to memorize?',
+    'How can you apply something from this surah today?',
+    'What attribute of Allah did you notice in this surah?',
+    'What did this surah remind you of from your own life?',
+    'If you had to share one verse with a friend, which would it be?',
+    'What question does this surah raise in your heart?'
+];
+const REFLECTIONS_KEY = 'quranReflections';
+const _reflectionShownThisSession = {};
+
+function getReflections() {
+    try { return JSON.parse(localStorage.getItem(REFLECTIONS_KEY) || '{}'); }
+    catch(e) { return {}; }
+}
+function saveReflection(suraId, text) {
+    var refs = getReflections();
+    if (text && text.trim()) {
+        refs[String(suraId)] = { text: text.trim(), ts: Date.now() };
+    } else {
+        delete refs[String(suraId)];
+    }
+    try { localStorage.setItem(REFLECTIONS_KEY, JSON.stringify(refs)); } catch(e) {}
+}
+
+function maybeShowReflectionPrompt(suraId) {
+    if (!isFeatureOn('reflectionPrompts')) return;
+    if (_reflectionShownThisSession[suraId]) return;
+    _reflectionShownThisSession[suraId] = true;
+
+    var sura = quranData.find(function(s){ return s.id === String(suraId); });
+    if (!sura) return;
+    // Pick a deterministic-ish question
+    var qIdx = (parseInt(suraId) + new Date().getDate()) % REFLECTION_QUESTIONS.length;
+    var question = REFLECTION_QUESTIONS[qIdx];
+    var existing = getReflections()[String(suraId)];
+
+    var overlay = document.createElement('div');
+    overlay.id = 'reflectionModal';
+    overlay.className = 'reflection-overlay';
+    overlay.innerHTML =
+        '<div class="reflection-box">' +
+            '<div class="reflection-header">' +
+                '<span class="reflection-icon">✍️</span>' +
+                '<span class="reflection-label">Reflection — ' + sura.name + '</span>' +
+                '<button class="reflection-close" id="reflectionClose">✕</button>' +
+            '</div>' +
+            '<div class="reflection-question">' + question + '</div>' +
+            '<textarea class="reflection-textarea" id="reflectionTextarea" placeholder="Take a moment to write a thought…">' +
+                (existing ? escapeHtml(existing.text) : '') +
+            '</textarea>' +
+            '<div class="reflection-actions">' +
+                '<button class="reflection-skip" id="reflectionSkip">Not now</button>' +
+                '<button class="reflection-save" id="reflectionSave">Save reflection</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 200);
+    }
+    document.getElementById('reflectionClose').addEventListener('click', close);
+    document.getElementById('reflectionSkip').addEventListener('click', close);
+    document.getElementById('reflectionSave').addEventListener('click', function() {
+        var text = document.getElementById('reflectionTextarea').value;
+        saveReflection(suraId, text);
+        if (typeof showToast === 'function') showToast(text.trim() ? '✓ Reflection saved' : 'Cleared');
+        close();
+    });
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) close();
+    });
+}
+
+// Hook into surah scroll to detect "reached bottom"
+(function hookReflectionTrigger() {
+    function attach() {
+        var container = document.getElementById('quranContainer');
+        if (!container || container._reflectionHooked) return;
+        container._reflectionHooked = true;
+        container.addEventListener('scroll', function() {
+            if (!isFeatureOn('reflectionPrompts')) return;
+            var nearBottom = (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 80);
+            if (!nearBottom) return;
+            var suraEl = container.querySelector('.sura');
+            if (!suraEl) return;
+            var suraId = suraEl.id;
+            // Wait a beat to avoid showing during rapid scroll
+            clearTimeout(container._refTimer);
+            container._refTimer = setTimeout(function() {
+                if (document.getElementById('reflectionModal')) return;
+                maybeShowReflectionPrompt(suraId);
+            }, 800);
+        }, { passive: true });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+    } else {
+        attach();
+    }
+    setTimeout(attach, 500);
+}());
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 7: HIJRI CALENDAR AWARENESS
+// ──────────────────────────────────────────────────────────────────
+// Simple Umm al-Qura-style conversion (approximation, ±1 day)
+function gregorianToHijri(g) {
+    var jd = Math.floor((g.getTime() / 86400000) + 2440587.5);
+    var l = jd - 1948440 + 10632;
+    var n = Math.floor((l - 1) / 10631);
+    l = l - 10631 * n + 354;
+    var j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) +
+            (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
+    l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
+            (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
+    var month = Math.floor((24 * l) / 709);
+    var day = l - Math.floor((709 * month) / 24);
+    var year = 30 * n + j - 30;
+    return { day: day, month: month, year: year };
+}
+
+const HIJRI_MONTHS = [
+    'Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani', 'Jumada al-Awwal',
+    'Jumada al-Thani', 'Rajab', 'Shaban', 'Ramadan', 'Shawwal',
+    'Dhu al-Qadah', 'Dhu al-Hijjah'
+];
+
+function getTodayHijri() { return gregorianToHijri(new Date()); }
+function formatHijri(h) {
+    return h.day + ' ' + HIJRI_MONTHS[h.month - 1] + ' ' + h.year + ' AH';
+}
+function getHijriSpecialDate(h) {
+    if (h.month === 1 && h.day === 1) return { name: 'Islamic New Year', icon: '🌙' };
+    if (h.month === 1 && h.day === 10) return { name: 'Day of Ashura', icon: '🕯' };
+    if (h.month === 3 && h.day === 12) return { name: 'Mawlid an-Nabi', icon: '✦' };
+    if (h.month === 9) {
+        if (h.day === 1) return { name: 'First day of Ramadan', icon: '🌙' };
+        if (h.day === 27) return { name: 'Laylat al-Qadr (likely)', icon: '⭐' };
+        return { name: 'Ramadan · day ' + h.day, icon: '🌙' };
+    }
+    if (h.month === 10 && h.day === 1) return { name: 'Eid al-Fitr', icon: '🎉' };
+    if (h.month === 12) {
+        if (h.day === 9) return { name: 'Day of Arafah', icon: '⛰' };
+        if (h.day === 10) return { name: 'Eid al-Adha', icon: '🎉' };
+    }
+    return null;
+}
+
+function appendHijriBadge() {
+    if (!isFeatureOn('hijriAwareness')) return;
+    var h = getTodayHijri();
+    var label = formatHijri(h);
+    var special = getHijriSpecialDate(h);
+    var bannerHost = document.querySelector('.settings-meditation');
+    if (!bannerHost || bannerHost.querySelector('.hijri-badge')) return;
+    var badge = document.createElement('div');
+    badge.className = 'hijri-badge';
+    if (special) {
+        badge.innerHTML = '<span class="hijri-icon">' + special.icon + '</span>' +
+                          '<span class="hijri-text"><strong>' + special.name + '</strong> · ' + label + '</span>';
+        badge.classList.add('hijri-badge-special');
+    } else {
+        badge.innerHTML = '<span class="hijri-icon">🌙</span><span class="hijri-text">' + label + '</span>';
+    }
+    bannerHost.appendChild(badge);
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 9: VERSE COMPARISON VIEW (compare all tafsirs)
+// ──────────────────────────────────────────────────────────────────
+function openTafsirComparison(suraId, verseIdx, verseText, suraName) {
+    if (!isFeatureOn('verseComparison')) return;
+    var existing = document.getElementById('tafsirCompareModal');
+    if (existing) existing.remove();
+    var verseKey = (parseInt(suraId) + 1) + ':' + (verseIdx + 1);
+
+    var overlay = document.createElement('div');
+    overlay.id = 'tafsirCompareModal';
+    overlay.className = 'tafsir-compare-overlay';
+    overlay.innerHTML =
+        '<div class="tafsir-compare-box">' +
+            '<div class="tafsir-compare-header">' +
+                '<span class="tafsir-compare-title">🔀 Comparing all tafsirs · ' + suraName + ' (' + verseKey + ')</span>' +
+                '<button class="tafsir-compare-close" id="tafsirCompareClose">✕</button>' +
+            '</div>' +
+            '<div class="tafsir-compare-verse" dir="rtl">' + escapeHtml(verseText) + '</div>' +
+            '<div class="tafsir-compare-body" id="tafsirCompareBody"></div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeTafsirCompare();
+    });
+    document.getElementById('tafsirCompareClose').addEventListener('click', closeTafsirCompare);
+
+    var body = document.getElementById('tafsirCompareBody');
+    // Render a card per tafsir; load each in parallel
+    TAFSIRS.forEach(function(t) {
+        var card = document.createElement('div');
+        card.className = 'tafsir-compare-card';
+        card.innerHTML =
+            '<div class="tcc-header">' +
+                '<span class="tcc-name">' + t.name + '</span>' +
+                '<span class="tcc-lang">' + t.lang + '</span>' +
+            '</div>' +
+            '<div class="tcc-content" dir="' + (t.rtl ? 'rtl' : 'ltr') + '"><div class="tafsir-spinner-small"></div></div>';
+        body.appendChild(card);
+        var content = card.querySelector('.tcc-content');
+        fetchTafsir(t.id, verseKey).then(function(text) {
+            content.innerHTML = sanitizeTafsirHtml(text);
+        }).catch(function(err) {
+            content.innerHTML = '<span class="tcc-error">Couldn\'t load this tafsir for this verse.</span>';
+        });
+    });
+}
+
+function closeTafsirCompare() {
+    var m = document.getElementById('tafsirCompareModal');
+    if (m) {
+        m.classList.remove('show');
+        setTimeout(function(){ if (m.parentNode) m.remove(); }, 200);
+    }
+}
+
+// Inject "Compare all" button into the tafsir modal header
+(function injectCompareButton() {
+    var origOpen = window.openTafsirModal;
+    if (typeof origOpen !== 'function') return;
+    window.openTafsirModal = function(suraId, verseIdx, verseText, suraName) {
+        origOpen(suraId, verseIdx, verseText, suraName);
+        if (!isFeatureOn('verseComparison')) return;
+        setTimeout(function() {
+            var header = document.querySelector('#tafsirModal .tafsir-modal-header');
+            if (!header || header.querySelector('.tafsir-compare-btn')) return;
+            var btn = document.createElement('button');
+            btn.className = 'tafsir-compare-btn';
+            btn.innerHTML = '🔀 Compare all';
+            btn.title = 'Show all tafsirs side by side';
+            btn.addEventListener('click', function() {
+                closeTafsirModal();
+                openTafsirComparison(suraId, verseIdx, verseText, suraName);
+            });
+            // Insert before close button
+            var closeBtn = header.querySelector('.tafsir-modal-close');
+            header.insertBefore(btn, closeBtn);
+        }, 50);
+    };
+}());
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 10: PRINT / PDF EXPORT
+// ──────────────────────────────────────────────────────────────────
+function printCurrentSurah() {
+    if (!isFeatureOn('pdfExport')) return;
+    var suraEl = document.querySelector('.sura');
+    if (!suraEl) {
+        if (typeof showToast === 'function') showToast('Open a surah first');
+        return;
+    }
+    var suraId = suraEl.id;
+    var sura = quranData.find(function(s){ return s.id === String(suraId); });
+    if (!sura) return;
+
+    // Build a clean print body
+    document.body.classList.add('printing-surah');
+    // Inject a print-only "user notes" panel if reflection or notes exist for this surah
+    var oldPanel = document.getElementById('printNotesPanel');
+    if (oldPanel) oldPanel.remove();
+    var panel = document.createElement('div');
+    panel.id = 'printNotesPanel';
+    panel.className = 'print-only-block';
+    var refl = getReflections()[String(suraId)];
+    var hasContent = false;
+    var html = '<h3>Your reflections & notes</h3>';
+    if (refl) {
+        html += '<div class="print-reflection"><strong>Reflection:</strong> ' + escapeHtml(refl.text) + '</div>';
+        hasContent = true;
+    }
+    // Per-verse notes
+    var notes = (typeof getNotes === 'function') ? getNotes() : {};
+    sura.verses.forEach(function(v, i) {
+        var n = notes[suraId + ':' + i];
+        if (n) {
+            html += '<div class="print-note">Verse ' + (i + 1) + ': ' + escapeHtml(n) + '</div>';
+            hasContent = true;
+        }
+    });
+    if (hasContent) {
+        panel.innerHTML = html;
+        document.querySelector('.sura').appendChild(panel);
+    }
+
+    setTimeout(function() {
+        window.print();
+        // Cleanup after print dialog
+        setTimeout(function() {
+            document.body.classList.remove('printing-surah');
+            var p = document.getElementById('printNotesPanel');
+            if (p) p.remove();
+        }, 500);
+    }, 100);
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 11: READING TIME ANALYTICS
+// ──────────────────────────────────────────────────────────────────
+const READING_TIME_KEY = 'quranReadingTime';
+var _readingTimeStart = null;
+
+function getReadingTime() {
+    try { return JSON.parse(localStorage.getItem(READING_TIME_KEY) || '{}'); }
+    catch(e) { return {}; }
+}
+function saveReadingTime(data) {
+    try { localStorage.setItem(READING_TIME_KEY, JSON.stringify(data)); } catch(e) {}
+}
+function getCurrentWeekKey() {
+    var d = new Date();
+    // ISO week start (Monday)
+    var dayNum = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - dayNum);
+    return d.toISOString().slice(0, 10);
+}
+
+function startReadingTimer() {
+    if (!isFeatureOn('readingTimeAnalytics')) return;
+    if (_readingTimeStart) return;
+    _readingTimeStart = Date.now();
+}
+function stopReadingTimer() {
+    if (!_readingTimeStart) return;
+    var elapsed = Date.now() - _readingTimeStart;
+    _readingTimeStart = null;
+    if (elapsed < 5000) return; // ignore <5s sessions (just opened then closed)
+    var minutes = elapsed / 60000;
+    var data = getReadingTime();
+    var weekKey = getCurrentWeekKey();
+    data[weekKey] = (data[weekKey] || 0) + minutes;
+    saveReadingTime(data);
+}
+
+(function wireReadingTimer() {
+    function init() {
+        if (!isFeatureOn('readingTimeAnalytics')) return;
+        startReadingTimer();
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) stopReadingTimer();
+            else startReadingTimer();
+        });
+        window.addEventListener('beforeunload', stopReadingTimer);
+        window.addEventListener('pagehide', stopReadingTimer);
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+}());
+
+function getReadingTimeSummary() {
+    var data = getReadingTime();
+    var thisWeek = data[getCurrentWeekKey()] || 0;
+    // Compute current session's running time
+    if (_readingTimeStart) {
+        thisWeek += (Date.now() - _readingTimeStart) / 60000;
+    }
+    // Average over last 4 weeks
+    var weeks = Object.keys(data).sort().slice(-4);
+    var total = 0;
+    weeks.forEach(function(k){ total += data[k] || 0; });
+    return { thisWeek: Math.round(thisWeek), avg4w: weeks.length > 0 ? Math.round(total / weeks.length) : 0 };
+}
+
+// ──────────────────────────────────────────────────────────────────
+// FEATURE 12: VOICE SEARCH
+// ──────────────────────────────────────────────────────────────────
+function getSpeechRecognition() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function attachVoiceSearchButton(inputEl) {
+    if (!isFeatureOn('voiceSearch')) return;
+    if (!inputEl || inputEl._voiceAttached) return;
+    var Rec = getSpeechRecognition();
+    if (!Rec) return; // browser doesn't support
+    inputEl._voiceAttached = true;
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'voice-search-btn';
+    btn.title = 'Voice search';
+    btn.innerHTML = '🎤';
+    // Insert next to the input (sibling)
+    if (inputEl.parentNode) {
+        inputEl.parentNode.insertBefore(btn, inputEl.nextSibling);
+    }
+    btn.addEventListener('click', function(e) {
+        e.preventDefault(); e.stopPropagation();
+        var recognition = new Rec();
+        // Pick recognition language from current primary
+        var langMap = { arabic: 'ar-SA', french: 'fr-FR', english: 'en-US', spanish: 'es-ES' };
+        recognition.lang = langMap[currentLanguage] || 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+        btn.classList.add('voice-listening');
+        recognition.onresult = function(ev) {
+            var text = ev.results[0][0].transcript;
+            inputEl.value = text;
+            inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+            // For search inputs that require Enter
+            inputEl.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter' }));
+        };
+        recognition.onerror = function(ev) {
+            console.warn('Voice search error:', ev.error);
+            if (typeof showToast === 'function') showToast('Voice: ' + ev.error);
+        };
+        recognition.onend = function() {
+            btn.classList.remove('voice-listening');
+        };
+        try {
+            recognition.start();
+        } catch(err) {
+            btn.classList.remove('voice-listening');
+            console.warn('Voice search start failed:', err);
+        }
+    });
+}
+
+// Attach voice button to all known search inputs
+(function attachVoiceToSearches() {
+    function attach() {
+        if (!isFeatureOn('voiceSearch')) return;
+        ['search-input', 'mob-search-input'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) attachVoiceSearchButton(el);
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', attach);
+    } else {
+        attach();
+    }
+    setTimeout(attach, 500);
+    setTimeout(attach, 1500); // mobile inputs may be built dynamically
+}());
+
+// ──────────────────────────────────────────────────────────────────
+// HOOKS: Run features that need quranData on load
+// ──────────────────────────────────────────────────────────────────
+(function v107InitHooks() {
+    var tries = 0;
+    var iv = setInterval(function() {
+        tries++;
+        if (typeof quranData !== 'undefined' && quranData.length > 0) {
+            clearInterval(iv);
+            setTimeout(function() {
+                maybeShowDailyVerse();
+                appendHijriBadge();
+            }, 1200);
+        } else if (tries > 100) {
+            clearInterval(iv);
+        }
+    }, 200);
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.7 — Settings UI integration
+// ════════════════════════════════════════════════════════════════════
+function appendV107SettingsUI(body) {
+    var sec = document.createElement('div');
+    sec.className = 'mob-settings-section';
+    var lbl = document.createElement('div');
+    lbl.className = 'mob-settings-lbl';
+    lbl.textContent = 'Explore';
+    sec.appendChild(lbl);
+
+    // Topics button
+    if (isFeatureOn('topicsIndex')) {
+        var topicsBtn = document.createElement('button');
+        topicsBtn.className = 'mob-settings-btn';
+        topicsBtn.textContent = '💡 Browse topics';
+        topicsBtn.addEventListener('click', function() {
+            if (typeof closeMobileSheet === 'function') closeMobileSheet();
+            closeTafsirModal && closeTafsirModal();
+            setTimeout(openTopicsModal, 250);
+        });
+        sec.appendChild(topicsBtn);
+    }
+
+    // Print / Export current surah
+    if (isFeatureOn('pdfExport')) {
+        var printBtn = document.createElement('button');
+        printBtn.className = 'mob-settings-btn';
+        printBtn.textContent = '🖨 Print / Export this surah';
+        printBtn.addEventListener('click', function() {
+            if (typeof closeMobileSheet === 'function') closeMobileSheet();
+            setTimeout(printCurrentSurah, 300);
+        });
+        sec.appendChild(printBtn);
+    }
+
+    body.appendChild(sec);
+
+    // Reading-time summary section
+    if (isFeatureOn('readingTimeAnalytics')) {
+        var rtSec = document.createElement('div');
+        rtSec.className = 'mob-settings-section';
+        var rtLbl = document.createElement('div');
+        rtLbl.className = 'mob-settings-lbl';
+        rtLbl.textContent = 'Reading time';
+        rtSec.appendChild(rtLbl);
+        var s = getReadingTimeSummary();
+        var rtBox = document.createElement('div');
+        rtBox.className = 'reading-time-box';
+        rtBox.innerHTML =
+            '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + s.thisWeek + ' min</span></div>' +
+            '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + s.avg4w + ' min/week</span></div>';
+        rtSec.appendChild(rtBox);
+        body.appendChild(rtSec);
+    }
+}
+
+// Inject the v10.7 settings UI into both mobile sheet and desktop modal
+(function injectV107SettingsUI() {
+    function tryInject() {
+        if (typeof buildSheetSettings === 'undefined') return false;
+        if (window._v107SettingsInjected) return true;
+        window._v107SettingsInjected = true;
+        var origSheet = buildSheetSettings;
+        window.buildSheetSettings = buildSheetSettings = function(body, title) {
+            origSheet(body, title);
+            appendV107SettingsUI(body);
+        };
+        if (typeof openFeaturesModal === 'function') {
+            var origModal = openFeaturesModal;
+            window.openFeaturesModal = function() {
+                origModal();
+                var body = document.getElementById('featuresModalBody');
+                if (body) appendV107SettingsUI(body);
+            };
+        }
+        return true;
+    }
+    if (!tryInject()) {
+        var iv = setInterval(function() {
+            if (tryInject()) clearInterval(iv);
+        }, 200);
+    }
+}());
+
+// Reactive toggle handlers for the v10.7 features
+(function v107ReactiveToggles() {
+    document.addEventListener('change', function(e) {
+        if (!e.target || !e.target.classList || !e.target.classList.contains('feature-toggle-input')) return;
+        var key = e.target.getAttribute('data-feature-key');
+        if (key === 'dailyVerse' && e.target.checked) {
+            // If enabled now, allow showing today's verse on next page load
+            // (don't show immediately — feels intrusive mid-session)
+        }
+        if (key === 'hijriAwareness') {
+            // Remove existing badge if disabling, or add if enabling
+            var existing = document.querySelector('.hijri-badge');
+            if (existing) existing.remove();
+            if (e.target.checked) setTimeout(appendHijriBadge, 100);
+        }
+        if (key === 'voiceSearch' && e.target.checked) {
+            ['search-input', 'mob-search-input'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) attachVoiceSearchButton(el);
+            });
+        }
+        if (key === 'voiceSearch' && !e.target.checked) {
+            document.querySelectorAll('.voice-search-btn').forEach(function(b){ b.remove(); });
+            document.querySelectorAll('input[id*="search"]').forEach(function(i){ delete i._voiceAttached; });
+        }
+        if (key === 'topicsIndex' && !e.target.checked) {
+            closeTopicsModal();
+        }
     });
 }());

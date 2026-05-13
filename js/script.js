@@ -553,6 +553,27 @@ document.getElementById('noteModalSave').addEventListener('click', function() {
         if (dot) dot.remove();
     }
     lsSet(NOTES_KEY, notes);
+    // v10.5: Sync verse-has-saved class + rebuild verse-actions
+    // so the Save tag remains visible when the verse is collapsed
+    var verseEl = noteModalTarget.noteBtn.closest('.verse');
+    if (verseEl) {
+        var sId = noteModalTarget.suraId;
+        var vIdx = noteModalTarget.verseIdx;
+        var hasAny = isHighlighted(sId, vIdx) ||
+                     isBookmarked(sId, vIdx) ||
+                     !!getNotes()[verseKey(sId, vIdx)];
+        verseEl.classList.toggle('verse-has-saved', hasAny);
+        // Rebuild verse-actions to refresh button states
+        var oldActions = verseEl.querySelector('.verse-actions');
+        var sura = quranData.find(function(s){ return s.id === String(sId); });
+        if (oldActions && sura) {
+            oldActions.remove();
+            verseEl.appendChild(buildVerseActions(sId, vIdx, sura.verses[vIdx].text, sura.name));
+            if (typeof attachAudioButtons === 'function') {
+                setTimeout(attachAudioButtons, 10);
+            }
+        }
+    }
     closeNoteModal();
 });
 
@@ -565,6 +586,23 @@ document.getElementById('noteModalDelete').addEventListener('click', function() 
     noteModalTarget.noteBtn.classList.remove('active');
     const dot = noteModalTarget.noteBtn.querySelector('.note-dot');
     if (dot) dot.remove();
+    // v10.5: Sync verse-has-saved + rebuild verse-actions
+    var verseEl = noteModalTarget.noteBtn.closest('.verse');
+    if (verseEl) {
+        var sId = noteModalTarget.suraId;
+        var vIdx = noteModalTarget.verseIdx;
+        var hasAny = isHighlighted(sId, vIdx) || isBookmarked(sId, vIdx);
+        verseEl.classList.toggle('verse-has-saved', hasAny);
+        var oldActions = verseEl.querySelector('.verse-actions');
+        var sura = quranData.find(function(s){ return s.id === String(sId); });
+        if (oldActions && sura) {
+            oldActions.remove();
+            verseEl.appendChild(buildVerseActions(sId, vIdx, sura.verses[vIdx].text, sura.name));
+            if (typeof attachAudioButtons === 'function') {
+                setTimeout(attachAudioButtons, 10);
+            }
+        }
+    }
     closeNoteModal();
 });
 
@@ -1294,6 +1332,22 @@ function displaySingleSura(suraId) {
     container.scrollTop = 0;
     clearSuraContext();
     markSuraAsRead(suraId);
+    // v10.7 BUG FIX: re-apply additional languages on every sura change
+    // (verses are recreated from scratch — secondary translations would otherwise be lost)
+    if (additionalLanguages && additionalLanguages.length > 0) {
+        additionalLanguages.forEach(function(code) {
+            // If we don't have the data yet, fetch it then apply
+            if (!xmlCache[code]) {
+                fetchAndParseQuran(code).then(function() {
+                    applyLanguageToVerses(code);
+                }).catch(function(e) {
+                    console.error('Error re-applying language', code, e);
+                });
+            } else {
+                applyLanguageToVerses(code);
+            }
+        });
+    }
     saveState();
 }
 
@@ -1307,6 +1361,20 @@ function displaySingleRevelationSura(suraNum) {
     const ctx = document.getElementById('suraContent');
     ctx.classList.replace('sura-contexte','eraseDiv'); ctx.innerHTML = '';
     markSuraAsRead(suraNum - 1);
+    // v10.7 BUG FIX: same re-apply logic as displaySingleSura
+    if (additionalLanguages && additionalLanguages.length > 0) {
+        additionalLanguages.forEach(function(code) {
+            if (!xmlCache[code]) {
+                fetchAndParseQuran(code).then(function() {
+                    applyLanguageToVerses(code);
+                }).catch(function(e) {
+                    console.error('Error re-applying language', code, e);
+                });
+            } else {
+                applyLanguageToVerses(code);
+            }
+        });
+    }
     saveState();
 }
 
@@ -1563,10 +1631,42 @@ document.getElementById('search-input').addEventListener('keydown', function(e){
 document.getElementById('reset-button').addEventListener('click', resetSearch);
 
 document.getElementById('languageSelector').addEventListener('change', function(){
+    var oldLang = currentLanguage;
     currentLanguage = this.value; isArabic = (currentLanguage === 'arabic');
     if (additionalLanguages.indexOf(currentLanguage) !== -1) removeSecondaryLanguage(currentLanguage);
+    // v10.7: Sync the add-language dropdown so the new primary isn't offered
+    // (and the old primary becomes available to add as a translation)
+    rebuildAddLangSelector();
     applyUILanguage(currentLanguage); loadQuranData();
 });
+
+// v10.7: Rebuild the desktop add-language dropdown to exclude:
+//   - the current primary language (would be duplicate)
+//   - languages already added as secondary
+// Always resets to the placeholder option.
+function rebuildAddLangSelector() {
+    var sel = document.getElementById('SurahLanguageSelector');
+    if (!sel) return;
+    var allLangs = [
+        ['arabic',  'Arabic'],
+        ['french',  'Français'],
+        ['english', 'English'],
+        ['spanish', 'Español']
+    ];
+    sel.innerHTML = '';
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '+ Add a language…';
+    sel.appendChild(placeholder);
+    allLangs.forEach(function(p) {
+        if (p[0] === currentLanguage) return;
+        if (additionalLanguages.indexOf(p[0]) !== -1) return;
+        var opt = document.createElement('option');
+        opt.value = p[0]; opt.textContent = p[1];
+        sel.appendChild(opt);
+    });
+    sel.value = ''; // explicit reset
+}
 
 document.getElementById('SurahLanguageSelector').addEventListener('change', function(){
     const code = this.value; if (!code) return; this.value = '';

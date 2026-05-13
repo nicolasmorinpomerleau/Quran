@@ -17,6 +17,7 @@ const DEFAULT_FEATURES = {
     searchAsYouType:   true,         // #5
     lastReadBanner:    true,         // #6
     bookmarkTags:      true,         // #12
+    saveTools:         true,         // v10.8 — unified: highlight + bookmark + note
     khatmTracker:      true,         // #13
     loadingSkeletons:  true,         // #14
     arabicFontChoice:  true,         // #17
@@ -1153,6 +1154,7 @@ function appendFeaturesUI(body) {
         searchAsYouType:    ['⚡ Search as you type',     'Auto-runs search 350ms after you stop typing'],
         lastReadBanner:     ['📍 "Continue reading" banner','Shows previously-read surah at top so you can jump back'],
         bookmarkTags:       ['🏷️ Bookmark tags',          'Categorize saved verses (e.g. "patience", "prayer")'],
+        saveTools:          ['🔖 Save tools',              'Show Highlight, Bookmark, and Note buttons on each verse'],
         khatmTracker:       ['🎯 Khatm tracker',          'Daily reading heatmap + completion count'],
         loadingSkeletons:   ['✨ Loading animations',      'Shimmer effect while content loads'],
         arabicFontChoice:   ['🔤 Arabic font choice',      'Pick from Amiri / Scheherazade / Naskh / Lateef'],
@@ -3469,28 +3471,32 @@ function maybeShowReflectionPrompt(suraId) {
 
     var sura = quranData.find(function(s){ return s.id === String(suraId); });
     if (!sura) return;
-    // Pick a deterministic-ish question
-    var qIdx = (parseInt(suraId) + new Date().getDate()) % REFLECTION_QUESTIONS.length;
-    var question = REFLECTION_QUESTIONS[qIdx];
+    // v10.8: Language-aware questions and labels
+    var questions = (typeof getReflectionQuestions === 'function') ? getReflectionQuestions() : REFLECTION_QUESTIONS;
+    var labels = (typeof getReflectionLabels === 'function') ? getReflectionLabels() : { reflection: 'Reflection', placeholder: 'Take a moment to write a thought…', skip: 'Not now', save: 'Save reflection', saved: '✓ Reflection saved', cleared: 'Cleared' };
+    var qIdx = (parseInt(suraId) + new Date().getDate()) % questions.length;
+    var question = questions[qIdx];
     var existing = getReflections()[String(suraId)];
+    var isRtl = (typeof currentLanguage !== 'undefined' && currentLanguage === 'arabic');
 
     var overlay = document.createElement('div');
     overlay.id = 'reflectionModal';
     overlay.className = 'reflection-overlay';
+    if (isRtl) overlay.setAttribute('dir', 'rtl');
     overlay.innerHTML =
         '<div class="reflection-box">' +
             '<div class="reflection-header">' +
-                '<span class="reflection-icon">✍️</span>' +
-                '<span class="reflection-label">Reflection — ' + sura.name + '</span>' +
-                '<button class="reflection-close" id="reflectionClose">✕</button>' +
+                '<span class="reflection-icon">\u270d\ufe0f</span>' +
+                '<span class="reflection-label">' + labels.reflection + ' \u2014 ' + sura.name + '</span>' +
+                '<button class="reflection-close" id="reflectionClose">\u2715</button>' +
             '</div>' +
             '<div class="reflection-question">' + question + '</div>' +
-            '<textarea class="reflection-textarea" id="reflectionTextarea" placeholder="Take a moment to write a thought…">' +
+            '<textarea class="reflection-textarea" id="reflectionTextarea" placeholder="' + labels.placeholder + '">' +
                 (existing ? escapeHtml(existing.text) : '') +
             '</textarea>' +
             '<div class="reflection-actions">' +
-                '<button class="reflection-skip" id="reflectionSkip">Not now</button>' +
-                '<button class="reflection-save" id="reflectionSave">Save reflection</button>' +
+                '<button class="reflection-skip" id="reflectionSkip">' + labels.skip + '</button>' +
+                '<button class="reflection-save" id="reflectionSave">' + labels.save + '</button>' +
             '</div>' +
         '</div>';
     document.body.appendChild(overlay);
@@ -3505,7 +3511,7 @@ function maybeShowReflectionPrompt(suraId) {
     document.getElementById('reflectionSave').addEventListener('click', function() {
         var text = document.getElementById('reflectionTextarea').value;
         saveReflection(suraId, text);
-        if (typeof showToast === 'function') showToast(text.trim() ? '✓ Reflection saved' : 'Cleared');
+        if (typeof showToast === 'function') showToast(text.trim() ? labels.saved : labels.cleared);
         close();
     });
     overlay.addEventListener('click', function(e) {
@@ -4020,4 +4026,177 @@ function appendV107SettingsUI(body) {
             closeTopicsModal();
         }
     });
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.8 — Reactive feature gating via body classes
+// CSS rules hide gated elements; flipping the body class is instant
+// ════════════════════════════════════════════════════════════════════
+function applyFeatureBodyClasses() {
+    var f = getFeatures();
+    var body = document.body;
+    var pairs = [
+        ['saveTools',         'feature-off-savetools'],
+        ['copyShareVerse',    'feature-off-share'],
+        ['tafsir',            'feature-off-tafsir'],
+        ['focusMode',         'feature-off-focusmode'],
+        ['audioRecitation',   'feature-off-audio'],
+        ['voiceSearch',       'feature-off-voice'],
+        ['topicsIndex',       'feature-off-topics'],
+        ['pdfExport',         'feature-off-print'],
+        ['readingTimeAnalytics','feature-off-readingtime'],
+        ['hijriAwareness',    'feature-off-hijri']
+    ];
+    pairs.forEach(function(p) {
+        body.classList.toggle(p[1], !f[p[0]]);
+    });
+}
+
+// Apply on init and on every toggle change
+(function wireFeatureBodyClasses() {
+    function init() {
+        applyFeatureBodyClasses();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+    // Refresh after every feature toggle (listen at the document level so we catch all)
+    document.addEventListener('change', function(e) {
+        // Toggle inputs live inside .feature-toggle-row
+        if (e.target && e.target.type === 'checkbox' && e.target.closest('.feature-toggle-row')) {
+            setTimeout(applyFeatureBodyClasses, 50);
+        }
+    });
+}());
+
+// v10.8: Reset reflection session flag so toggle ON works immediately
+(function reflectionResetOnToggle() {
+    document.addEventListener('change', function(e) {
+        if (!e.target || e.target.type !== 'checkbox') return;
+        if (!e.target.closest('.feature-toggle-row')) return;
+        var f = getFeatures();
+        if (!f.reflectionPrompts) return;
+        // Clear session flags so reflection can re-trigger
+        if (typeof _reflectionShownThisSession !== 'undefined') {
+            Object.keys(_reflectionShownThisSession).forEach(function(k){ delete _reflectionShownThisSession[k]; });
+        }
+        // If we're near the bottom of a surah right now, trigger immediately
+        setTimeout(function() {
+            var container = document.getElementById('quranContainer');
+            if (!container) return;
+            var nearBottom = (container.scrollTop + container.clientHeight) >= (container.scrollHeight - 80);
+            if (!nearBottom) return;
+            var suraEl = container.querySelector('.sura');
+            if (!suraEl) return;
+            if (typeof maybeShowReflectionPrompt === 'function') maybeShowReflectionPrompt(suraEl.id);
+        }, 200);
+    });
+}());
+
+// v10.8: Reflection questions in all supported languages
+const REFLECTION_QUESTIONS_BY_LANG = {
+    english: [
+        'What stood out to you in this surah?',
+        'Which verse would you like to memorize?',
+        'How can you apply something from this surah today?',
+        'What attribute of Allah did you notice in this surah?',
+        'What did this surah remind you of from your own life?',
+        'If you had to share one verse with a friend, which would it be?',
+        'What question does this surah raise in your heart?'
+    ],
+    french: [
+        'Qu\'est-ce qui vous a marqué dans cette sourate ?',
+        'Quel verset aimeriez-vous mémoriser ?',
+        'Comment pouvez-vous appliquer quelque chose de cette sourate aujourd\'hui ?',
+        'Quel attribut d\'Allah avez-vous remarqué dans cette sourate ?',
+        'Que cette sourate vous a-t-elle rappelé de votre propre vie ?',
+        'Si vous deviez partager un verset avec un ami, lequel serait-ce ?',
+        'Quelle question cette sourate soulève-t-elle dans votre cœur ?'
+    ],
+    spanish: [
+        '\u00bfQu\u00e9 te llam\u00f3 la atenci\u00f3n en esta sura?',
+        '\u00bfQu\u00e9 vers\u00edculo te gustar\u00eda memorizar?',
+        '\u00bfC\u00f3mo puedes aplicar algo de esta sura hoy?',
+        '\u00bfQu\u00e9 atributo de Allah notaste en esta sura?',
+        '\u00bfQu\u00e9 te record\u00f3 esta sura de tu propia vida?',
+        'Si tuvieras que compartir un vers\u00edculo con un amigo, \u00bfcu\u00e1l ser\u00eda?',
+        '\u00bfQu\u00e9 pregunta plantea esta sura en tu coraz\u00f3n?'
+    ],
+    arabic: [
+        '\u0645\u0627 \u0627\u0644\u0630\u064a \u0644\u0641\u062a \u0627\u0646\u062a\u0628\u0627\u0647\u0643 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0633\u0648\u0631\u0629\u061f',
+        '\u0623\u064a \u0622\u064a\u0629 \u062a\u0648\u062f\u0651 \u062d\u0641\u0638\u0647\u0627\u061f',
+        '\u0643\u064a\u0641 \u064a\u0645\u0643\u0646\u0643 \u062a\u0637\u0628\u064a\u0642 \u0634\u064a\u0621 \u0645\u0646 \u0647\u0630\u0647 \u0627\u0644\u0633\u0648\u0631\u0629 \u0627\u0644\u064a\u0648\u0645\u061f',
+        '\u0645\u0627 \u0627\u0644\u0635\u0641\u0629 \u0645\u0646 \u0635\u0641\u0627\u062a \u0627\u0644\u0644\u0647 \u0627\u0644\u062a\u064a \u0644\u0627\u062d\u0638\u062a\u0647\u0627 \u0641\u064a \u0647\u0630\u0647 \u0627\u0644\u0633\u0648\u0631\u0629\u061f',
+        '\u0628\u0645\u0627\u0630\u0627 \u0630\u0643\u0651\u0631\u062a\u0643 \u0647\u0630\u0647 \u0627\u0644\u0633\u0648\u0631\u0629 \u0645\u0646 \u062d\u064a\u0627\u062a\u0643\u061f',
+        '\u0644\u0648 \u0623\u0631\u062f\u062a \u0623\u0646 \u062a\u0634\u0627\u0631\u0643 \u0635\u062f\u064a\u0642\u064b\u0627 \u0622\u064a\u0629 \u0648\u0627\u062d\u062f\u0629\u060c \u0641\u0623\u064a\u0647\u0627 \u062a\u062e\u062a\u0627\u0631\u061f',
+        '\u0645\u0627 \u0627\u0644\u0633\u0624\u0627\u0644 \u0627\u0644\u0630\u064a \u0623\u062b\u0627\u0631\u062a\u0647 \u0647\u0630\u0647 \u0627\u0644\u0633\u0648\u0631\u0629 \u0641\u064a \u0642\u0644\u0628\u0643\u061f'
+    ]
+};
+
+const REFLECTION_LABELS = {
+    english: { reflection: 'Reflection', placeholder: 'Take a moment to write a thought\u2026', skip: 'Not now', save: 'Save reflection', saved: '\u2713 Reflection saved', cleared: 'Cleared' },
+    french:  { reflection: 'R\u00e9flexion',  placeholder: 'Prenez un moment pour \u00e9crire une pens\u00e9e\u2026', skip: 'Pas maintenant', save: 'Enregistrer', saved: '\u2713 R\u00e9flexion enregistr\u00e9e', cleared: 'Effac\u00e9' },
+    spanish: { reflection: 'Reflexi\u00f3n',  placeholder: 'T\u00f3mate un momento para escribir un pensamiento\u2026', skip: 'Ahora no', save: 'Guardar reflexi\u00f3n', saved: '\u2713 Reflexi\u00f3n guardada', cleared: 'Borrado' },
+    arabic:  { reflection: '\u062a\u0623\u0645\u0644',       placeholder: '\u062e\u0630 \u0644\u062d\u0638\u0629 \u0644\u062a\u062f\u0648\u064a\u0646 \u0641\u0643\u0631\u0629\u2026', skip: '\u0644\u064a\u0633 \u0627\u0644\u0622\u0646', save: '\u062d\u0641\u0638 \u0627\u0644\u062a\u0623\u0645\u0644', saved: '\u2713 \u062a\u0645 \u062d\u0641\u0638 \u0627\u0644\u062a\u0623\u0645\u0644', cleared: '\u062a\u0645 \u0627\u0644\u0645\u0633\u062d' }
+};
+
+function getReflectionQuestions() {
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    return REFLECTION_QUESTIONS_BY_LANG[lang] || REFLECTION_QUESTIONS_BY_LANG.english;
+}
+function getReflectionLabels() {
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    return REFLECTION_LABELS[lang] || REFLECTION_LABELS.english;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// v10.8 — Wire top access bar (Topics button + Reading-time display)
+// ════════════════════════════════════════════════════════════════════
+(function wireTopAccessBar() {
+    function attach() {
+        var topicsBtn = document.getElementById('topTopicsBtn');
+        if (topicsBtn && !topicsBtn._wired) {
+            topicsBtn._wired = true;
+            topicsBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (typeof openTopicsModal === 'function') openTopicsModal();
+            });
+        }
+        refreshTopReadingTime();
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+    else attach();
+    // Refresh reading-time every 60s while page is visible
+    setInterval(function() {
+        if (!document.hidden) refreshTopReadingTime();
+    }, 60000);
+}());
+
+function refreshTopReadingTime() {
+    var el = document.getElementById('topReadingTime');
+    if (!el) return;
+    var valEl = el.querySelector('.trt-val');
+    if (!valEl) return;
+    if (typeof getReadingTimeSummary !== 'function') {
+        valEl.textContent = '\u2014';
+        return;
+    }
+    var s = getReadingTimeSummary();
+    valEl.textContent = s.thisWeek + ' min';
+}
+
+// Refresh after every navigation
+(function hookRefreshReadingTime() {
+    var hooked = false;
+    function tryHook() {
+        if (hooked || typeof displaySingleSura === 'undefined') return;
+        hooked = true;
+        var orig = displaySingleSura;
+        window.displaySingleSura = displaySingleSura = function(suraId) {
+            orig(suraId);
+            setTimeout(refreshTopReadingTime, 100);
+        };
+    }
+    if (!tryHook()) {
+        var iv = setInterval(function(){ tryHook(); if (hooked) clearInterval(iv); }, 200);
+    }
 }());

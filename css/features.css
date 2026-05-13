@@ -3043,3 +3043,108 @@ header {
     }
 }
 .print-only-block { display: none; }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.8 — Bug fixes + reactive feature gating + new top access bar
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Reactive feature gating via body classes ── */
+body.feature-off-savetools .verse-action-save { display: none !important; }
+body.feature-off-share .verse-action-share { display: none !important; }
+body.feature-off-tafsir .verse-action-tafsir { display: none !important; }
+body.feature-off-audio .verse-audio-btn { display: none !important; }
+body.feature-off-audio .audio-mini-player { display: none !important; }
+body.feature-off-focusmode .sura-focus-pill { display: none !important; }
+body.feature-off-voice .voice-search-btn { display: none !important; }
+body.feature-off-topics .top-access-btn,
+body.feature-off-topics #topTopicsBtn { display: none !important; }
+body.feature-off-print .sura-print-pill { display: none !important; }
+body.feature-off-readingtime .top-reading-time { display: none !important; }
+body.feature-off-hijri .hijri-badge { display: none !important; }
+
+/* When savetools is off but other actions remain, the verse-actions strip can become empty */
+body.feature-off-savetools.feature-off-share.feature-off-tafsir .verse-actions {
+    display: none !important;
+}
+
+/* ── Search button active state (bug 5 UI) ── */
+#searchbutton.search-active,
+#searchButtonSourats.search-active {
+    background: var(--accent) !important;
+    color: var(--bg-content) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 1px var(--accent) inset;
+}
+
+/* ── Top access bar (Topics + reading-time, above search) ── */
+#topAccessBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 0;
+}
+
+.top-access-btn {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 14px;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 99px;
+    color: var(--accent);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.top-access-btn:hover {
+    background: var(--accent-faint);
+    border-color: var(--accent-dim);
+}
+.top-access-btn:active { transform: scale(0.97); }
+.top-access-btn .tab-icon { font-size: 16px; line-height: 1; }
+
+.top-reading-time {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    background: var(--accent-trace);
+    border: 0.5px solid var(--accent-faint);
+    border-radius: 99px;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+}
+.top-reading-time .trt-icon { font-size: 13px; }
+.top-reading-time .trt-val { color: var(--accent); font-weight: 600; }
+
+/* ── Print pill in sticky title ── */
+.sura-print-pill {
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 13px;
+    cursor: pointer;
+    flex-shrink: 0;
+    line-height: 1;
+    transition: background 0.15s, transform 0.1s;
+    width: auto;
+    height: auto;
+    font-family: inherit;
+    margin-right: 4px;
+}
+.sura-print-pill:hover {
+    background: var(--accent-faint);
+    transform: scale(1.05);
+}
+.sura-print-pill:active { transform: scale(0.92); }

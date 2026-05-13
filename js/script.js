@@ -171,7 +171,29 @@ function applyUILanguage(language) {
         el.style.textAlign  = aln;
     });
     const inp = document.getElementById('search-input');
-    if (inp) { inp.style.direction = dir; if (t.rtl) inp.placeholder = 'ابحث في القرآن…'; }
+    if (inp) {
+        inp.style.direction = dir;
+        // v10.8: Always set placeholder, not only RTL
+        var placeholderMap = {
+            arabic:  'ابحث في القرآن…',
+            french:  'Rechercher dans le Coran…',
+            english: 'Search the Quran…',
+            spanish: 'Buscar en el Corán…'
+        };
+        inp.placeholder = placeholderMap[language] || placeholderMap.english;
+    }
+    // v10.8: Mobile search input gets the same treatment
+    var mobInp = document.getElementById('mob-search-input');
+    if (mobInp) {
+        var placeholderMap2 = {
+            arabic:  'ابحث في القرآن…',
+            french:  'Rechercher dans le Coran…',
+            english: 'Search the Quran…',
+            spanish: 'Buscar en el Corán…'
+        };
+        mobInp.placeholder = placeholderMap2[language] || placeholderMap2.english;
+        mobInp.style.direction = dir;
+    }
     if (!isOriginalOrder) {
         const tog = document.getElementById('toggleOrder');
         if (tog) {
@@ -502,13 +524,16 @@ function toggleHighlight(suraId, verseIdx, verseEl, btn) {
     if (hl[key]) {
         delete hl[key];
         verseEl.classList.remove('verse-highlighted');
-        btn.classList.remove('active');
+        if (btn) btn.classList.remove('active');
     } else {
         hl[key] = true;
         verseEl.classList.add('verse-highlighted');
-        btn.classList.add('active');
+        if (btn) btn.classList.add('active');
     }
     lsSet(HIGHLIGHTS_KEY, hl);
+    // v10.8: Refresh the Saved hub so the highlight appears/disappears immediately
+    if (typeof refreshSavedHub === 'function') refreshSavedHub();
+    if (typeof renderDesktopNotesList === 'function') renderDesktopNotesList();
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -803,11 +828,14 @@ function restoreLangOption(langCode) {
 // ═══════════════════════════════════════════════════════════════════
 async function loadQuranData(targetSuraId) {
     clearSuraContext(); isArabic = (currentLanguage === 'arabic');
-    const suraEl = document.querySelector('.sura');
+    const suraEl = getCurrentSuraEl();
     const suraToShow = (targetSuraId !== undefined && targetSuraId !== null)
         ? targetSuraId : (suraEl ? +suraEl.getAttribute('id') : 0);
     try {
         quranData = await fetchAndParseQuran(currentLanguage);
+        // v10.8: When loading classic order, force the TOC back to Surah tab
+        // (otherwise activeTocTab may still be 'revelation' from a prior toggle)
+        if (isOriginalOrder) activeTocTab = 'surah';
         renderCurrentTOC();
         displaySingleSura(suraToShow);
         document.getElementById('arabic-options').style.display = isArabic ? 'block' : 'none';
@@ -1045,22 +1073,23 @@ function buildVerseActions(suraId, verseIdx, verseText, suraName) {
     const isNT = !!noteData;
     const anySaved = isHL || isBM || isNT;
 
-    // ── SAVE button (groups Highlight, Bookmark, Note) ──
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'verse-action-btn verse-action-save';
-    if (anySaved) saveBtn.classList.add('has-saved');
-    saveBtn.innerHTML = '<span class="va-icon">🔖</span><span class="va-label">Save</span>';
-    if (anySaved) {
-        const dot = document.createElement('span');
-        dot.className = 'va-dot';
-        saveBtn.appendChild(dot);
+    // ── SAVE button (groups Highlight, Bookmark, Note) — v10.8 gated by saveTools ──
+    if (typeof isFeatureOn !== 'function' || isFeatureOn('saveTools')) {
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'verse-action-btn verse-action-save';
+        if (anySaved) saveBtn.classList.add('has-saved');
+        saveBtn.innerHTML = '<span class="va-icon">🔖</span><span class="va-label">Save</span>';
+        if (anySaved) {
+            const dot = document.createElement('span');
+            dot.className = 'va-dot';
+            saveBtn.appendChild(dot);
+        }
+        saveBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openVerseChooser('save', saveBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
+        });
+        actions.appendChild(saveBtn);
     }
-    saveBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        openVerseChooser('save', saveBtn, { suraId: suraId, verseIdx: verseIdx, verseText: verseText, suraName: suraName });
-    });
-
-    actions.appendChild(saveBtn);
 
     // ── SHARE button (groups Copy, Share, Link) — gated by copyShareVerse feature ──
     if (typeof isFeatureOn !== 'function' || isFeatureOn('copyShareVerse')) {
@@ -1111,6 +1140,10 @@ document.addEventListener('keydown', function(e) {
 function openVerseChooser(kind, anchorBtn, ctx) {
     // v10.3: Block share chooser entirely if copyShareVerse is disabled
     if (kind === 'share' && typeof isFeatureOn === 'function' && !isFeatureOn('copyShareVerse')) {
+        return;
+    }
+    // v10.8: Block save chooser entirely if saveTools is disabled
+    if (kind === 'save' && typeof isFeatureOn === 'function' && !isFeatureOn('saveTools')) {
         return;
     }
     closeVerseChooser();
@@ -1247,6 +1280,17 @@ function buildSuraDOM(sura) {
 
     // v10.4: Install pill removed from sticky title — replaced by header banner.
 
+    // v10.8: Print pill — opens browser print dialog (filtered for this surah)
+    const printPill = document.createElement('button');
+    printPill.className = 'sura-print-pill';
+    printPill.title = 'Print / Export this surah';
+    printPill.textContent = '🖨';
+    printPill.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (typeof printCurrentSurah === 'function') printCurrentSurah();
+    });
+    sticky.appendChild(printPill);
+
     // Focus pill (right) — only if focus mode feature is on
     const focusPill = document.createElement('button');
     focusPill.className = 'sura-focus-pill';
@@ -1322,6 +1366,14 @@ function reapplyVerseActions(suraId) {
     });
 }
 
+// v10.8: Robust lookup for the currently displayed .sura element.
+// Handles the zoom-wrapper case where firstChild is the wrapper, not the sura.
+function getCurrentSuraEl() {
+    var container = document.getElementById('quranContainer');
+    if (!container) return null;
+    return container.querySelector('.sura');
+}
+
 function displaySingleSura(suraId) {
     const sura = quranData.find(function(s){ return s.id === String(suraId); });
     if (!sura) return;
@@ -1388,8 +1440,10 @@ function highlightText(text, term) {
 }
 
 function searchSourat(word) {
-    const container = document.getElementById('quranContainer'); if (!container.firstChild) return;
-    const sura = quranData.find(function(s){ return s.id === container.firstChild.id; }); if (!sura) return;
+    var suraEl = getCurrentSuraEl();
+    if (!suraEl) return;
+    const sura = quranData.find(function(s){ return s.id === suraEl.id; });
+    if (!sura) return;
     const ignoreDia = getIgnoreDiacritics();
     const sw = normalize(word, ignoreDia).toLowerCase();
     const matched = sura.verses.filter(function(v){ return normalize(v.text,ignoreDia).toLowerCase().includes(sw); });
@@ -1423,8 +1477,8 @@ function closeSearchResults() {
 
 function resetSearch() {
     document.getElementById('search-input').value = '';
-    const first = document.getElementById('quranContainer').firstChild;
-    if (first) displaySingleSura(first.id);
+    var suraEl = getCurrentSuraEl();
+    if (suraEl) displaySingleSura(suraEl.id);
     closeSearchResults();
 }
 
@@ -1486,7 +1540,7 @@ function displaySearchResults(verses, word) {
 }
 
 function highlightAndScrollToVerse(suraId, verseNumber) {
-    const currentEl = document.getElementById('quranContainer').firstChild;
+    var currentEl = getCurrentSuraEl();
     if (!currentEl || currentEl.id !== String(suraId)) displaySingleSura(suraId);
     const suraContainer = document.getElementById(suraId); if (!suraContainer) return;
     const verseEls = suraContainer.getElementsByClassName('verse');
@@ -1616,16 +1670,34 @@ function scaleTocFont(w) {
 // ═══════════════════════════════════════════════════════════════════
 // EVENT LISTENERS
 // ═══════════════════════════════════════════════════════════════════
+// v10.8: Track which search scope is currently active so the buttons reflect it
+let _lastSearchScope = 'quran'; // 'quran' or 'sura'
+function setSearchScope(scope) {
+    _lastSearchScope = scope;
+    var qBtn = document.getElementById('searchbutton');
+    var sBtn = document.getElementById('searchButtonSourats');
+    if (qBtn) qBtn.classList.toggle('search-active', scope === 'quran');
+    if (sBtn) sBtn.classList.toggle('search-active', scope === 'sura');
+}
+
 document.getElementById('searchbutton').addEventListener('click', function(){
+    setSearchScope('quran');
     const term = document.getElementById('search-input').value.trim(); if (term) searchQuran(term);
 });
 
 document.getElementById('searchButtonSourats').addEventListener('click', function(){
+    setSearchScope('sura');
     const term = document.getElementById('search-input').value.trim(); if (term) searchSourat(term);
 });
 
 document.getElementById('search-input').addEventListener('keydown', function(e){
-    if (e.key === 'Enter') { const term = e.target.value.trim(); if (term) searchQuran(term); }
+    if (e.key === 'Enter') {
+        const term = e.target.value.trim();
+        if (!term) return;
+        // v10.8: Enter follows the last selected scope (default: Quran-wide)
+        if (_lastSearchScope === 'sura') searchSourat(term);
+        else searchQuran(term);
+    }
 });
 
 document.getElementById('reset-button').addEventListener('click', resetSearch);
@@ -1689,9 +1761,9 @@ document.getElementById('toggleOrder').addEventListener('click', function(){
 document.getElementById('context').addEventListener('click', async function(){
     if (contextOpen) { clearSuraContext(); return; }
     closeSearchResults();
-    const first = document.getElementById('quranContainer').firstChild || document.querySelector('.sura');
-    if (!first) return;
-    const suraData = quranData.find(function(s){ return s.id === (first.id||'0'); });
+    var suraEl = getCurrentSuraEl();
+    if (!suraEl) return;
+    const suraData = quranData.find(function(s){ return s.id === suraEl.id; });
     if (!suraData) return;
     await fetchAndDisplayContext(parseInt(suraData.id) + 1);
 });
@@ -1836,6 +1908,9 @@ async function init() {
 }
 
 init();
+
+// v10.8: Default search scope is whole-Quran on app load
+setTimeout(function(){ if (typeof setSearchScope === 'function') setSearchScope('quran'); }, 100);
 
 // ═══════════════════════════════════════════════════════════════════
 // MOBILE — Universal bottom sheet + bottom nav

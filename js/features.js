@@ -1146,6 +1146,7 @@ function appendFeaturesUI(body) {
         keyboardShortcuts:  ['⌨️ Keyboard shortcuts',     'Use ←/→ ? F on desktop'],
         copyShareVerse:     ['📋 Copy & share verse',     'Adds copy / share / link buttons under each verse'],
         searchAsYouType:    ['⚡ Search as you type',     'Auto-runs search 350ms after you stop typing'],
+        voiceSearch:           ['🎤 Voice search',           'Tap the mic to speak a search query'],
         lastReadBanner:     ['📍 "Continue reading" banner','Shows previously-read surah at top so you can jump back'],
         saveTools:          ['🔖 Save tools',              'Show Highlight, Bookmark, and Note buttons on each verse'],
         khatmTracker:       ['🎯 Khatm tracker',          'Daily reading heatmap + completion count'],
@@ -1164,8 +1165,7 @@ function appendFeaturesUI(body) {
         hijriAwareness:        ['🌙 Hijri calendar',         'Marks special Islamic dates (Ramadan, Hajj, Laylat al-Qadr…)'],
         verseComparison:       ['🔀 Compare tafsirs',         'Adds "Compare all" button in the tafsir modal'],
         pdfExport:             ['🖨 Print / PDF export',     'Print the current surah with your notes'],
-        readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in top bar'],
-        voiceSearch:           ['🎤 Voice search',           'Tap the mic to speak a search query']
+        readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in top bar']
     };
 
     Object.keys(FEATURE_LABELS).forEach(function(key) {
@@ -1207,8 +1207,8 @@ function appendFeaturesUI(body) {
                 if (this.checked) {
                     if (typeof attachAudioButtons === 'function') attachAudioButtons();
                 } else {
+                    // v10.11: CSS body class hides the buttons — don't remove them
                     if (typeof stopAudio === 'function') stopAudio();
-                    document.querySelectorAll('.verse-audio-btn').forEach(function(b){ b.remove(); });
                 }
             }
             if (key === 'tafsir' && !this.checked) {
@@ -1525,12 +1525,25 @@ window.openFeaturesModal = function() {
         arabic:  "أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا"
     };
     var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'french';
-    var translation = medTranslations[lang] || medTranslations.french;
-    var showTranslation = (lang !== 'arabic');
+    // v10.11: Collect primary + additional non-Arabic translations to show under the Arabic verse
+    var translationsToShow = [];
+    if (lang !== 'arabic' && medTranslations[lang]) translationsToShow.push(medTranslations[lang]);
+    if (typeof additionalLanguages !== 'undefined' && additionalLanguages.length) {
+        additionalLanguages.forEach(function(code) {
+            if (code === 'arabic') return;
+            if (code === lang) return; // already added
+            if (medTranslations[code] && translationsToShow.indexOf(medTranslations[code]) === -1) {
+                translationsToShow.push(medTranslations[code]);
+            }
+        });
+    }
+    var translationsHtml = translationsToShow.map(function(t) {
+        return '<div class="med-translation">' + t + '</div>';
+    }).join('');
     med.innerHTML =
         '<div class="med-ornament">✦</div>' +
         '<div class="med-arabic" dir="rtl">أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ أَمْ عَلَىٰ قُلُوبٍ أَقْفَالُهَا</div>' +
-        (showTranslation ? '<div class="med-translation">' + translation + '</div>' : '') +
+        translationsHtml +
         '<div class="med-citation">— Quran 47:24</div>';
     body.appendChild(med);
     // Reuse the same UI builders the mobile sheet uses
@@ -1944,11 +1957,25 @@ function appendReadingPlanUI(body) {
             '<div class="rpa-row"><span class="rpa-key">Progress:</span><span class="rpa-val">' + doneCount + ' / ' + cfg.totalDays + ' days</span></div>';
         sec.appendChild(info);
 
+        // v10.11: Restore-pill button — shows the floating pill again if user dismissed it
+        var btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;';
+
+        var showPillBtn = document.createElement('button');
+        showPillBtn.className = 'mob-settings-btn';
+        showPillBtn.style.cssText = 'flex:1;min-width:0;';
+        showPillBtn.textContent = '📌 Show pill';
+        showPillBtn.title = 'Bring back the floating reading-plan pill';
+        showPillBtn.addEventListener('click', function() {
+            try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
+            if (typeof renderReadingPlanCard === 'function') renderReadingPlanCard();
+            if (typeof showToast === 'function') showToast('Pill restored');
+        });
+        btnRow.appendChild(showPillBtn);
+
         var cancelBtn = document.createElement('button');
         cancelBtn.className = 'mob-settings-btn';
-        cancelBtn.style.background = '#d9707018';
-        cancelBtn.style.borderColor = '#d9707040';
-        cancelBtn.style.color = '#e08585';
+        cancelBtn.style.cssText = 'flex:1;min-width:0;background:#d9707018;border-color:#d9707040;color:#e08585;';
         cancelBtn.textContent = '🗑 Cancel plan';
         cancelBtn.addEventListener('click', function() {
             if (typeof showConfirm === 'function') {
@@ -1972,7 +1999,8 @@ function appendReadingPlanUI(body) {
                 try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
             }
         });
-        sec.appendChild(cancelBtn);
+        btnRow.appendChild(cancelBtn);
+        sec.appendChild(btnRow);
     } else {
         // No active plan — show plan picker
         var presets = [
@@ -2110,29 +2138,41 @@ function startPlan(planType, customDays) {
             navigator.serviceWorker.register('service-worker.js').then(function(reg) {
                 console.info('[PWA] Service worker registered, scope:', reg.scope);
 
+                // v10.11: Helper to show the update pill (extracted for reuse)
+                function showUpdatePill(workerToActivate) {
+                    if (document.querySelector('.pwa-update-bar')) return; // already showing
+                    var bar = document.createElement('div');
+                    bar.className = 'pwa-update-bar';
+                    bar.innerHTML = '<span>📦 New version available</span><button class="pwa-update-btn">Reload</button><button class="pwa-update-dismiss">✕</button>';
+                    document.body.appendChild(bar);
+                    bar.querySelector('.pwa-update-btn').addEventListener('click', function() {
+                        if (workerToActivate && workerToActivate.postMessage) {
+                            workerToActivate.postMessage({ type: 'SKIP_WAITING' });
+                        }
+                        location.reload();
+                    });
+                    bar.querySelector('.pwa-update-dismiss').addEventListener('click', function() {
+                        bar.remove();
+                    });
+                }
+
+                // v10.11: If a SW is ALREADY waiting (installed before this page loaded), show pill now
+                if (reg.waiting && navigator.serviceWorker.controller) {
+                    showUpdatePill(reg.waiting);
+                }
+
                 // Check for updates periodically (every hour)
                 setInterval(function() { reg.update(); }, 60 * 60 * 1000);
+                // Also check on focus (catches updates that landed while app was closed)
+                window.addEventListener('focus', function() { reg.update(); });
 
-                // Listen for updates
+                // Listen for updates discovered during this session
                 reg.addEventListener('updatefound', function() {
                     var newWorker = reg.installing;
                     if (!newWorker) return;
                     newWorker.addEventListener('statechange', function() {
                         if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // A new version is ready — notify user
-                            if (typeof showToast === 'function') {
-                                var bar = document.createElement('div');
-                                bar.className = 'pwa-update-bar';
-                                bar.innerHTML = '<span>📦 New version available</span><button class="pwa-update-btn">Reload</button><button class="pwa-update-dismiss">✕</button>';
-                                document.body.appendChild(bar);
-                                bar.querySelector('.pwa-update-btn').addEventListener('click', function() {
-                                    newWorker.postMessage({ type: 'SKIP_WAITING' });
-                                    location.reload();
-                                });
-                                bar.querySelector('.pwa-update-dismiss').addEventListener('click', function() {
-                                    bar.remove();
-                                });
-                            }
+                            showUpdatePill(newWorker);
                         }
                     });
                 });
@@ -2724,8 +2764,8 @@ function updateMiniPlayer(state) {
 }
 
 // ── Add play buttons to verses in current sura (called after render) ──
+// v10.11: ALWAYS attach the button — CSS body class hides when feature off
 function attachAudioButtons() {
-    if (!isFeatureOn('audioRecitation')) return;
     document.querySelectorAll('.sura .verse').forEach(function(verseEl, _i) {
         if (verseEl.querySelector('.verse-audio-btn')) return; // already has one
         var suraEl = verseEl.closest('.sura');
@@ -3523,16 +3563,33 @@ function saveReflection(suraId, text) {
         delete refs[String(suraId)];
     }
     try { localStorage.setItem(REFLECTIONS_KEY, JSON.stringify(refs)); } catch(e) {}
+    // v10.11: Refresh saved hub so the reflection appears/disappears immediately
+    if (typeof refreshSavedHub === 'function') refreshSavedHub();
 }
 
 function maybeShowReflectionPrompt(suraId) {
     if (!isFeatureOn('reflectionPrompts')) return;
     if (_reflectionShownThisSession[suraId]) return;
     _reflectionShownThisSession[suraId] = true;
+    // v10.11: Don't trigger if any other modal/sheet is currently open
+    if (document.getElementById('mobileSheet') && document.getElementById('mobileSheet').classList.contains('show')) return;
+    if (document.getElementById('featuresModal') && document.getElementById('featuresModal').classList.contains('show')) return;
+    if (document.getElementById('tafsirModal')) return;
+    if (document.getElementById('tafsirCompareModal')) return;
+    if (document.getElementById('topicsModal')) return;
+    if (document.getElementById('readingPlanModal')) return;
+    if (document.getElementById('noteModal') && document.getElementById('noteModal').classList.contains('show')) return;
+    openReflectionModal(suraId);
+}
 
+// v10.11: Always-open variant (used by Saved hub click to edit)
+function openReflectionModal(suraId) {
     var sura = quranData.find(function(s){ return s.id === String(suraId); });
     if (!sura) return;
-    // v10.8: Language-aware questions and labels
+    // Close any existing reflection modal first
+    var existingModal = document.getElementById('reflectionModal');
+    if (existingModal) existingModal.remove();
+
     var questions = (typeof getReflectionQuestions === 'function') ? getReflectionQuestions() : REFLECTION_QUESTIONS;
     var labels = (typeof getReflectionLabels === 'function') ? getReflectionLabels() : { reflection: 'Reflection', placeholder: 'Take a moment to write a thought…', skip: 'Not now', save: 'Save reflection', saved: '✓ Reflection saved', cleared: 'Cleared' };
     var qIdx = (parseInt(suraId) + new Date().getDate()) % questions.length;
@@ -4144,7 +4201,8 @@ function applyFeatureBodyClasses() {
         ['topicsIndex',       'feature-off-topics'],
         ['pdfExport',         'feature-off-print'],
         ['readingTimeAnalytics','feature-off-readingtime'],
-        ['hijriAwareness',    'feature-off-hijri']
+        ['hijriAwareness',    'feature-off-hijri'],
+        ['khatmTracker',      'feature-off-khatm']
     ];
     pairs.forEach(function(p) {
         body.classList.toggle(p[1], !f[p[0]]);
@@ -4501,3 +4559,162 @@ async function scheduleNextDailyNotification() {
     }
 }());
 
+
+// ════════════════════════════════════════════════════════════════════
+// v10.11 — Global Escape handler: closes all open modals/sheets/overlays
+// ════════════════════════════════════════════════════════════════════
+(function globalEscapeHandler() {
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        // Ignore if typing in an input (let the input lose focus instead)
+        var tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
+            return;
+        }
+        // Close known modals/sheets in priority order (top-most first)
+        var closed = false;
+        // Confirm overlay (highest z-index)
+        var confirmO = document.getElementById('confirmOverlay');
+        if (confirmO && confirmO.classList.contains('show')) {
+            confirmO.classList.remove('show');
+            setTimeout(function(){ if (confirmO.parentNode) confirmO.remove(); }, 200);
+            closed = true;
+        }
+        if (closed) return;
+        // Note modal
+        var noteModal = document.getElementById('noteModal');
+        if (noteModal && noteModal.classList.contains('show')) {
+            if (typeof closeNoteModal === 'function') closeNoteModal();
+            closed = true;
+        }
+        if (closed) return;
+        // Verse chooser
+        if (typeof closeVerseChooser === 'function') {
+            var chooser = document.querySelector('.verse-chooser');
+            if (chooser) { closeVerseChooser(); closed = true; }
+        }
+        if (closed) return;
+        // Reflection modal
+        var refl = document.getElementById('reflectionModal');
+        if (refl) { refl.classList.remove('show'); setTimeout(function(){ if (refl.parentNode) refl.remove(); }, 200); closed = true; }
+        if (closed) return;
+        // Daily verse modal
+        var dv = document.getElementById('dailyVerseModal');
+        if (dv) { dv.classList.remove('show'); setTimeout(function(){ if (dv.parentNode) dv.remove(); }, 200); closed = true; }
+        if (closed) return;
+        // Topics modal (and its drill-down stays in same overlay)
+        if (typeof closeTopicsModal === 'function' && document.getElementById('topicsModal')) {
+            closeTopicsModal(); closed = true;
+        }
+        if (closed) return;
+        // Tafsir compare modal
+        if (typeof closeTafsirCompare === 'function' && document.getElementById('tafsirCompareModal')) {
+            closeTafsirCompare(); closed = true;
+        }
+        if (closed) return;
+        // Tafsir modal
+        if (typeof closeTafsirModal === 'function' && document.getElementById('tafsirModal')) {
+            closeTafsirModal(); closed = true;
+        }
+        if (closed) return;
+        // Reading plan modal
+        var rpm = document.getElementById('readingPlanModal');
+        if (rpm) { rpm.classList.remove('show'); setTimeout(function(){ if (rpm.parentNode) rpm.remove(); }, 200); closed = true; }
+        if (closed) return;
+        // Install modal
+        var inst = document.getElementById('installModal');
+        if (inst) { inst.classList.remove('show'); setTimeout(function(){ if (inst.parentNode) inst.remove(); }, 200); closed = true; }
+        if (closed) return;
+        // Features modal (desktop Settings)
+        var feat = document.getElementById('featuresModal');
+        if (feat && feat.classList.contains('show')) {
+            feat.classList.remove('show'); closed = true;
+        }
+        if (closed) return;
+        // Mobile sheet
+        var sheet = document.getElementById('mobileSheet');
+        if (sheet && sheet.classList.contains('show')) {
+            if (typeof closeMobileSheet === 'function') closeMobileSheet();
+            closed = true;
+        }
+        if (closed) return;
+        // Sidebar (mobile)
+        var sb = document.getElementById('sidebar');
+        if (sb && sb.classList.contains('open')) {
+            sb.classList.remove('open');
+            var ov = document.getElementById('sidebarOverlay');
+            if (ov) ov.classList.remove('show');
+        }
+    });
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.11 — Khatm sidebar button → modal (desktop)
+// ════════════════════════════════════════════════════════════════════
+function openKhatmModal() {
+    if (!isFeatureOn('khatmTracker')) {
+        if (typeof showToast === 'function') showToast('Enable Khatm tracker in Settings first');
+        return;
+    }
+    var existing = document.getElementById('khatmModal');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'khatmModal';
+    overlay.className = 'khatm-modal-overlay';
+    overlay.innerHTML =
+        '<div class="khatm-modal-box">' +
+            '<div class="khatm-modal-header">' +
+                '<span class="khatm-modal-title">🎯 Khatm tracker</span>' +
+                '<button class="khatm-modal-close" id="khatmModalClose">✕</button>' +
+            '</div>' +
+            '<div class="khatm-modal-body" id="khatmModalBody"></div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function(){ overlay.classList.add('show'); });
+
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 200);
+    }
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) close();
+    });
+    document.getElementById('khatmModalClose').addEventListener('click', close);
+
+    // Populate body using the existing appendKhatmUI helper (which renders heatmap + streak + mark button)
+    var body = document.getElementById('khatmModalBody');
+    if (typeof appendKhatmUI === 'function') appendKhatmUI(body);
+}
+
+// Wire the sidebar button
+(function wireKhatmBtn() {
+    function attach() {
+        var btn = document.getElementById('khatmBtn');
+        if (!btn || btn._wired) return;
+        btn._wired = true;
+        btn.addEventListener('click', openKhatmModal);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+    else attach();
+    setTimeout(attach, 300);
+}());
+
+// Reactive: when khatm toggle changes, refresh open Settings panel + close modal if disabled
+document.addEventListener('change', function(e) {
+    if (!e.target || e.target.type !== 'checkbox') return;
+    if (!e.target.closest('.feature-toggle-row')) return;
+    setTimeout(function() {
+        var f = getFeatures();
+        // If Khatm was just turned off, close the modal
+        if (!f.khatmTracker) {
+            var m = document.getElementById('khatmModal');
+            if (m) m.remove();
+        }
+        // If a Features modal is open, re-render so the Khatm section appears/disappears
+        var fm = document.getElementById('featuresModal');
+        if (fm && fm.classList.contains('show') && typeof openFeaturesModal === 'function') {
+            openFeaturesModal();
+        }
+    }, 80);
+});

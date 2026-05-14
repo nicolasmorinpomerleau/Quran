@@ -177,14 +177,23 @@
                 <!-- Saved hub panel (Bookmarks / Notes / Highlights) -->
                 <div id="bookmarksPanel" class="eraseDiv">
                     <div id="bookmarks-topbar">
-                        <span id="bookmarks-label">🔖 Bookmarks</span>
+                        <span id="bookmarks-label">📁 Saved</span>
                         <button id="bookmarksReset" title="Clear all in this tab">🗑 Reset</button>
                         <button id="bookmarksClose">✕ Close</button>
                     </div>
                     <div id="saved-tabs">
-                        <button class="saved-tab active" data-savedtab="bookmarks">🔖 Bookmarks</button>
-                        <button class="saved-tab" data-savedtab="notes">📝 Notes</button>
-                        <button class="saved-tab" data-savedtab="highlights">✦ Highlights</button>
+                        <button class="saved-tab active" data-savedtab="bookmarks">
+                            <span class="st-ico">🔖</span><span class="st-lbl">Bookmarks</span>
+                        </button>
+                        <button class="saved-tab" data-savedtab="notes">
+                            <span class="st-ico">📝</span><span class="st-lbl">Notes</span>
+                        </button>
+                        <button class="saved-tab" data-savedtab="highlights">
+                            <span class="st-ico">✦</span><span class="st-lbl">Highlights</span>
+                        </button>
+                        <button class="saved-tab" data-savedtab="reflections">
+                            <span class="st-ico">✍️</span><span class="st-lbl">Reflections</span>
+                        </button>
                     </div>
                     <div id="bookmarks-list"></div>
                 </div>
@@ -296,7 +305,7 @@
         </div>
     </div>
 
-    <footer>Quran Display v10.8 — May you read with a mindful heart</footer>
+    <footer>Quran Display v10.10 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

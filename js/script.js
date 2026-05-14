@@ -323,13 +323,34 @@ function renderSavedHubDesktop(tab) {
     const bms      = getBookmarks();
     const notesArr = getNotesList();
     const hlArr    = getHighlightsList();
+    // v10.10: reflections — { suraId: {text, ts} }
+    var reflections = (typeof getReflections === 'function') ? getReflections() : {};
+    var reflectionsArr = Object.keys(reflections).map(function(sId) {
+        var entry = reflections[sId];
+        var sura = quranData.find(function(s){ return s.id === String(sId); });
+        return {
+            suraId: sId,
+            suraName: sura ? sura.name : 'Surah ' + (parseInt(sId) + 1),
+            text: entry.text,
+            ts: entry.ts
+        };
+    }).sort(function(a, b){ return (b.ts || 0) - (a.ts || 0); });
 
-    // Update tab counts
+    // v10.10: Update tab counts — icon stays visible, label may be hidden by CSS on narrow screens
     document.querySelectorAll('.saved-tab').forEach(function(b) {
         var t = b.getAttribute('data-savedtab');
-        var count = t === 'bookmarks' ? bms.length : t === 'notes' ? notesArr.length : hlArr.length;
-        var icon = t === 'bookmarks' ? '🔖 Bookmarks' : t === 'notes' ? '📝 Notes' : '✦ Highlights';
-        b.textContent = icon + (count ? ' (' + count + ')' : '');
+        var count = 0;
+        if (t === 'bookmarks')   count = bms.length;
+        else if (t === 'notes')  count = notesArr.length;
+        else if (t === 'highlights') count = hlArr.length;
+        else if (t === 'reflections') count = reflectionsArr.length;
+        var lblEl = b.querySelector('.st-lbl');
+        if (lblEl) {
+            // Restore label and append count
+            var origText = lblEl.getAttribute('data-base') || lblEl.textContent.replace(/\s*\(\d+\)$/, '');
+            lblEl.setAttribute('data-base', origText);
+            lblEl.textContent = origText + (count ? ' (' + count + ')' : '');
+        }
         b.classList.toggle('active', t === _desktopSavedTab);
     });
 
@@ -431,7 +452,7 @@ function renderSavedHubDesktop(tab) {
             list.appendChild(item);
         });
 
-    } else { // highlights
+    } else if (_desktopSavedTab === 'highlights') {
         if (lbl) lbl.textContent = '✦ Highlights' + (hlArr.length ? ' (' + hlArr.length + ')' : '');
         if (resetBtn) {
             resetBtn.style.display = hlArr.length ? '' : 'none';
@@ -465,6 +486,41 @@ function renderSavedHubDesktop(tab) {
                     const verses = document.querySelectorAll('.verse');
                     if (verses[h.verseIdx]) verses[h.verseIdx].scrollIntoView({ behavior:'smooth' });
                 }, 100);
+            });
+            list.appendChild(item);
+        });
+
+    } else {  // reflections (v10.10)
+        if (lbl) lbl.textContent = '✍️ Reflections' + (reflectionsArr.length ? ' (' + reflectionsArr.length + ')' : '');
+        if (resetBtn) {
+            resetBtn.style.display = reflectionsArr.length ? '' : 'none';
+            resetBtn.title = 'Clear all reflections';
+        }
+        if (reflectionsArr.length === 0) {
+            list.innerHTML = '<div class="bookmarks-empty"><div class="bookmarks-empty-icon">✍️</div><div>No reflections yet</div><div class="bookmarks-empty-hint">Scroll to the end of a surah to be prompted for a reflection.</div></div>';
+            return;
+        }
+        reflectionsArr.forEach(function(r) {
+            const item = document.createElement('div');
+            item.className = 'bookmark-item';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'bookmark-remove'; removeBtn.textContent = '✕';
+            removeBtn.addEventListener('click', function(e){
+                e.stopPropagation();
+                if (typeof saveReflection === 'function') saveReflection(r.suraId, '');
+                renderSavedHubDesktop();
+            });
+            item.appendChild(removeBtn);
+            const surahEl = document.createElement('div');
+            surahEl.className = 'bookmark-surah';
+            var dateStr = r.ts ? new Date(r.ts).toLocaleDateString() : '';
+            surahEl.textContent = r.suraName + (dateStr ? ' · ' + dateStr : '');
+            const textEl = document.createElement('div');
+            textEl.className = 'note-text-preview';
+            textEl.textContent = r.text;
+            item.appendChild(surahEl); item.appendChild(textEl);
+            item.addEventListener('click', function() {
+                displaySingleSura(r.suraId);
             });
             list.appendChild(item);
         });
@@ -506,8 +562,29 @@ document.querySelectorAll('.saved-tab').forEach(function(btn) {
 document.getElementById('bookmarksReset').onclick = function() {
     if (_desktopSavedTab === 'notes')           resetAllNotes();
     else if (_desktopSavedTab === 'highlights') resetAllHighlights();
+    else if (_desktopSavedTab === 'reflections') resetAllReflections();
     else                                        resetAllBookmarks();
 };
+
+// v10.10: Reset all reflections (uses showConfirm)
+function resetAllReflections() {
+    var refs = (typeof getReflections === 'function') ? getReflections() : {};
+    var count = Object.keys(refs).length;
+    if (count === 0) return;
+    if (typeof showConfirm === 'function') {
+        showConfirm(
+            'Clear all reflections?',
+            count + ' reflection' + (count === 1 ? '' : 's') + ' will be removed. This cannot be undone.',
+            function() {
+                try { localStorage.removeItem('quranReflections'); } catch(e) {}
+                renderSavedHubDesktop('reflections');
+            }
+        );
+    } else if (confirm('Clear all ' + count + ' reflections?')) {
+        try { localStorage.removeItem('quranReflections'); } catch(e) {}
+        renderSavedHubDesktop('reflections');
+    }
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // VERSE HIGHLIGHTING
@@ -2317,12 +2394,25 @@ function buildSheetBookmarks(body, title) {
     var bms = getBookmarks();
     var notesArr = getNotesList();
     var hlArr = getHighlightsList();
+    // v10.10: Reflections
+    var refsObj = (typeof getReflections === 'function') ? getReflections() : {};
+    var refsArr = Object.keys(refsObj).map(function(sId) {
+        var entry = refsObj[sId];
+        var sura = quranData.find(function(s){ return s.id === String(sId); });
+        return {
+            suraId: sId,
+            suraName: sura ? sura.name : 'Surah ' + (parseInt(sId) + 1),
+            text: entry.text,
+            ts: entry.ts
+        };
+    }).sort(function(a, b){ return (b.ts || 0) - (a.ts || 0); });
 
     // ── Title reflects active tab ──
     function updateTitle(tab) {
-        if (tab === 'notes')      title.textContent = '📝 Notes' + (notesArr.length ? ' (' + notesArr.length + ')' : '');
+        if (tab === 'notes')           title.textContent = '📝 Notes' + (notesArr.length ? ' (' + notesArr.length + ')' : '');
         else if (tab === 'highlights') title.textContent = '✦ Highlights' + (hlArr.length ? ' (' + hlArr.length + ')' : '');
-        else                      title.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
+        else if (tab === 'reflections')title.textContent = '✍️ Reflections' + (refsArr.length ? ' (' + refsArr.length + ')' : '');
+        else                           title.textContent = '🔖 Bookmarks' + (bms.length ? ' (' + bms.length + ')' : '');
     }
     updateTitle(_savedHubActiveTab);
 
@@ -2334,38 +2424,40 @@ function buildSheetBookmarks(body, title) {
         if (oldR) oldR.remove();
         var hasItems = (tab === 'bookmarks' && bms.length) ||
                        (tab === 'notes'     && notesArr.length) ||
-                       (tab === 'highlights'&& hlArr.length);
+                       (tab === 'highlights'&& hlArr.length) ||
+                       (tab === 'reflections'&& refsArr.length);
         if (!hasItems) return;
         var resetBtn = document.createElement('button');
         resetBtn.className = 'mob-sheet-reset';
         resetBtn.textContent = '🗑 Reset';
         resetBtn.title = 'Clear all in this tab';
         resetBtn.addEventListener('click', function() {
-            if (tab === 'notes')      resetAllNotes();
+            if (tab === 'notes')           resetAllNotes();
             else if (tab === 'highlights') resetAllHighlights();
-            else                      resetAllBookmarks();
+            else if (tab === 'reflections')resetAllReflections();
+            else                           resetAllBookmarks();
         });
         var closeBtn = headerEl.querySelector('.mob-sheet-close');
         headerEl.insertBefore(resetBtn, closeBtn);
     }
     ensureReset(_savedHubActiveTab);
 
-    // ── Tab bar ──
+    // ── Tab bar — v10.10: 4 tabs with icons + labels ──
     var tabsRow = sheet.querySelector('.mob-saved-tabs');
     if (tabsRow) tabsRow.remove();
     tabsRow = document.createElement('div');
     tabsRow.className = 'mob-saved-tabs';
     [
-        { id: 'bookmarks',  label: '🔖 Bookmarks',  count: bms.length },
-        { id: 'notes',      label: '📝 Notes',      count: notesArr.length },
-        { id: 'highlights', label: '✦ Highlights', count: hlArr.length }
+        { id: 'bookmarks',  icon: '🔖', label: 'Bookmarks',  count: bms.length },
+        { id: 'notes',      icon: '📝', label: 'Notes',      count: notesArr.length },
+        { id: 'highlights', icon: '✦',  label: 'Highlights', count: hlArr.length },
+        { id: 'reflections',icon: '✍️', label: 'Reflections',count: refsArr.length }
     ].forEach(function(t) {
         var btn = document.createElement('button');
         btn.className = 'mob-saved-tab' + (_savedHubActiveTab === t.id ? ' active' : '');
-        btn.textContent = t.label + (t.count ? ' (' + t.count + ')' : '');
+        btn.innerHTML = '<span class="mst-ico">' + t.icon + '</span><span class="mst-lbl">' + t.label + (t.count ? ' (' + t.count + ')' : '') + '</span>';
         btn.addEventListener('click', function() {
             _savedHubActiveTab = t.id;
-            // Re-render
             buildSheetBookmarks(body, title);
         });
         tabsRow.appendChild(btn);
@@ -2378,8 +2470,10 @@ function buildSheetBookmarks(body, title) {
         renderBookmarksInBody(body, bms);
     } else if (_savedHubActiveTab === 'notes') {
         renderNotesInBody(body, notesArr);
-    } else {
+    } else if (_savedHubActiveTab === 'highlights') {
         renderHighlightsInBody(body, hlArr);
+    } else {
+        renderReflectionsInBody(body, refsArr);
     }
 }
 
@@ -2509,6 +2603,39 @@ function renderHighlightsInBody(body, hlArr) {
                 var verses = document.querySelectorAll('.verse');
                 if (verses[h.verseIdx]) verses[h.verseIdx].scrollIntoView({ behavior: 'smooth' });
             }, 150);
+        });
+        body.appendChild(item);
+    });
+}
+
+// v10.10: Reflections in mobile sheet
+function renderReflectionsInBody(body, refsArr) {
+    if (!refsArr.length) {
+        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">✍️</div><div>No reflections yet</div><div class="mob-bookmarks-empty-hint">Scroll to the end of a surah — you\'ll be prompted to reflect.</div></div>';
+        return;
+    }
+    refsArr.forEach(function(r) {
+        var item = document.createElement('div');
+        item.className = 'mob-bm-item';
+        var rmv = document.createElement('button');
+        rmv.className = 'mob-saved-rm'; rmv.textContent = '✕'; rmv.title = 'Delete reflection';
+        rmv.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (typeof saveReflection === 'function') saveReflection(r.suraId, '');
+            var bodyEl = document.getElementById('mobileSheetBody');
+            var titleEl = document.getElementById('mobileSheetTitle');
+            if (bodyEl && titleEl) buildSheetBookmarks(bodyEl, titleEl);
+        });
+        item.appendChild(rmv);
+        var surah = document.createElement('div'); surah.className = 'mob-bm-surah';
+        var dateStr = r.ts ? new Date(r.ts).toLocaleDateString() : '';
+        surah.textContent = r.suraName + (dateStr ? ' · ' + dateStr : '');
+        var textEl = document.createElement('div'); textEl.className = 'mob-bm-note-text';
+        textEl.textContent = r.text;
+        item.appendChild(surah); item.appendChild(textEl);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            displaySingleSura(r.suraId);
         });
         body.appendChild(item);
     });

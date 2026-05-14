@@ -11,29 +11,27 @@ const FEATURES_KEY = 'quranFeaturesV1';
 
 // Default feature flags (user can toggle in settings)
 const DEFAULT_FEATURES = {
-    keyboardShortcuts: true,        // #2
+    // v10.9: Off by default — user can opt in
+    keyboardShortcuts: false,        // #2
+    lastReadBanner:    false,        // #6 — Continue Reading banner
+    khatmTracker:      false,        // #13
+    // Always on (no toggle): pullToRefresh, deepLinks. Removed from this map.
+    // Removed dead flags: bookmarkTags, landscapeLayout, loadingSkeletons.
     copyShareVerse:    true,         // #3
     swipeBetweenSurahs:true,         // #4 (mobile)
     searchAsYouType:   true,         // #5
-    lastReadBanner:    true,         // #6
-    bookmarkTags:      true,         // #12
     saveTools:         true,         // v10.8 — unified: highlight + bookmark + note
-    khatmTracker:      true,         // #13
-    loadingSkeletons:  true,         // #14
     arabicFontChoice:  true,         // #17
     focusMode:         true,         // #18
     autoDarkTheme:     false,        // #19 (off by default — opinionated)
     browserLangDefault:false,        // #20 (off by default — Arabic is best default)
-    pullToRefresh:     true,         // #21 (mobile)
     hapticFeedback:    true,         // #22 (mobile)
-    landscapeLayout:   true,         // #23 (mobile)
     verseNavigation:   true,         // #1
-    deepLinks:         true,         // #15
     notesExportImport: true,         // #7
     betterErrorStates: true,         // #16
     audioRecitation:   true,         // v10.2 — Phase 2b
     tafsir:            true,         // v10.2 — Phase 2b
-    // v10.7 — eight new features
+    // v10.7 — eight features
     topicsIndex:           true,
     dailyVerse:            true,
     reflectionPrompts:     true,
@@ -41,8 +39,34 @@ const DEFAULT_FEATURES = {
     verseComparison:       true,
     pdfExport:             true,
     readingTimeAnalytics:  true,
-    voiceSearch:           true
+    voiceSearch:           true,
+    dailyVerseNotification:false      // v10.10 — opt-in (requires notification permission)
 };
+
+// v10.9: One-time migration — for users upgrading from v10.8 or earlier,
+// reset the now-default-OFF flags to false (user-friendly fresh experience).
+// They can opt back in via Settings if they want.
+(function v109DefaultsMigration() {
+    try {
+        if (localStorage.getItem('quranV109Migrated') === '1') return;
+        var saved = JSON.parse(localStorage.getItem(FEATURES_KEY) || '{}');
+        // Force these to off (matches new defaults)
+        saved.keyboardShortcuts = false;
+        saved.lastReadBanner    = false;
+        saved.khatmTracker      = false;
+        // Remove dead flag entries so they don't leak into UI anymore
+        delete saved.bookmarkTags;
+        delete saved.landscapeLayout;
+        delete saved.loadingSkeletons;
+        delete saved.pullToRefresh; // always on
+        delete saved.deepLinks;     // always on
+        delete saved.hapticFeedback;     // v10.10: always on
+        delete saved.swipeBetweenSurahs; // v10.10: always on
+        delete saved.betterErrorStates;  // v10.10: removed (dead code)
+        localStorage.setItem(FEATURES_KEY, JSON.stringify(saved));
+        localStorage.setItem('quranV109Migrated', '1');
+    } catch(e) {}
+}());
 
 function getFeatures() {
     try {
@@ -65,9 +89,8 @@ function isFeatureOn(name) {
     return !!getFeatures()[name];
 }
 
-// Quick helper
+// Quick helper — v10.10: always on (no toggle)
 function hapticTap(ms) {
-    if (!isFeatureOn('hapticFeedback')) return;
     if (navigator.vibrate) {
         try { navigator.vibrate(ms || 10); } catch(e) {}
     }
@@ -113,7 +136,7 @@ function applyAutoTheme() {
 // #15 — Deep links: ?s=2&v=255 opens directly to that verse
 // ═══════════════════════════════════════════════════════════════════
 function parseDeepLink() {
-    if (!isFeatureOn('deepLinks')) return null;
+    // v10.9: deepLinks always enabled (no toggle)
     var p = new URLSearchParams(location.search);
     var s = parseInt(p.get('s'), 10);
     var v = parseInt(p.get('v'), 10);
@@ -240,43 +263,14 @@ function showLastReadBanner() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// #14 — Loading skeletons
+// #14 — Loading skeletons removed in v10.9 (was never called anywhere
+// and content loads instantly from local XML, so it was dead code).
 // ═══════════════════════════════════════════════════════════════════
-function showSkeleton(targetEl) {
-    if (!isFeatureOn('loadingSkeletons')) return;
-    if (!targetEl) return;
-    targetEl.innerHTML =
-        '<div class="skeleton-wrap">' +
-        '<div class="skeleton-line skeleton-title"></div>' +
-        '<div class="skeleton-verse"><div class="skeleton-line skeleton-ar"></div><div class="skeleton-line skeleton-tr"></div></div>' +
-        '<div class="skeleton-verse"><div class="skeleton-line skeleton-ar" style="width:75%"></div><div class="skeleton-line skeleton-tr"></div></div>' +
-        '<div class="skeleton-verse"><div class="skeleton-line skeleton-ar"></div><div class="skeleton-line skeleton-tr" style="width:60%"></div></div>' +
-        '</div>';
-}
 
 // ═══════════════════════════════════════════════════════════════════
-// #16 — Better error states
+// #16 — Better error states removed in v10.10 (was never called anywhere —
+// tafsir, audio, and search each have their own inline error UI).
 // ═══════════════════════════════════════════════════════════════════
-function showError(targetEl, message, retryFn) {
-    if (!isFeatureOn('betterErrorStates')) {
-        if (targetEl) targetEl.innerHTML = '<p>' + message + '</p>';
-        return;
-    }
-    if (!targetEl) return;
-    var html =
-        '<div class="error-state">' +
-        '<div class="error-icon">⚠️</div>' +
-        '<div class="error-msg">' + message + '</div>';
-    if (retryFn) {
-        html += '<button class="error-retry">Retry</button>';
-    }
-    html += '</div>';
-    targetEl.innerHTML = html;
-    if (retryFn) {
-        var btn = targetEl.querySelector('.error-retry');
-        if (btn) btn.addEventListener('click', retryFn);
-    }
-}
 
 // ═══════════════════════════════════════════════════════════════════
 // #2 — Keyboard shortcuts
@@ -522,7 +516,8 @@ function copyVerseToClipboard(suraId, verseIdx, verseText, suraName) {
 
 function shareVerse(suraId, verseIdx, verseText, suraName) {
     var text = buildShareableText(suraId, verseIdx, verseText, suraName);
-    var url = isFeatureOn('deepLinks') ? buildDeepLink(suraId, verseIdx + 1) : location.href;
+    // v10.9: deep links always enabled (always-on feature, no toggle)
+    var url = buildDeepLink(suraId, verseIdx + 1);
     if (navigator.share) {
         navigator.share({
             title: suraName + ' ' + (parseInt(suraId)+1) + ':' + (verseIdx+1),
@@ -620,7 +615,7 @@ function buildVerseNav() {
     }
 
     document.addEventListener('touchstart', function(e) {
-        if (!isFeatureOn('swipeBetweenSurahs')) return;
+        // v10.10: Always on (no toggle) — natural gesture
         if (window.innerWidth > 900) return;
         if (!e.target.closest('#quranContainer')) return;
         if (e.touches.length !== 1) { startX = null; tracking = false; return; }
@@ -750,7 +745,7 @@ function buildVerseNav() {
     var indicator = null;
 
     document.addEventListener('touchstart', function(e) {
-        if (!isFeatureOn('pullToRefresh')) return;
+        // v10.9: Always on (no toggle) — natural gesture, no reason to disable
         if (window.innerWidth > 900) return;
         var container = document.getElementById('quranContainer');
         if (!container) return;
@@ -1133,8 +1128,8 @@ function loadArabicFontChoice() {
         orig(body, title);
         appendFeaturesUI(body);
         appendFocusModeButton(body);
-        appendDataUI(body);
         appendKhatmUI(body);
+        // v10.10: appendDataUI moved to a final injection layer (always last)
     };
 }());
 
@@ -1148,35 +1143,28 @@ function appendFeaturesUI(body) {
 
     var f = getFeatures();
     var FEATURE_LABELS = {
-        keyboardShortcuts:  ['⌨️ Keyboard shortcuts',     'Use ←/→ ? F / on desktop'],
+        keyboardShortcuts:  ['⌨️ Keyboard shortcuts',     'Use ←/→ ? F on desktop'],
         copyShareVerse:     ['📋 Copy & share verse',     'Adds copy / share / link buttons under each verse'],
-        swipeBetweenSurahs: ['👆 Swipe between surahs',   'Swipe left / right to switch surah on phone'],
         searchAsYouType:    ['⚡ Search as you type',     'Auto-runs search 350ms after you stop typing'],
         lastReadBanner:     ['📍 "Continue reading" banner','Shows previously-read surah at top so you can jump back'],
-        bookmarkTags:       ['🏷️ Bookmark tags',          'Categorize saved verses (e.g. "patience", "prayer")'],
         saveTools:          ['🔖 Save tools',              'Show Highlight, Bookmark, and Note buttons on each verse'],
         khatmTracker:       ['🎯 Khatm tracker',          'Daily reading heatmap + completion count'],
-        loadingSkeletons:   ['✨ Loading animations',      'Shimmer effect while content loads'],
         arabicFontChoice:   ['🔤 Arabic font choice',      'Pick from Amiri / Scheherazade / Naskh / Lateef'],
         focusMode:          ['🧘 Focus mode',              'Hides everything except verses (key: F)'],
         autoDarkTheme:      ['🌗 Auto dark theme',         'Switches to Scholar after 7pm, Manuscript before'],
         browserLangDefault: ['🌐 Browser language default','Picks French/English/Spanish/Arabic from device'],
-        pullToRefresh:      ['↻ Pull to refresh',         'Pull down at top of reading to refresh on mobile'],
-        hapticFeedback:     ['📳 Haptic feedback',         'Subtle vibration on taps (mobile only)'],
-        landscapeLayout:    ['📐 Landscape layout',        'Compact spacing in landscape on mobile'],
         verseNavigation:    ['⇆ Verse navigation buttons', 'Floating prev / next / jump-to-verse buttons'],
-        deepLinks:          ['🔗 Verse deep links',        'Adds 🔗 button per verse to copy a shareable URL'],
         notesExportImport:  ['💾 Backup / restore data',   'Adds export / import buttons in settings'],
-        betterErrorStates:  ['⚠️ Friendly error messages', 'Replaces blank failures with helpful retry'],
         audioRecitation:    ['🔊 Audio recitation',         'Play verses with multiple reciters · needs internet'],
         tafsir:             ['📚 Tafsir (commentary)',      'Tap a verse to read classical commentary · needs internet'],
         topicsIndex:           ['💡 Topics index',           'Browse verses by theme — patience, mercy, gratitude…'],
         dailyVerse:            ['🌅 Daily verse',            'A contemplative verse shown once per day on open'],
+        dailyVerseNotification:['🔔 Daily verse notification','Schedules a daily notification (best-effort: works only on installed PWA on Android Chrome)'],
         reflectionPrompts:     ['✍️ Reflection prompts',     'Optional reflection question after finishing a surah'],
-        hijriAwareness:        ['🌙 Hijri calendar',         'Marks special Islamic dates (Ramadan, Laylat al-Qadr…)'],
+        hijriAwareness:        ['🌙 Hijri calendar',         'Marks special Islamic dates (Ramadan, Hajj, Laylat al-Qadr…)'],
         verseComparison:       ['🔀 Compare tafsirs',         'Adds "Compare all" button in the tafsir modal'],
         pdfExport:             ['🖨 Print / PDF export',     'Print the current surah with your notes'],
-        readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in Khatm tracker'],
+        readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in top bar'],
         voiceSearch:           ['🎤 Voice search',           'Tap the mic to speak a search query']
     };
 
@@ -1548,8 +1536,8 @@ window.openFeaturesModal = function() {
     // Reuse the same UI builders the mobile sheet uses
     if (typeof appendFeaturesUI      === 'function') appendFeaturesUI(body);
     if (typeof appendFocusModeButton === 'function') appendFocusModeButton(body);
-    if (typeof appendDataUI          === 'function') appendDataUI(body);
     if (typeof appendKhatmUI         === 'function') appendKhatmUI(body);
+    // v10.10: appendDataUI moved to final injection layer (always last)
     overlay.classList.add('show');
 };
 
@@ -1787,37 +1775,90 @@ function markTodayComplete() {
 }
 
 // ── Render the plan card at top of reading area ──
+// v10.10: Reading plan UI completely reworked.
+// - Inline card removed (was too big and intrusive)
+// - Small floating pill in top-right area on desktop, in bottom area on mobile
+// - Click the pill → opens a compact modal with progress + Mark Done + ✕
+// - User can dismiss the pill (sessionStorage) but plan stays active; Settings re-shows it.
 function renderReadingPlanCard() {
-    var existing = document.getElementById('readingPlanCard');
+    var existing = document.getElementById('readingPlanPill');
     if (existing) existing.remove();
+    var existingCard = document.getElementById('readingPlanCard'); // legacy
+    if (existingCard) existingCard.remove();
 
     var plan = getReadingPlan();
     if (!plan) return;
-
     var info = calculateTodayReading();
     if (!info) return;
 
-    var card = document.createElement('div');
-    card.id = 'readingPlanCard';
-    card.className = 'reading-plan-card';
+    // Has the user dismissed the pill this session?
+    var dismissed = false;
+    try { dismissed = sessionStorage.getItem('readingPlanPillDismissed') === '1'; } catch(e) {}
+    if (dismissed) return;
 
+    var pill = document.createElement('button');
+    pill.id = 'readingPlanPill';
+    pill.className = 'reading-plan-pill';
+    pill.type = 'button';
+    pill.title = 'Open reading plan';
+
+    var icon, label;
     if (info.notStarted) {
-        card.innerHTML =
-            '<span class="rpc-icon">📖</span>' +
-            '<div class="rpc-text">' +
-                '<div class="rpc-label">Reading plan</div>' +
-                '<div class="rpc-detail">Starts ' + new Date(plan.startDate).toLocaleDateString() + '</div>' +
-            '</div>';
+        icon = '📖';
+        label = 'Plan · starts soon';
     } else if (info.finished) {
-        card.innerHTML =
-            '<span class="rpc-icon">🎉</span>' +
-            '<div class="rpc-text">' +
-                '<div class="rpc-label">Plan complete!</div>' +
-                '<div class="rpc-detail">All ' + info.totalDays + ' days done</div>' +
-            '</div>' +
-            '<button class="rpc-action" id="rpcDismiss">Dismiss</button>';
+        icon = '🎉';
+        label = 'Plan complete';
+    } else if (info.completed) {
+        icon = '✓';
+        label = 'Day ' + info.dayNum + ' done';
     } else {
-        // Active plan day
+        icon = '📖';
+        label = 'Day ' + info.dayNum + ' / ' + info.totalDays;
+    }
+    pill.innerHTML =
+        '<span class="rpp-ico">' + icon + '</span>' +
+        '<span class="rpp-lbl">' + label + '</span>' +
+        '<span class="rpp-x" title="Hide for this session">✕</span>';
+
+    pill.addEventListener('click', function(e) {
+        if (e.target.classList.contains('rpp-x')) {
+            e.stopPropagation();
+            try { sessionStorage.setItem('readingPlanPillDismissed', '1'); } catch(err) {}
+            pill.remove();
+            return;
+        }
+        openReadingPlanModal();
+    });
+
+    document.body.appendChild(pill);
+}
+
+// v10.10: Modal that opens when the pill is clicked
+function openReadingPlanModal() {
+    var existing = document.getElementById('readingPlanModal');
+    if (existing) existing.remove();
+    var plan = getReadingPlan();
+    if (!plan) return;
+    var info = calculateTodayReading();
+    if (!info) return;
+
+    var overlay = document.createElement('div');
+    overlay.id = 'readingPlanModal';
+    overlay.className = 'reading-plan-modal-overlay';
+
+    var contentHtml;
+    if (info.notStarted) {
+        contentHtml =
+            '<div class="rpm-icon-big">📖</div>' +
+            '<div class="rpm-status">Plan starts ' + new Date(plan.startDate).toLocaleDateString() + '</div>';
+    } else if (info.finished) {
+        contentHtml =
+            '<div class="rpm-icon-big">🎉</div>' +
+            '<div class="rpm-status">Plan complete!</div>' +
+            '<div class="rpm-detail">You finished all ' + info.totalDays + ' days</div>' +
+            '<button class="rpm-btn-primary" id="rpmDismissPlan">Dismiss plan</button>';
+    } else {
         var doneCount = Object.keys(plan.completedDays).length;
         var pct = Math.round((doneCount / info.totalDays) * 100);
         var juzText = info.juzList.length === 1
@@ -1826,34 +1867,50 @@ function renderReadingPlanCard() {
         var surahHint = info.surahs.length > 0
             ? ' · Surahs ' + info.surahs[0] + (info.surahs.length > 1 ? '–' + info.surahs[info.surahs.length-1] : '')
             : '';
-        var statusIcon = info.completed ? '✓' : '📖';
-        var actionBtn = info.completed
-            ? '<span class="rpc-done-badge">✓ Done</span>'
-            : '<button class="rpc-action" id="rpcMarkDone">Mark done</button>';
+        var doneCta = info.completed
+            ? '<div class="rpm-done-badge">✓ Day already marked done</div>'
+            : '<button class="rpm-btn-primary" id="rpmMarkDone">Mark today done</button>';
+        contentHtml =
+            '<div class="rpm-day">Day ' + info.dayNum + ' of ' + info.totalDays + '</div>' +
+            '<div class="rpm-today">' + juzText + surahHint + '</div>' +
+            '<div class="rpm-progress"><div class="rpm-progress-fill" style="width:' + pct + '%"></div></div>' +
+            '<div class="rpm-progress-text">' + doneCount + ' / ' + info.totalDays + ' days · ' + pct + '%</div>' +
+            doneCta;
+    }
 
-        card.innerHTML =
-            '<span class="rpc-icon">' + statusIcon + '</span>' +
-            '<div class="rpc-text">' +
-                '<div class="rpc-label">Day ' + info.dayNum + ' of ' + info.totalDays + ' · ' + juzText + surahHint + '</div>' +
-                '<div class="rpc-progress"><div class="rpc-progress-fill" style="width:' + pct + '%"></div></div>' +
-                '<div class="rpc-detail">' + doneCount + ' / ' + info.totalDays + ' days · ' + pct + '%</div>' +
+    overlay.innerHTML =
+        '<div class="reading-plan-modal-box">' +
+            '<div class="rpm-header">' +
+                '<span class="rpm-title">📖 Reading plan</span>' +
+                '<button class="rpm-close" id="rpmClose">✕</button>' +
             '</div>' +
-            actionBtn;
-    }
+            '<div class="rpm-body">' + contentHtml + '</div>' +
+            '<div class="rpm-footer">To cancel the plan, see Settings → Reading plan.</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function(){ overlay.classList.add('show'); });
 
-    // Insert at the top of content-wrapper, above any sura
-    var contentWrapper = document.getElementById('content-wrapper');
-    if (contentWrapper) {
-        contentWrapper.insertBefore(card, contentWrapper.firstChild);
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 200);
     }
-
-    // Wire actions
-    var markBtn = card.querySelector('#rpcMarkDone');
-    if (markBtn) markBtn.addEventListener('click', markTodayComplete);
-    var dismissBtn = card.querySelector('#rpcDismiss');
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) close();
+    });
+    document.getElementById('rpmClose').addEventListener('click', close);
+    var markBtn = document.getElementById('rpmMarkDone');
+    if (markBtn) markBtn.addEventListener('click', function() {
+        markTodayComplete();
+        close();
+        // The pill will refresh on next renderReadingPlanCard call
+        setTimeout(renderReadingPlanCard, 100);
+    });
+    var dismissBtn = document.getElementById('rpmDismissPlan');
     if (dismissBtn) dismissBtn.addEventListener('click', function() {
         clearReadingPlan();
-        card.remove();
+        close();
+        var p = document.getElementById('readingPlanPill');
+        if (p) p.remove();
     });
 }
 
@@ -1897,18 +1954,22 @@ function appendReadingPlanUI(body) {
             if (typeof showConfirm === 'function') {
                 showConfirm('Cancel reading plan?', 'Your progress (' + doneCount + ' days) will be lost.', function() {
                     clearReadingPlan();
-                    var card = document.getElementById('readingPlanCard');
-                    if (card) card.remove();
+                    var pill = document.getElementById('readingPlanPill');
+                    if (pill) pill.remove();
+                    var modal = document.getElementById('readingPlanModal');
+                    if (modal) modal.remove();
+                    // Clear session-dismissed flag so a future plan shows the pill again
+                    try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
                     showToast('Plan cancelled');
-                    // Refresh modal/sheet
                     if (typeof openFeaturesModal === 'function' && document.getElementById('featuresModal').classList.contains('show')) {
                         openFeaturesModal();
                     }
                 });
             } else if (confirm('Cancel reading plan? Your progress will be lost.')) {
                 clearReadingPlan();
-                var card2 = document.getElementById('readingPlanCard');
-                if (card2) card2.remove();
+                var pill2 = document.getElementById('readingPlanPill');
+                if (pill2) pill2.remove();
+                try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
             }
         });
         sec.appendChild(cancelBtn);
@@ -3581,15 +3642,28 @@ function getHijriSpecialDate(h) {
     if (h.month === 1 && h.day === 1) return { name: 'Islamic New Year', icon: '🌙' };
     if (h.month === 1 && h.day === 10) return { name: 'Day of Ashura', icon: '🕯' };
     if (h.month === 3 && h.day === 12) return { name: 'Mawlid an-Nabi', icon: '✦' };
+    if (h.month === 7 && h.day === 27) return { name: 'Laylat al-Mi\'raj (likely)', icon: '✦' };
+    if (h.month === 8 && h.day === 15) return { name: 'Laylat al-Bara\'ah', icon: '✦' };
     if (h.month === 9) {
         if (h.day === 1) return { name: 'First day of Ramadan', icon: '🌙' };
-        if (h.day === 27) return { name: 'Laylat al-Qadr (likely)', icon: '⭐' };
+        // Last 10 nights — odd nights are the likely candidates for Laylat al-Qadr
+        if (h.day === 21 || h.day === 23 || h.day === 25 || h.day === 29) {
+            return { name: 'Last 10 of Ramadan · possible Laylat al-Qadr · day ' + h.day, icon: '⭐' };
+        }
+        if (h.day === 27) return { name: 'Laylat al-Qadr (most likely) · 27 Ramadan', icon: '⭐' };
+        if (h.day >= 20) return { name: 'Last 10 of Ramadan · day ' + h.day, icon: '🌙' };
         return { name: 'Ramadan · day ' + h.day, icon: '🌙' };
     }
     if (h.month === 10 && h.day === 1) return { name: 'Eid al-Fitr', icon: '🎉' };
+    if (h.month === 10 && h.day === 2) return { name: 'Eid al-Fitr · day 2', icon: '🎉' };
+    if (h.month === 10 && h.day === 3) return { name: 'Eid al-Fitr · day 3', icon: '🎉' };
     if (h.month === 12) {
-        if (h.day === 9) return { name: 'Day of Arafah', icon: '⛰' };
-        if (h.day === 10) return { name: 'Eid al-Adha', icon: '🎉' };
+        // Hajj season — multi-day pilgrimage 8-13 Dhul-Hijjah
+        if (h.day >= 1 && h.day <= 7) return { name: 'Dhul-Hijjah · first 10 days · day ' + h.day, icon: '⛰' };
+        if (h.day === 8) return { name: 'Yawm at-Tarwiyah · Hajj begins', icon: '⛰' };
+        if (h.day === 9) return { name: 'Day of Arafah · climax of Hajj', icon: '⛰' };
+        if (h.day === 10) return { name: 'Eid al-Adha · 10 Dhul-Hijjah', icon: '🎉' };
+        if (h.day >= 11 && h.day <= 13) return { name: 'Days of Tashriq · Hajj · day ' + h.day, icon: '⛰' };
     }
     return null;
 }
@@ -3963,8 +4037,33 @@ function appendV107SettingsUI(body) {
         rtBox.className = 'reading-time-box';
         rtBox.innerHTML =
             '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + s.thisWeek + ' min</span></div>' +
-            '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + s.avg4w + ' min/week</span></div>';
+            '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + s.avg4w + ' min/week</span></div>' +
+            '<div class="rt-footer"><button class="rt-reset-link" type="button">🗑 Reset</button></div>';
         rtSec.appendChild(rtBox);
+        var rtReset = rtBox.querySelector('.rt-reset-link');
+        rtReset.addEventListener('click', function() {
+            var data = getReadingTime();
+            var weeksCount = Object.keys(data).length;
+            var totalMin = 0;
+            Object.values(data).forEach(function(m){ totalMin += m; });
+            var msg = 'This will erase your reading-time history (' + weeksCount + ' week' + (weeksCount === 1 ? '' : 's') + ' · ' + Math.round(totalMin) + ' total minutes). This cannot be undone.';
+            if (typeof showConfirm === 'function') {
+                showConfirm('Reset reading time?', msg, function() {
+                    try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+                    _readingTimeStart = Date.now();
+                    if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
+                    if (typeof showToast === 'function') showToast('Reading time reset');
+                    var feat = document.getElementById('featuresModal');
+                    if (feat && feat.classList.contains('show') && typeof openFeaturesModal === 'function') {
+                        openFeaturesModal();
+                    }
+                });
+            } else if (confirm(msg)) {
+                try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+                _readingTimeStart = Date.now();
+                if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
+            }
+        });
         body.appendChild(rtSec);
     }
 }
@@ -4200,3 +4299,205 @@ function refreshTopReadingTime() {
         var iv = setInterval(function(){ tryHook(); if (hooked) clearInterval(iv); }, 200);
     }
 }());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.10 — Final injection layer: Export & Data section always at the
+// bottom of Settings (mobile sheet AND desktop modal)
+// ════════════════════════════════════════════════════════════════════
+(function injectDataLast() {
+    function tryInject() {
+        if (typeof buildSheetSettings === 'undefined' || typeof appendDataUI !== 'function') return false;
+        if (window._dataLastInjected) return true;
+        window._dataLastInjected = true;
+
+        var origSheet = buildSheetSettings;
+        window.buildSheetSettings = buildSheetSettings = function(body, title) {
+            origSheet(body, title);
+            // Defer so this runs after any other injection layers that wrap origSheet
+            setTimeout(function() {
+                // Defensive: don't double-add
+                if (!body.querySelector('.data-section-marker')) {
+                    appendDataUI(body);
+                    var marker = body.lastElementChild;
+                    if (marker) marker.classList.add('data-section-marker');
+                }
+            }, 0);
+        };
+        if (typeof openFeaturesModal === 'function') {
+            var origModal = openFeaturesModal;
+            window.openFeaturesModal = function() {
+                origModal();
+                setTimeout(function() {
+                    var body = document.getElementById('featuresModalBody');
+                    if (body && !body.querySelector('.data-section-marker')) {
+                        appendDataUI(body);
+                        var marker = body.lastElementChild;
+                        if (marker) marker.classList.add('data-section-marker');
+                    }
+                }, 50);
+            };
+        }
+        return true;
+    }
+    if (!tryInject()) {
+        var iv = setInterval(function() {
+            if (tryInject()) clearInterval(iv);
+        }, 200);
+    }
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.10 — Daily verse notification (best-effort)
+// (a) When toggled ON, request permission
+// (b) If installed PWA + Notification Triggers API available (Chrome
+//     Android), schedule a notification for tomorrow 8am
+// (c) Always fall back to "show on next open" — handled by maybeShowDailyVerse
+// ════════════════════════════════════════════════════════════════════
+const DAILY_NOTIF_LAST_SCHEDULED = 'quranDailyNotifLastScheduled';
+
+async function setupDailyVerseNotification() {
+    if (!isFeatureOn('dailyVerseNotification')) return;
+    if (!('Notification' in window)) {
+        if (typeof showToast === 'function') showToast('Notifications not supported on this browser');
+        return false;
+    }
+    if (Notification.permission === 'denied') {
+        if (typeof showToast === 'function') showToast('Notifications blocked — enable in browser settings');
+        return false;
+    }
+    if (Notification.permission === 'default') {
+        try {
+            var perm = await Notification.requestPermission();
+            if (perm !== 'granted') {
+                if (typeof showToast === 'function') showToast('Notifications denied');
+                return false;
+            }
+        } catch(e) {
+            return false;
+        }
+    }
+    // Schedule for tomorrow 8 AM (or 8 AM today if it's before 8 AM)
+    await scheduleNextDailyNotification();
+    return true;
+}
+
+async function scheduleNextDailyNotification() {
+    try {
+        if (!('serviceWorker' in navigator)) return;
+        var reg = await navigator.serviceWorker.ready;
+        // Check for Notification Triggers API support (experimental, Chrome Android)
+        if (!('showTrigger' in Notification.prototype) && !('TimestampTrigger' in window)) {
+            // Browser doesn't support scheduled notifications — we'll rely on the
+            // "show on next open" fallback (which works via maybeShowDailyVerse).
+            return;
+        }
+        // Compute next 8 AM
+        var now = new Date();
+        var target = new Date();
+        target.setHours(8, 0, 0, 0);
+        if (target.getTime() <= now.getTime()) {
+            target.setDate(target.getDate() + 1);
+        }
+        // Don't reschedule if we already scheduled for this exact time
+        var lastScheduled = null;
+        try { lastScheduled = parseInt(localStorage.getItem(DAILY_NOTIF_LAST_SCHEDULED) || '0'); } catch(e) {}
+        if (lastScheduled === target.getTime()) return;
+        try {
+            var TT = window.TimestampTrigger;
+            await reg.showNotification('🌅 Today\'s verse', {
+                body: 'Your daily Quran reflection is waiting.',
+                icon: 'img/icon-192.png',
+                badge: 'img/icon-192.png',
+                tag: 'daily-verse',
+                showTrigger: TT ? new TT(target.getTime()) : undefined
+            });
+            localStorage.setItem(DAILY_NOTIF_LAST_SCHEDULED, String(target.getTime()));
+        } catch(err) {
+            console.warn('[Notif] scheduling failed', err);
+        }
+    } catch(e) {
+        console.warn('[Notif] setup error', e);
+    }
+}
+
+// When the feature toggle flips ON, request permission and schedule
+(function reactiveNotifToggle() {
+    document.addEventListener('change', function(e) {
+        if (!e.target || e.target.type !== 'checkbox') return;
+        if (!e.target.closest('.feature-toggle-row')) return;
+        // Detect which feature changed
+        setTimeout(function() {
+            if (isFeatureOn('dailyVerseNotification') && Notification && Notification.permission !== 'granted') {
+                setupDailyVerseNotification();
+            }
+        }, 100);
+    });
+}());
+
+// On app load, if the feature is on, try to (re)schedule
+(function notifInitOnLoad() {
+    function init() {
+        if (isFeatureOn('dailyVerseNotification') && 'Notification' in window && Notification.permission === 'granted') {
+            scheduleNextDailyNotification();
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else setTimeout(init, 1500);
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.10 — appendDataUI as the FINAL injection layer
+// (Export & data section sits at the very bottom of Settings)
+// ════════════════════════════════════════════════════════════════════
+(function injectDataLast() {
+    function tryInject() {
+        if (typeof buildSheetSettings === 'undefined') return false;
+        if (window._dataLastInjected) return true;
+        window._dataLastInjected = true;
+        var origSheet = buildSheetSettings;
+        // Wrap whatever buildSheetSettings already is (including prior monkey-patches)
+        window.buildSheetSettings = buildSheetSettings = function(body, title) {
+            origSheet(body, title);
+            // Defer so all other appended sections finish first
+            setTimeout(function() {
+                // Avoid double-add if the chain ran twice
+                if (body.querySelector('.data-section-marker')) return;
+                if (typeof appendDataUI === 'function') {
+                    var before = body.children.length;
+                    appendDataUI(body);
+                    // Mark the last appended section so we don't re-add
+                    if (body.children.length > before) {
+                        var last = body.children[body.children.length - 1];
+                        if (last) last.classList.add('data-section-marker');
+                    }
+                }
+            }, 0);
+        };
+        if (typeof openFeaturesModal === 'function') {
+            var origModal = openFeaturesModal;
+            window.openFeaturesModal = function() {
+                origModal();
+                setTimeout(function() {
+                    var body = document.getElementById('featuresModalBody');
+                    if (!body) return;
+                    if (body.querySelector('.data-section-marker')) return;
+                    if (typeof appendDataUI === 'function') {
+                        var before = body.children.length;
+                        appendDataUI(body);
+                        if (body.children.length > before) {
+                            var last = body.children[body.children.length - 1];
+                            if (last) last.classList.add('data-section-marker');
+                        }
+                    }
+                }, 50);
+            };
+        }
+        return true;
+    }
+    if (!tryInject()) {
+        var iv = setInterval(function() {
+            if (tryInject()) clearInterval(iv);
+        }, 200);
+    }
+}());
+

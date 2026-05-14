@@ -439,17 +439,76 @@ body.focus-mode::after {
 .khatm-legend .kl[data-level="4"] { background: var(--accent); }
 
 /* ── Landscape layout adjustments ── */
+/* ════════════════════════════════════════════════════════════════════
+   v10.9 — Landscape mode for phones (proper space optimization)
+   ════════════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {
-    body { font-size: 14px; }
-    header { min-height: 44px; padding: 4px 12px; }
-    .Bismileh { height: 28px; }
-    #introductionTitle { font-size: 0.7rem; }
-    .bottom-nav .bnav-btn { padding: 4px 2px 6px; }
-    .bnav-ico { font-size: 16px; }
-    .bnav-lbl { font-size: 8px; }
-    .verse { font-size: 1.3rem; padding: 10px 0; }
-    .last-read-banner { padding: 6px 12px; }
-    .lrb-text { font-size: 12px; }
+    /* Hide install banner in landscape — saves precious vertical space */
+    .header-install-btn { display: none !important; }
+
+    /* Compact header */
+    header {
+        min-height: 0;
+        padding: 4px 12px;
+    }
+
+    /* Slimmer bottom nav so verse area has more room */
+    .bottom-nav .bnav-btn { padding: 3px 2px 5px; }
+    .bnav-ico { font-size: 16px; line-height: 1; }
+    .bnav-lbl { font-size: 9px; }
+    .bottom-nav { height: 42px; }
+
+    /* Sticky title becomes a thin bar */
+    .sura-sticky-title {
+        padding: 5px 10px !important;
+        font-size: 13px !important;
+    }
+    .sura-streak-pill,
+    .sura-print-pill,
+    .sura-focus-pill {
+        padding: 2px 7px !important;
+        font-size: 11px !important;
+    }
+
+    /* Verse cards: less vertical padding, slightly tighter line-height */
+    .verse {
+        padding: 8px 14px 6px !important;
+        margin-bottom: 6px !important;
+        line-height: 1.75 !important;
+    }
+    .secondary-verse {
+        margin-top: 4px !important;
+        line-height: 1.55 !important;
+    }
+
+    /* Bismillah panel slimmer */
+    .bismillah-panel { margin: 8px 0 12px !important; }
+    .bismillah-text { padding: 8px 4px !important; font-size: 1.1rem !important; }
+
+    /* Last-read banner */
+    .last-read-banner { padding: 5px 12px !important; }
+    .lrb-text { font-size: 11px !important; }
+
+    /* Bottom sheet adapts to short height — show more list at once */
+    .mob-sheet { max-height: 95vh; }
+    .mob-sheet-header { padding: 8px 14px !important; }
+
+    /* Continue Reading card (desktop sidebar style) — compact in landscape */
+    .continue-reading-card,
+    .last-read-banner { margin-bottom: 6px; }
+
+    /* Reading container claims more vertical space */
+    .textContainer {
+        padding: 6px 14px !important;
+    }
+
+    /* Audio mini-player — slim it */
+    .audio-mini-player {
+        padding: 6px 10px !important;
+        bottom: 50px !important;
+    }
+    .amp-verse-line { font-size: 12px; }
+    .amp-reciter-line { font-size: 10px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -550,7 +609,7 @@ body.focus-mode::after {
 }
 
 .features-modal-title {
-    font-size: 18px;
+    font-size: 22px;
     font-family: var(--font-heading);
     font-style: italic;
     color: var(--accent);
@@ -1253,16 +1312,16 @@ body.focus-mode::after {
     transform: translateX(-50%);
     background: var(--accent);
     color: var(--bg-page);
-    padding: 9px 14px;
+    padding: 14px 22px;
     border-radius: 99px;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 14px;
     z-index: 9999;
     font-family: var(--font-ui);
-    font-size: 13px;
-    font-weight: 600;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.5);
     max-width: 92vw;
     animation: pwa-bar-in 0.3s cubic-bezier(.4,0,.2,1);
 }
@@ -1277,8 +1336,8 @@ body.focus-mode::after {
     color: var(--accent);
     border: none;
     border-radius: 99px;
-    padding: 4px 12px;
-    font-size: 12px;
+    padding: 7px 18px;
+    font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     width: auto;
@@ -1289,16 +1348,17 @@ body.focus-mode::after {
     background: transparent;
     border: none;
     color: var(--bg-page);
-    font-size: 14px;
+    font-size: 18px;
     cursor: pointer;
-    padding: 2px 6px;
+    padding: 3px 8px;
     width: auto;
-    opacity: 0.7;
+    opacity: 0.8;
 }
 .pwa-update-dismiss:hover { opacity: 1; }
 
 @media (max-width: 600px) {
-    .pwa-update-bar { bottom: 75px; font-size: 12px; }
+    .pwa-update-bar { bottom: 75px; font-size: 14px; padding: 12px 18px; }
+    .pwa-update-btn { padding: 6px 14px; font-size: 13px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -1921,7 +1981,7 @@ header {
 }
 .med-arabic {
     font-family: var(--font-arabic);
-    font-size: 1.25rem;
+    font-size: 1.45rem;
     color: var(--accent);
     line-height: 1.85;
     padding: 0 4px;
@@ -1931,25 +1991,25 @@ header {
     margin-top: 14px;
     font-family: var(--font-heading);
     font-style: italic;
-    font-size: 0.92rem;
+    font-size: 1.05rem;
     color: var(--text-primary);
-    opacity: 0.82;
+    opacity: 0.88;
     line-height: 1.55;
     padding: 0 8px;
 }
 .med-citation {
     margin-top: 12px;
     font-family: var(--font-ui);
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--accent);
-    opacity: 0.75;
+    opacity: 0.78;
 }
 @media (max-width: 600px) {
     .settings-meditation { padding: 18px 16px 14px; }
-    .med-arabic { font-size: 1.1rem; }
-    .med-translation { font-size: 0.85rem; }
+    .med-arabic { font-size: 1.25rem; }
+    .med-translation { font-size: 0.95rem; }
 }
 /* In the desktop Features modal (which uses .features-modal-body), banner spans full width */
 .features-modal-body .settings-meditation {
@@ -2326,11 +2386,11 @@ header {
 
 /* Feature toggle subtitle — readable in all themes */
 .feature-toggle-sub {
-    font-size: 13px !important;
+    font-size: 14px !important;
     color: var(--text-secondary) !important;
     opacity: 1 !important;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
 /* Translation color in Minimal — muted warm brown, distinct from black Arabic */
@@ -3148,3 +3208,319 @@ body.feature-off-savetools.feature-off-share.feature-off-tafsir .verse-actions {
     transform: scale(1.05);
 }
 .sura-print-pill:active { transform: scale(0.92); }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.10 — Reading plan pill + modal, 4-tab saved hub, reading-time reset link
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Reading plan floating pill ── */
+.reading-plan-pill {
+    position: fixed;
+    top: 70px;
+    right: 18px;
+    z-index: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 12px 8px 14px;
+    background: var(--accent);
+    color: var(--bg-content);
+    border: none;
+    border-radius: 99px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    width: auto;
+    height: auto;
+}
+.reading-plan-pill:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+}
+.reading-plan-pill:active { transform: scale(0.97); }
+.rpp-ico { font-size: 14px; line-height: 1; }
+.rpp-lbl { letter-spacing: 0.02em; }
+.rpp-x {
+    margin-left: 2px;
+    padding: 1px 7px;
+    border-radius: 99px;
+    background: rgba(0,0,0,0.15);
+    font-size: 11px;
+    opacity: 0.85;
+    transition: opacity 0.15s, background 0.15s;
+}
+.rpp-x:hover { background: rgba(0,0,0,0.3); opacity: 1; }
+
+@media (max-width: 900px) {
+    /* Mobile: place pill above the bottom nav, near right edge but not in the corner */
+    .reading-plan-pill {
+        top: auto;
+        bottom: 70px;
+        right: 12px;
+        padding: 9px 13px 9px 15px;
+        font-size: 13px;
+    }
+}
+
+/* ── Reading plan modal ── */
+.reading-plan-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+.reading-plan-modal-overlay.show { opacity: 1; }
+
+.reading-plan-modal-box {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--accent-faint);
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    overflow: hidden;
+    box-shadow: 0 16px 60px rgba(0,0,0,0.5);
+    transform: scale(0.95);
+    transition: transform 0.2s;
+}
+.reading-plan-modal-overlay.show .reading-plan-modal-box { transform: scale(1); }
+
+.rpm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+}
+.rpm-title {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 17px;
+}
+.rpm-close {
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 5px 11px;
+    border-radius: 99px;
+    cursor: pointer;
+    width: auto;
+}
+.rpm-close:hover { background: var(--accent-faint); }
+
+.rpm-body {
+    padding: 22px 20px 18px;
+    text-align: center;
+}
+.rpm-icon-big {
+    font-size: 38px;
+    margin-bottom: 8px;
+}
+.rpm-status {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 16px;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+.rpm-day {
+    font-family: var(--font-heading);
+    font-style: italic;
+    font-size: 19px;
+    color: var(--accent);
+    margin-bottom: 6px;
+}
+.rpm-today {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+.rpm-progress {
+    height: 8px;
+    background: var(--accent-trace);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.rpm-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width 0.3s;
+}
+.rpm-progress-text {
+    font-family: var(--font-ui);
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 18px;
+}
+.rpm-detail {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+.rpm-btn-primary {
+    background: var(--accent);
+    color: var(--bg-content);
+    border: 1px solid var(--accent);
+    padding: 10px 22px;
+    border-radius: 99px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    width: auto;
+}
+.rpm-btn-primary:hover { background: var(--accent-dim); }
+.rpm-done-badge {
+    display: inline-block;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--accent);
+    padding: 8px 16px;
+    border-radius: 99px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+}
+.rpm-footer {
+    padding: 10px 18px 14px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: center;
+    font-family: var(--font-ui);
+    opacity: 0.85;
+}
+
+/* ── 4-tab saved hub (desktop) ── */
+.saved-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--text-secondary);
+    border-radius: 99px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    width: auto;
+}
+.saved-tab:hover {
+    background: var(--accent-faint);
+    color: var(--accent);
+}
+.saved-tab.active {
+    background: var(--accent);
+    color: var(--bg-content);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+.saved-tab .st-ico { font-size: 13px; line-height: 1; }
+.saved-tab .st-lbl { letter-spacing: 0.02em; }
+#saved-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 8px 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+}
+
+/* ── 4-tab saved hub (mobile) ── */
+.mob-saved-tabs {
+    display: flex;
+    gap: 5px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.mob-saved-tabs::-webkit-scrollbar { display: none; }
+.mob-saved-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 11px;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--text-secondary);
+    border-radius: 99px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+    width: auto;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.mob-saved-tab.active {
+    background: var(--accent);
+    color: var(--bg-content);
+    border-color: var(--accent);
+    font-weight: 600;
+}
+.mob-saved-tab .mst-ico { font-size: 13px; line-height: 1; }
+.mob-saved-tab .mst-lbl { letter-spacing: 0.02em; }
+
+/* On very narrow screens, hide tab labels — icons only */
+@media (max-width: 400px) {
+    .mob-saved-tab .mst-lbl { display: none; }
+    .mob-saved-tab { padding: 9px 12px; }
+    .mob-saved-tab .mst-ico { font-size: 16px; }
+}
+
+/* Mobile reflection items use the same .mob-bm-note-text styling as notes */
+.mob-bm-note-text {
+    margin-top: 4px;
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.55;
+    font-family: var(--font-ui);
+}
+
+/* ── Reading-time reset link (inside the box, subtle) ── */
+.rt-footer {
+    margin-top: 10px;
+    padding-top: 8px;
+    border-top: 0.5px solid var(--accent-faint);
+    text-align: right;
+}
+.rt-reset-link {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 99px;
+    width: auto;
+    transition: color 0.15s, background 0.15s;
+}
+.rt-reset-link:hover {
+    color: #e08585;
+    background: rgba(217, 112, 112, 0.08);
+}
+
+/* Hide the legacy inline reading-plan-card if any old code references it */
+.reading-plan-card { display: none !important; }

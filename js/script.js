@@ -124,10 +124,10 @@ async function fetchAndParseQuran(language) {
 }
 
 // ─── Hijri calendar ───────────────────────────────────────────────
-const HijriMonths = [
-    'Muharram','Safar','Rabi al-Awwal','Rabi ath-Thani',
-    'Jumada al-Awwal','Jumada ath-Thani','Rajab','Shaban',
-    'Ramadan','Shawwal','Dhu al-Qadah','Dhu al-Hijjah'
+const HijriMonthsAr = [
+    'محرَّم','صفر','ربيع الأوَّل','ربيع الثَّاني',
+    'جمادى الأولى','جمادى الآخرة','رجب','شعبان',
+    'رمضان','شوَّال','ذو القعدة','ذو الحجَّة'
 ];
 
 async function getHijriCalendarForMonth() {
@@ -143,8 +143,9 @@ async function getHijriCalendarForMonth() {
         const data = await resp.json();
         if (data.code === 200) {
             const h = data.data.hijri;
+            const monthName = (h.month && h.month.ar) ? h.month.ar : HijriMonthsAr[h.month.number-1];
             el.querySelector('.date-hijri').textContent =
-                h.day + ' ' + HijriMonths[h.month.number-1] + ' ' + h.year + ' هـ';
+                h.day + ' ' + monthName + ' ' + h.year + ' هـ';
         }
     } catch(e) {}
 }
@@ -194,6 +195,13 @@ function applyUILanguage(language) {
         mobInp.placeholder = placeholderMap2[language] || placeholderMap2.english;
         mobInp.style.direction = dir;
     }
+    // A.12: Align sidebar section labels with current language direction
+    document.querySelectorAll('.SelectLanguage').forEach(function(el) {
+        el.style.direction  = dir;
+        el.style.textAlign  = aln;
+        el.style.fontFamily = t.rtl ? 'var(--font-arabic)' : '';
+    });
+
     // v10.11: Translate TOC tab labels
     var tocTabMap = { surah: t.tocSurah, juz: t.tocJuz, revelation: t.tocRevelation, topics: t.tocTopics };
     document.querySelectorAll('.toc-tab').forEach(function(btn) {
@@ -1922,18 +1930,22 @@ document.getElementById('SurahLanguageSelector').addEventListener('change', func
     if (code === currentLanguage) return; addSecondaryLanguage(code);
 });
 
-document.getElementById('toggleOrder').addEventListener('click', function(){
-    const t = uiTranslations[currentLanguage] || uiTranslations['english'];
-    if (isOriginalOrder) {
-        const cl = t.rtl ? 'الترتيب الكلاسيكي' : (currentLanguage==='french'?'Ordre classique':currentLanguage==='spanish'?'Orden clásico':'Classic Order');
-        this.textContent = cl; this.style.direction = t.rtl?'rtl':'ltr'; this.style.textAlign = t.rtl?'right':'left';
-        clearAllSecondaryLanguages(); loadRevelationOrderQuranData();
-    } else {
-        this.textContent = t.toggleOrder; this.style.direction = t.rtl?'rtl':'ltr'; this.style.textAlign = t.rtl?'right':'left';
-        clearAllSecondaryLanguages(); loadQuranData();
-    }
-    isOriginalOrder = !isOriginalOrder; saveState();
-});
+// toggleOrder button removed from sidebar — revelation order is accessible via the TOC tab
+var _toggleOrderBtn = document.getElementById('toggleOrder');
+if (_toggleOrderBtn) {
+    _toggleOrderBtn.addEventListener('click', function(){
+        const t = uiTranslations[currentLanguage] || uiTranslations['english'];
+        if (isOriginalOrder) {
+            const cl = t.rtl ? 'الترتيب الكلاسيكي' : (currentLanguage==='french'?'Ordre classique':currentLanguage==='spanish'?'Orden clásico':'Classic Order');
+            this.textContent = cl; this.style.direction = t.rtl?'rtl':'ltr'; this.style.textAlign = t.rtl?'right':'left';
+            clearAllSecondaryLanguages(); loadRevelationOrderQuranData();
+        } else {
+            this.textContent = t.toggleOrder; this.style.direction = t.rtl?'rtl':'ltr'; this.style.textAlign = t.rtl?'right':'left';
+            clearAllSecondaryLanguages(); loadQuranData();
+        }
+        isOriginalOrder = !isOriginalOrder; saveState();
+    });
+}
 
 document.getElementById('context').addEventListener('click', async function(){
     if (contextOpen) { clearSuraContext(); return; }

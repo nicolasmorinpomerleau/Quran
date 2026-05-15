@@ -257,8 +257,11 @@ body.focus-mode::after {
     z-index: 40;
     opacity: 0.7;
     transition: opacity 0.2s;
+    cursor: grab;
+    touch-action: none;
 }
 .verse-nav-fab:hover { opacity: 1; }
+.verse-nav-fab:active { cursor: grabbing; }
 .vnav-btn {
     width: 46px;
     height: 46px;
@@ -325,14 +328,14 @@ body.focus-mode::after {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 0;
+    padding: 11px 0;
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     font-family: var(--font-ui);
 }
 .feature-toggle-row:last-child { border-bottom: none; }
 .feature-toggle-lbl {
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-primary);
     flex: 1;
     padding-right: 12px;
@@ -546,13 +549,13 @@ body.focus-mode::after {
 .feature-toggle-lbl-wrap {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     flex: 1;
     padding-right: 12px;
     min-width: 0;
 }
 .feature-toggle-sub {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-primary);
     opacity: 0.78;
     font-weight: 400;
@@ -644,13 +647,25 @@ body.focus-mode::after {
     padding: 4px 0;
 }
 
-/* Inside modal, .mob-settings-section gets desktop-friendly padding */
+/* Inside modal, .mob-settings-section gets desktop-friendly padding + clear visual divider */
 .features-modal-body .mob-settings-section {
-    padding: 14px 20px;
-    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    border-bottom: 2px solid var(--border-mid);
+    position: relative;
 }
 .features-modal-body .mob-settings-section:last-child {
     border-bottom: none;
+}
+/* Section label as a clear header */
+.features-modal-body .mob-settings-section .mob-settings-lbl {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--accent-faint);
 }
 
 /* Desktop: hide the modal on mobile screens (we use the sheet instead) */
@@ -962,18 +977,32 @@ body.focus-mode::after {
 .theme-swatch-scholar    { background: linear-gradient(135deg, #0d1117 0%, #1f2937 100%); }
 
 .theme-name-primary {
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
     white-space: nowrap;
 }
 
 .theme-name-aesthetic {
-    font-size: 10px;
+    font-size: 13px;
     font-style: italic;
     color: var(--text-secondary);
     opacity: 0.78;
     white-space: nowrap;
+}
+
+/* Desktop theme button: stack swatch + labels vertically */
+#themeSwitcher .theme-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 7px 14px;
+    min-width: 80px;
+}
+
+#themeSwitcher .theme-btn.active {
+    box-shadow: inset 0 0 0 2px var(--accent);
 }
 
 #themeSwitcher .theme-btn.active .theme-name-primary { color: var(--accent); }
@@ -984,8 +1013,8 @@ body.focus-mode::after {
         min-width: 0;
         padding: 6px 6px 7px;
     }
-    .theme-name-primary { font-size: 11px; }
-    .theme-name-aesthetic { font-size: 9px; }
+    .theme-name-primary { font-size: 12px; }
+    .theme-name-aesthetic { font-size: 11px; }
 }
 
 /* Mobile theme chips (in settings sheet) */
@@ -2426,9 +2455,20 @@ header {
 .mob-settings-section div[style*="opacity:0.85"],
 .mob-settings-section div[style*="opacity:0.7"] {
     opacity: 1 !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     color: var(--text-secondary) !important;
     line-height: 1.5 !important;
+}
+
+/* Mobile sheet: visible divider between settings sections */
+.mob-sheet-body .mob-settings-section {
+    border-top: 2px solid var(--border-mid);
+    padding-top: 14px;
+    margin-top: 4px;
+}
+.mob-sheet-body .mob-settings-section:first-child {
+    border-top: none;
+    margin-top: 0;
 }
 
 /* ── Install instructions modal (v10.5) ── */

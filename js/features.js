@@ -564,6 +564,48 @@ function buildVerseNav() {
         '<button class="vnav-btn" data-dir="down" title="Next surah">›</button>';
     document.body.appendChild(fab);
 
+    // Make FAB draggable (touch + mouse) so it never blocks the bottom nav
+    (function makeDraggable(el) {
+        var isDragging = false, startX, startY, origLeft, origBottom, moved = false;
+        function onStart(e) {
+            var pt = e.touches ? e.touches[0] : e;
+            isDragging = true; moved = false;
+            startX = pt.clientX; startY = pt.clientY;
+            var rect = el.getBoundingClientRect();
+            origLeft = rect.left;
+            origBottom = window.innerHeight - rect.bottom;
+            el.style.transition = 'none';
+            el.style.right = 'auto';
+            el.style.top = 'auto';
+            el.style.left = origLeft + 'px';
+            el.style.bottom = origBottom + 'px';
+        }
+        function onMove(e) {
+            if (!isDragging) return;
+            var pt = e.touches ? e.touches[0] : e;
+            var dx = pt.clientX - startX, dy = pt.clientY - startY;
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+            if (!moved) return;
+            e.preventDefault();
+            var newLeft = Math.max(0, Math.min(window.innerWidth - el.offsetWidth, origLeft + dx));
+            var newBottom = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, origBottom - dy));
+            el.style.left = newLeft + 'px';
+            el.style.bottom = newBottom + 'px';
+        }
+        function onEnd() {
+            isDragging = false;
+            el.style.transition = '';
+        }
+        el.addEventListener('mousedown', onStart);
+        el.addEventListener('touchstart', onStart, { passive: true });
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('touchmove', onMove, { passive: false });
+        document.addEventListener('mouseup', onEnd);
+        document.addEventListener('touchend', onEnd);
+        // Suppress click after drag
+        el.addEventListener('click', function(e) { if (moved) { e.stopPropagation(); moved = false; } }, true);
+    }(fab));
+
     fab.querySelector('[data-dir="up"]').addEventListener('click', function() {
         var s = document.querySelector('.sura');
         if (!s) return;
@@ -905,11 +947,24 @@ function buildKhatmHeatmap() {
     var today = new Date();
     var todayKey = today.toISOString().slice(0, 10);
 
-    // Show last 3 months (current + 2 prior)
+    // Show last 3 months (current + 2 prior), skip months with no reading activity
     var monthsToShow = [];
     for (var m = 2; m >= 0; m--) {
         var d = new Date(today.getFullYear(), today.getMonth() - m, 1);
-        monthsToShow.push(d);
+        var isCurrentMonth = (d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth());
+        if (isCurrentMonth) {
+            monthsToShow.push(d);
+        } else {
+            // Only include if there's at least one day of activity
+            var yr = d.getFullYear(), mn = d.getMonth();
+            var daysInMn = new Date(yr, mn + 1, 0).getDate();
+            var hasActivity = false;
+            for (var dd = 1; dd <= daysInMn; dd++) {
+                var key = new Date(yr, mn, dd).toISOString().slice(0, 10);
+                if (k.daily[key]) { hasActivity = true; break; }
+            }
+            if (hasActivity) monthsToShow.push(d);
+        }
     }
 
     var MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -4792,8 +4847,13 @@ function openKhatmModal() {
 
     function close() {
         overlay.classList.remove('show');
+        document.removeEventListener('keydown', khatmEscHandler);
         setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 200);
     }
+    function khatmEscHandler(e) {
+        if (e.key === 'Escape') close();
+    }
+    document.addEventListener('keydown', khatmEscHandler);
     overlay.addEventListener('click', function(e) {
         if (e.target === overlay) close();
     });

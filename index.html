@@ -63,19 +63,21 @@
             </div>
             <div id="controlsElements">
 
-                <!-- v10.8: Top access buttons + reading time (above search) -->
+                <!-- v10.8: Reading-time display (Topics button moved to TOC tab) -->
                 <div id="topAccessBar">
-                    <button id="topTopicsBtn" class="top-access-btn" type="button" title="Browse topics">
-                        <span class="tab-icon">💡</span>
-                        <span class="tab-label">Topics</span>
-                    </button>
                     <div id="topReadingTime" class="top-reading-time" title="Reading time this week">
                         <span class="trt-icon">⏱</span>
                         <span class="trt-val">0 min</span>
                     </div>
                 </div>
 
-                <!-- v10: Search (always visible — primary action) -->
+                <!-- v10.13: Search — collapsible section (default open) -->
+                <div class="side-group" data-default="open">
+                    <button class="side-group-header" type="button">
+                        <span class="side-group-arrow">▶</span>
+                        <span class="side-group-label">Search</span>
+                    </button>
+                    <div class="side-group-body">
                 <div id="searchControls">
                     <input type="text" id="search-input" placeholder="🔍 Search the Quran…">
                     <!-- Search history chips -->
@@ -91,6 +93,8 @@
                             <button id="searchbutton">Quran Search</button>
                             <button id="searchButtonSourats">Surah Search</button>
                         </div>
+                    </div>
+                </div>
                     </div>
                 </div>
 
@@ -306,7 +310,7 @@
         </div>
     </div>
 
-    <footer>Quran Display v10.12 — May you read with a mindful heart</footer>
+    <footer id="appFooter">Quran Display v10.13 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

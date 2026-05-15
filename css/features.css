@@ -1140,12 +1140,11 @@ body.focus-mode::after {
     margin-top: 0 !important;
 }
 
-/* Search controls — make it visually primary at top */
+/* Search controls inside collapsible group — remove redundant border */
 #searchControls {
-    margin-top: 4px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 4px;
+    margin-top: 2px;
+    padding-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 /* Hide collapsible groups when on mobile (sidebar drawer reuses these) */
@@ -2424,12 +2423,16 @@ header {
 
 /* Feature toggle subtitle — readable in all themes */
 .feature-toggle-sub {
-    font-size: 14px !important;
+    font-size: 15px !important;
     color: var(--text-secondary) !important;
     opacity: 1 !important;
     font-weight: 400;
     line-height: 1.55;
 }
+/* Per-theme contrast boost for feature descriptions */
+[data-theme="manuscript"] .feature-toggle-sub { color: #c9b88a !important; }
+[data-theme="minimal"] .feature-toggle-sub { color: #5c4d32 !important; }
+[data-theme="scholar"] .feature-toggle-sub { color: #9eafc5 !important; }
 
 /* Translation color in Minimal — muted warm brown, distinct from black Arabic */
 [data-theme="minimal"] .secondary-verse {
@@ -3265,10 +3268,13 @@ body.feature-off-savetools.feature-off-share.feature-off-tafsir .verse-actions {
 }
 .sura-print-pill:active { transform: scale(0.94); }
 
-/* Smaller on phone */
+/* Mobile: keep it comfortable to tap */
+@media (max-width: 900px) {
+    .sura-print-pill { padding: 7px 14px; font-size: 14px; gap: 6px; }
+}
 @media (max-width: 600px) {
-    .sura-print-pill { padding: 5px 11px; font-size: 12px; gap: 5px; }
-    .sura-print-pill .spp-svg { width: 12px; height: 12px; }
+    .sura-print-pill { padding: 7px 12px; font-size: 14px; gap: 5px; }
+    .sura-print-pill .spp-svg { width: 14px; height: 14px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3769,3 +3775,59 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     border-color: var(--accent);
     font-weight: 600;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.13 — New version available notification banner
+   ════════════════════════════════════════════════════════════════════ */
+.update-banner {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: var(--bg-content);
+    padding: 10px 16px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
+}
+.update-banner.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+.update-banner-btn {
+    background: rgba(255,255,255,0.25);
+    border: 1px solid rgba(255,255,255,0.4);
+    color: inherit;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    width: auto;
+    white-space: nowrap;
+}
+.update-banner-btn:hover { background: rgba(255,255,255,0.38); }
+.update-banner-close {
+    background: transparent;
+    border: none;
+    color: inherit;
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 2px;
+    width: auto;
+    line-height: 1;
+}
+.update-banner-close:hover { opacity: 1; }

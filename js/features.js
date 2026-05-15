@@ -568,15 +568,19 @@ function buildVerseNav() {
     (function makeDraggable(el) {
         var isDragging = false, startX, startY, origLeft, origBottom, moved = false;
         function onStart(e) {
+            if (e.touches && e.touches.length !== 1) return;
             var pt = e.touches ? e.touches[0] : e;
             isDragging = true; moved = false;
             startX = pt.clientX; startY = pt.clientY;
+            // Get VISUAL rect (after CSS transform)
             var rect = el.getBoundingClientRect();
             origLeft = rect.left;
             origBottom = window.innerHeight - rect.bottom;
+            // Clear CSS transform & positional props before switching to left/bottom
             el.style.transition = 'none';
-            el.style.right = 'auto';
+            el.style.transform = 'none';
             el.style.top = 'auto';
+            el.style.right = 'auto';
             el.style.left = origLeft + 'px';
             el.style.bottom = origBottom + 'px';
         }
@@ -586,18 +590,21 @@ function buildVerseNav() {
             var dx = pt.clientX - startX, dy = pt.clientY - startY;
             if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
             if (!moved) return;
-            e.preventDefault();
+            if (e.cancelable) e.preventDefault();
             var newLeft = Math.max(0, Math.min(window.innerWidth - el.offsetWidth, origLeft + dx));
             var newBottom = Math.max(0, Math.min(window.innerHeight - el.offsetHeight, origBottom - dy));
             el.style.left = newLeft + 'px';
             el.style.bottom = newBottom + 'px';
         }
         function onEnd() {
+            if (!isDragging) return;
             isDragging = false;
             el.style.transition = '';
+            // Keep inline left/bottom/transform so dragged position persists
         }
         el.addEventListener('mousedown', onStart);
-        el.addEventListener('touchstart', onStart, { passive: true });
+        // non-passive so preventDefault works inside onMove
+        el.addEventListener('touchstart', onStart, { passive: false });
         document.addEventListener('mousemove', onMove);
         document.addEventListener('touchmove', onMove, { passive: false });
         document.addEventListener('mouseup', onEnd);
@@ -1048,7 +1055,9 @@ function buildKhatmHeatmap() {
 
 // v10.4: Show the date + count for a tapped cell
 function showKhatmCellDetail(cell) {
-    var banner = document.getElementById('khatmDetailBanner');
+    // Find banner in the same heatmap (avoids conflict when multiple instances exist)
+    var heatmap = cell.closest('.khatm-heatmap') || cell.closest('.khatm-calendar');
+    var banner = heatmap ? heatmap.querySelector('.khatm-detail') : document.getElementById('khatmDetailBanner');
     if (!banner) return;
     var date = cell.getAttribute('data-date');
     var count = parseInt(cell.getAttribute('data-count')) || 0;
@@ -1065,8 +1074,9 @@ function showKhatmCellDetail(cell) {
         msg = formatted + ' · ' + count + ' surah' + (count === 1 ? '' : 's') + ' opened';
     }
     banner.innerHTML = '<span class="khatm-detail-icon">📅</span><span class="khatm-detail-text">' + msg + '</span>';
-    // Highlight selected cell
-    document.querySelectorAll('.khatm-cell.khatm-selected').forEach(function(c) {
+    // Highlight selected cell — scope to this heatmap instance
+    var scope = heatmap || document;
+    scope.querySelectorAll('.khatm-cell.khatm-selected').forEach(function(c) {
         c.classList.remove('khatm-selected');
     });
     cell.classList.add('khatm-selected');
@@ -1213,7 +1223,6 @@ function appendFeaturesUI(body) {
         notesExportImport:  ['💾 Backup / restore data',   'Adds export / import buttons in settings'],
         audioRecitation:    ['🔊 Audio recitation',         'Play verses with multiple reciters · needs internet'],
         tafsir:             ['📚 Tafsir (commentary)',      'Tap a verse to read classical commentary · needs internet'],
-        topicsIndex:           ['💡 Topics index',           'Browse verses by theme — patience, mercy, gratitude…'],
         dailyVerse:            ['🌅 Daily verse',            'A contemplative verse shown once per day on open'],
         dailyVerseNotification:['🔔 Daily verse notification','Schedules a daily notification (best-effort: works only on installed PWA on Android Chrome)'],
         reflectionPrompts:     ['✍️ Reflection prompts',     'Optional reflection question after finishing a surah'],
@@ -1290,9 +1299,6 @@ function appendFeaturesUI(body) {
                         if (el) delete el._voiceAttached;
                     });
                 }
-            }
-            if (key === 'topicsIndex' && !this.checked) {
-                if (typeof closeTopicsModal === 'function') closeTopicsModal();
             }
             if (key === 'verseComparison' && !this.checked) {
                 if (typeof closeTafsirCompare === 'function') closeTafsirCompare();
@@ -4463,18 +4469,11 @@ function getReflectionLabels() {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// v10.8 — Wire top access bar (Topics button + Reading-time display)
+// v10.8 — Wire top access bar (Reading-time display)
+// v10.13: Topics button removed — Topics is accessible via TOC tab
 // ════════════════════════════════════════════════════════════════════
 (function wireTopAccessBar() {
     function attach() {
-        var topicsBtn = document.getElementById('topTopicsBtn');
-        if (topicsBtn && !topicsBtn._wired) {
-            topicsBtn._wired = true;
-            topicsBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (typeof openTopicsModal === 'function') openTopicsModal();
-            });
-        }
         refreshTopReadingTime();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
@@ -4513,6 +4512,55 @@ function refreshTopReadingTime() {
     if (!tryHook()) {
         var iv = setInterval(function(){ tryHook(); if (hooked) clearInterval(iv); }, 200);
     }
+}());
+
+// ════════════════════════════════════════════════════════════════════
+// v10.13 — New version available notification
+// Shows a pill banner when the service worker detects an update
+// ════════════════════════════════════════════════════════════════════
+(function initUpdateNotification() {
+    if (!('serviceWorker' in navigator)) return;
+
+    function showUpdateBanner() {
+        if (document.getElementById('updateBanner')) return;
+        var banner = document.createElement('div');
+        banner.id = 'updateBanner';
+        banner.className = 'update-banner';
+        banner.innerHTML =
+            '<span class="update-banner-text">✨ New version available</span>' +
+            '<button class="update-banner-btn" id="updateBannerBtn">Reload</button>' +
+            '<button class="update-banner-close" id="updateBannerClose">✕</button>';
+        document.body.appendChild(banner);
+        setTimeout(function() { banner.classList.add('show'); }, 50);
+        document.getElementById('updateBannerBtn').addEventListener('click', function() {
+            window.location.reload();
+        });
+        document.getElementById('updateBannerClose').addEventListener('click', function() {
+            banner.classList.remove('show');
+            setTimeout(function() { if (banner.parentNode) banner.remove(); }, 300);
+        });
+    }
+
+    // React when new SW takes control
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+        showUpdateBanner();
+    });
+
+    // Also check on load if there's a waiting SW (user had the page open during update)
+    navigator.serviceWorker.ready.then(function(reg) {
+        if (reg.waiting) {
+            showUpdateBanner();
+        }
+        reg.addEventListener('updatefound', function() {
+            var installing = reg.installing;
+            if (!installing) return;
+            installing.addEventListener('statechange', function() {
+                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                    showUpdateBanner();
+                }
+            });
+        });
+    }).catch(function() {});
 }());
 
 // ════════════════════════════════════════════════════════════════════

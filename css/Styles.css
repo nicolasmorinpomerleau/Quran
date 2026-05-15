@@ -545,7 +545,7 @@ button {
    ════════════════════════════════════════════════════════════════════ */
 .textContainer {
     flex: 2;
-    padding: 36px 48px;
+    padding: 0 48px 36px;
     overflow-y: auto;
     overflow-x: hidden;
     background: var(--bg-content);
@@ -996,7 +996,11 @@ footer {
     #sidebarHeader { display: flex; }
 
     /* Reading area full width */
-    .textContainer, .sura-contexte {
+    .textContainer {
+        padding: 0 24px 20px;
+        flex: 1;
+    }
+    .sura-contexte {
         padding: 20px 24px;
         flex: 1;
     }
@@ -1045,7 +1049,8 @@ footer {
     .sidebar1 { width: 290px; min-width: 290px; }
 
     /* Reading padding tighter */
-    .textContainer, .sura-contexte { padding: 14px 16px; }
+    .textContainer { padding: 0 16px 14px; }
+    .sura-contexte { padding: 14px 16px; }
     /* v9.11: verse font-size respects slider — only set line-height here */
     .verse { line-height: 2; }
     #suraTitle { font-size: 1.05rem; }
@@ -1173,7 +1178,7 @@ input[type="range"] {
     border: none;
     border-bottom: 2px solid transparent;
     padding: 6px 12px 8px;
-    font-size: 17px;
+    font-size: 20px;
     font-family: var(--font-ui);
     color: var(--text-muted);
     cursor: pointer;
@@ -2029,20 +2034,20 @@ input[type="range"] {
 #bookmarksReset {
     font-size: 12px;
     padding: 4px 10px;
-    background: #d97070;
-    border: 1px solid #c45050;
-    color: white;
+    background: #d9707018;
+    border: 1px solid #d9707040;
+    color: #e08585;
     border-radius: 99px;
     cursor: pointer;
-    font-weight: 600;
+    font-weight: 500;
     width: auto;
     flex-shrink: 0;
     white-space: nowrap;
     margin-right: 6px;
 }
 #bookmarksReset:hover {
-    background: #c45050;
-    color: white;
+    background: #d9707030;
+    color: #f0a0a0;
 }
 
 /* Mobile reset button inside sheet header */
@@ -2072,13 +2077,14 @@ input[type="range"] {
     z-index: 5;
     background: var(--bg-content);
     color: var(--accent);
-    font-family: var(--font-heading);
-    font-style: italic;
-    font-size: 1.1rem;
+    font-family: var(--font-ui);
+    font-style: normal;
+    font-size: 1.15rem;
+    font-weight: 600;
     text-align: center;
     padding: 10px 16px 9px;
     border-bottom: 1px solid var(--border);
-    margin: -36px -48px 24px;
+    margin: 0 -48px 6px;
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
 }
@@ -2097,18 +2103,18 @@ input[type="range"] {
 /* Mobile: tighter padding & adjust margin */
 @media (max-width: 900px) {
     .sura-sticky-title {
-        font-size: 1.1rem;
+        font-size: 1.15rem;
         padding: 11px 14px;
-        margin: -20px -24px 18px;
+        margin: 0 -24px 4px;
     }
 }
 @media (max-width: 600px) {
     .sura-sticky-title {
-        font-size: 1.05rem;
+        font-size: 1.1rem;
         padding: 10px 12px;
-        margin: -14px -16px 14px;
+        margin: 0 -16px 4px;
     }
-    .sura-print-pill { font-size: 14px !important; padding: 4px 10px !important; }
+    .sura-print-pill { font-size: 14px !important; padding: 5px 12px !important; }
     .sura-print-pill .spp-lbl { font-size: 14px; }
 }
 
@@ -2149,6 +2155,7 @@ input[type="range"] {
     line-height: 1.6;
     margin-bottom: 18px;
     opacity: 0.9;
+    font-weight: 400;
 }
 
 .confirm-btns {
@@ -2176,13 +2183,13 @@ input[type="range"] {
 }
 
 .confirm-btn.danger {
-    background: #d97070;
-    border-color: #d97070;
+    background: #c0392b;
+    border-color: #c0392b;
     color: white;
-    font-weight: 600;
+    font-weight: 400;
 }
 .confirm-btn.danger:hover {
-    background: #c46060;
+    background: #a93226;
     color: white;
 }
 

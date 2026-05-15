@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · الإصدار ١٠٫١٣ · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.13 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.13 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.13 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -195,12 +195,37 @@ function applyUILanguage(language) {
         mobInp.placeholder = placeholderMap2[language] || placeholderMap2.english;
         mobInp.style.direction = dir;
     }
-    // A.12: Align sidebar section labels with current language direction
+    // Translate & align sidebar section labels
     document.querySelectorAll('.SelectLanguage').forEach(function(el) {
         el.style.direction  = dir;
         el.style.textAlign  = aln;
         el.style.fontFamily = t.rtl ? 'var(--font-arabic)' : '';
     });
+    // A.9/B.4: Translate language section labels
+    var qLangLbl = document.querySelector('label[for="languageSelector"]');
+    if (qLangLbl) {
+        qLangLbl.textContent = t.langQuranLabel;
+        qLangLbl.style.direction = dir;
+        qLangLbl.style.textAlign = aln;
+        qLangLbl.style.fontFamily = t.rtl ? 'var(--font-arabic)' : '';
+    }
+    var addLangLbl = document.querySelector('#multiLanguage .SelectLanguage');
+    if (addLangLbl) {
+        // Preserve child span (lang-badge) while changing text
+        var badge = addLangLbl.querySelector('.lang-badge');
+        addLangLbl.textContent = t.langAddLabel + ' ';
+        if (badge) addLangLbl.appendChild(badge);
+        addLangLbl.style.direction = dir;
+        addLangLbl.style.textAlign = aln;
+        addLangLbl.style.fontFamily = t.rtl ? 'var(--font-arabic)' : '';
+    }
+    // B.1: Translate footer text
+    var footerEl = document.getElementById('appFooter');
+    if (footerEl) {
+        footerEl.textContent = t.footer;
+        footerEl.style.direction = dir;
+        footerEl.style.textAlign = t.rtl ? 'right' : 'center';
+    }
 
     // v10.11: Translate TOC tab labels
     var tocTabMap = { surah: t.tocSurah, juz: t.tocJuz, revelation: t.tocRevelation, topics: t.tocTopics };
@@ -1503,10 +1528,10 @@ function buildSuraDOM(sura) {
     wrapper.appendChild(title);
 
     // v10.3: Modern Reverent — Bismillah panel at the start of each surah
-    // (except Surah 9 At-Tawbah, which traditionally has no Bismillah,
-    //  and Surah 1 Al-Fatiha, whose first verse already IS the Bismillah)
+    // (except Surah 9 At-Tawbah, which traditionally has no Bismillah)
+    // Surah 1 Al-Fatiha keeps the panel even though verse 1 is the Bismillah
     var sNum = parseInt(sura.id, 10) + 1;
-    if (sNum !== 1 && sNum !== 9) {
+    if (sNum !== 9) {
         var bismillahPanel = document.createElement('div');
         bismillahPanel.className = 'bismillah-panel';
         bismillahPanel.innerHTML =

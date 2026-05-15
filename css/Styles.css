@@ -411,7 +411,8 @@ button {
 #searchbutton,
 #searchButtonSourats,
 #toggleOrder,
-#context {
+#context,
+#khatmBtn {
     width: 100%;
     padding: 11px 12px;
     background: var(--bg-btn);
@@ -422,7 +423,8 @@ button {
 #searchbutton:hover,
 #searchButtonSourats:hover,
 #toggleOrder:hover,
-#context:hover { background: var(--bg-btn-hover); color: var(--text-primary); }
+#context:hover,
+#khatmBtn:hover { background: var(--bg-btn-hover); color: var(--text-primary); }
 
 #toggleButtons { display: flex; flex-direction: column; gap: 6px; }
 
@@ -1259,6 +1261,19 @@ input[type="range"] {
     margin-left: 6px;
     vertical-align: middle;
     flex-shrink: 0;
+}
+
+/* v10.12: Golden dot — indicates the surah has at least one saved item */
+.toc-item-name .saved-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-left: 5px;
+    vertical-align: middle;
+    flex-shrink: 0;
+    box-shadow: 0 0 4px var(--accent-faint);
 }
 
 /* ── Verse highlighted state ── */

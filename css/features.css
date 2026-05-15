@@ -248,18 +248,20 @@ body.focus-mode::after {
 .verse-nav-fab {
     position: fixed;
     right: 16px;
-    bottom: 80px;
+    /* v10.12: Vertically centered on right edge (desktop) — was bottom-corner */
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 10px;
     z-index: 40;
-    opacity: 0.55;
+    opacity: 0.7;
     transition: opacity 0.2s;
 }
 .verse-nav-fab:hover { opacity: 1; }
 .vnav-btn {
-    width: 42px;
-    height: 42px;
+    width: 46px;
+    height: 46px;
     border-radius: 50%;
     background: var(--bg-sidebar);
     border: 1px solid var(--accent-faint);
@@ -279,7 +281,14 @@ body.focus-mode::after {
 .vnav-jump { font-size: 16px; font-weight: 700; }
 
 @media (max-width: 900px) {
-    .verse-nav-fab { bottom: 70px; right: 10px; }
+    /* Mobile: revert to bottom-corner (no right space available) */
+    .verse-nav-fab {
+        bottom: 70px;
+        right: 10px;
+        top: auto;
+        transform: none;
+        gap: 6px;
+    }
     .vnav-btn { width: 38px; height: 38px; font-size: 19px; }
 }
 
@@ -3494,8 +3503,24 @@ body.feature-off-savetools.feature-off-share.feature-off-tafsir .verse-actions {
 }
 .mob-saved-tab .mst-ico { font-size: 13px; line-height: 1; }
 .mob-saved-tab .mst-lbl { letter-spacing: 0.02em; }
+.mob-saved-tab .mst-count {
+    margin-left: 5px;
+    font-size: 11px;
+    background: var(--accent);
+    color: var(--bg-content);
+    padding: 1px 7px;
+    border-radius: 99px;
+    font-weight: 700;
+    min-width: 16px;
+    text-align: center;
+    line-height: 1.4;
+}
+.mob-saved-tab.active .mst-count {
+    background: var(--bg-content);
+    color: var(--accent);
+}
 
-/* On very narrow screens, hide tab labels — icons only */
+/* On very narrow screens, hide tab labels — icons + count stay */
 @media (max-width: 400px) {
     .mob-saved-tab .mst-lbl { display: none; }
     .mob-saved-tab { padding: 9px 12px; }
@@ -3624,4 +3649,83 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 /* Inside the modal, the Khatm section label is redundant — hide */
 .khatm-modal-body .mob-settings-section > .mob-settings-lbl:first-child {
     display: none;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.12 — Khatm Settings section hidden on desktop (use sidebar button)
+   ════════════════════════════════════════════════════════════════════ */
+@media (min-width: 901px) {
+    /* Desktop only: the Features modal's Khatm section is redundant
+       since the sidebar button opens a dedicated modal */
+    .features-modal-body .khatm-calendar,
+    .features-modal-body .khatm-heatmap {
+        display: none;
+    }
+}
+
+/* Khatm modal header actions container */
+.khatm-modal-header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.khatm-modal-reset {
+    background: transparent;
+    border: 1px solid var(--accent-faint);
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 5px 11px;
+    border-radius: 99px;
+    cursor: pointer;
+    width: auto;
+    font-family: var(--font-ui);
+}
+.khatm-modal-reset:hover {
+    color: #e08585;
+    border-color: #d9707040;
+    background: rgba(217, 112, 112, 0.08);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.12 — Mobile Surahs sheet TOC tabs (4-tab nav at top)
+   ════════════════════════════════════════════════════════════════════ */
+.mob-toc-tabs {
+    display: flex;
+    gap: 5px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    background: var(--bg-sidebar);
+}
+.mob-toc-tabs::-webkit-scrollbar { display: none; }
+
+.mob-toc-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 13px;
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    color: var(--text-secondary);
+    border-radius: 99px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 500;
+    flex-shrink: 0;
+    width: auto;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.mob-toc-tab:hover {
+    background: var(--accent-faint);
+    color: var(--accent);
+}
+.mob-toc-tab.active {
+    background: var(--accent);
+    color: var(--bg-content);
+    border-color: var(--accent);
+    font-weight: 600;
 }

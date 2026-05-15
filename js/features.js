@@ -1964,12 +1964,12 @@ function appendReadingPlanUI(body) {
         var showPillBtn = document.createElement('button');
         showPillBtn.className = 'mob-settings-btn';
         showPillBtn.style.cssText = 'flex:1;min-width:0;';
-        showPillBtn.textContent = '📌 Show pill';
-        showPillBtn.title = 'Bring back the floating reading-plan pill';
+        showPillBtn.textContent = '📌 Show window';
+        showPillBtn.title = 'Bring back the floating reading-plan window';
         showPillBtn.addEventListener('click', function() {
             try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
             if (typeof renderReadingPlanCard === 'function') renderReadingPlanCard();
-            if (typeof showToast === 'function') showToast('Pill restored');
+            if (typeof showToast === 'function') showToast('Window restored');
         });
         btnRow.appendChild(showPillBtn);
 
@@ -2037,6 +2037,49 @@ function appendReadingPlanUI(body) {
     }
 
     body.appendChild(sec);
+
+    // v10.12: Reading-time summary — placed right under Reading Plan (same feature category)
+    if (isFeatureOn('readingTimeAnalytics')) {
+        var rtSec = document.createElement('div');
+        rtSec.className = 'mob-settings-section';
+        var rtLbl = document.createElement('div');
+        rtLbl.className = 'mob-settings-lbl';
+        rtLbl.textContent = 'Reading time';
+        rtSec.appendChild(rtLbl);
+        var s = getReadingTimeSummary();
+        var rtBox = document.createElement('div');
+        rtBox.className = 'reading-time-box';
+        rtBox.innerHTML =
+            '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + s.thisWeek + ' min</span></div>' +
+            '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + s.avg4w + ' min/week</span></div>' +
+            '<div class="rt-footer"><button class="rt-reset-link" type="button">🗑 Reset</button></div>';
+        rtSec.appendChild(rtBox);
+        var rtReset = rtBox.querySelector('.rt-reset-link');
+        rtReset.addEventListener('click', function() {
+            var data = getReadingTime();
+            var weeksCount = Object.keys(data).length;
+            var totalMin = 0;
+            Object.values(data).forEach(function(m){ totalMin += m; });
+            var msg = 'This will erase your reading-time history (' + weeksCount + ' week' + (weeksCount === 1 ? '' : 's') + ' · ' + Math.round(totalMin) + ' total minutes). This cannot be undone.';
+            if (typeof showConfirm === 'function') {
+                showConfirm('Reset reading time?', msg, function() {
+                    try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+                    _readingTimeStart = Date.now();
+                    if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
+                    if (typeof showToast === 'function') showToast('Reading time reset');
+                    var feat = document.getElementById('featuresModal');
+                    if (feat && feat.classList.contains('show') && typeof openFeaturesModal === 'function') {
+                        openFeaturesModal();
+                    }
+                });
+            } else if (confirm(msg)) {
+                try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+                _readingTimeStart = Date.now();
+                if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
+            }
+        });
+        body.appendChild(rtSec);
+    }
 }
 
 function startPlan(planType, customDays) {
@@ -3345,6 +3388,113 @@ const TOPICS = [
     { name: 'Paradise (Jannah)',    icon: '🌺', verses: ['2:25', '13:35', '32:17', '47:15', '56:10', '56:11', '56:12'] }
 ];
 
+// v10.12: Topic name translations by primary language
+const TOPIC_TRANSLATIONS = {
+    french: {
+        'Patience (Sabr)':       'Patience (Sabr)',
+        'Mercy':                 'Miséricorde',
+        'Gratitude (Shukr)':     'Gratitude (Shukr)',
+        'Forgiveness':           'Pardon',
+        'Charity (Sadaqah)':     'Charité (Sadaqah)',
+        'Parents':               'Parents',
+        'Prayer (Salah)':        'Prière (Salat)',
+        'Repentance (Tawbah)':   'Repentir (Tawbah)',
+        'Hope':                  'Espoir',
+        'Trust in Allah':        'Confiance en Allah',
+        'Knowledge':             'Connaissance',
+        'Death & Afterlife':     'Mort & Au-delà',
+        'Justice':               'Justice',
+        'Honesty':               'Honnêteté',
+        'Trials & Tests':        'Épreuves',
+        'Faith (Iman)':          'Foi (Iman)',
+        'Good Deeds':            'Bonnes actions',
+        'Modesty (Haya)':        'Pudeur (Haya)',
+        'Brotherhood':           'Fraternité',
+        'Wealth & Possessions':  'Richesse & Biens',
+        'Marriage':              'Mariage',
+        'Orphans':               'Orphelins',
+        'Reflection (Tadabbur)': 'Méditation (Tadabbur)',
+        'Time':                  'Le Temps',
+        'Creation':              'Création',
+        "Allah's Names":         "Noms d'Allah",
+        'Heart (Qalb)':          'Cœur (Qalb)',
+        'Truth & Falsehood':     'Vérité & Mensonge',
+        'Light (Nur)':           'Lumière (Nour)',
+        'Paradise (Jannah)':     'Paradis (Jannah)'
+    },
+    spanish: {
+        'Patience (Sabr)':       'Paciencia (Sabr)',
+        'Mercy':                 'Misericordia',
+        'Gratitude (Shukr)':     'Gratitud (Shukr)',
+        'Forgiveness':           'Perdón',
+        'Charity (Sadaqah)':     'Caridad (Sadaqah)',
+        'Parents':               'Padres',
+        'Prayer (Salah)':        'Oración (Salat)',
+        'Repentance (Tawbah)':   'Arrepentimiento (Tawbah)',
+        'Hope':                  'Esperanza',
+        'Trust in Allah':        'Confianza en Allah',
+        'Knowledge':             'Conocimiento',
+        'Death & Afterlife':     'Muerte & Más allá',
+        'Justice':               'Justicia',
+        'Honesty':               'Honestidad',
+        'Trials & Tests':        'Pruebas',
+        'Faith (Iman)':          'Fe (Iman)',
+        'Good Deeds':            'Buenas obras',
+        'Modesty (Haya)':        'Modestia (Haya)',
+        'Brotherhood':           'Hermandad',
+        'Wealth & Possessions':  'Riqueza & Bienes',
+        'Marriage':              'Matrimonio',
+        'Orphans':               'Huérfanos',
+        'Reflection (Tadabbur)': 'Reflexión (Tadabbur)',
+        'Time':                  'El Tiempo',
+        'Creation':              'Creación',
+        "Allah's Names":         'Nombres de Allah',
+        'Heart (Qalb)':          'Corazón (Qalb)',
+        'Truth & Falsehood':     'Verdad & Falsedad',
+        'Light (Nur)':           'Luz (Nour)',
+        'Paradise (Jannah)':     'Paraíso (Jannah)'
+    },
+    arabic: {
+        'Patience (Sabr)':       'الصبر',
+        'Mercy':                 'الرحمة',
+        'Gratitude (Shukr)':     'الشكر',
+        'Forgiveness':           'المغفرة',
+        'Charity (Sadaqah)':     'الصدقة',
+        'Parents':               'الوالدان',
+        'Prayer (Salah)':        'الصلاة',
+        'Repentance (Tawbah)':   'التوبة',
+        'Hope':                  'الأمل',
+        'Trust in Allah':        'التوكل على الله',
+        'Knowledge':             'العلم',
+        'Death & Afterlife':     'الموت والآخرة',
+        'Justice':               'العدل',
+        'Honesty':               'الصدق',
+        'Trials & Tests':        'الابتلاءات',
+        'Faith (Iman)':          'الإيمان',
+        'Good Deeds':            'الأعمال الصالحة',
+        'Modesty (Haya)':        'الحياء',
+        'Brotherhood':           'الأخوة',
+        'Wealth & Possessions':  'المال والمتاع',
+        'Marriage':              'الزواج',
+        'Orphans':               'اليتامى',
+        'Reflection (Tadabbur)': 'التدبر',
+        'Time':                  'الزمن',
+        'Creation':              'الخلق',
+        "Allah's Names":         'أسماء الله الحسنى',
+        'Heart (Qalb)':          'القلب',
+        'Truth & Falsehood':     'الحق والباطل',
+        'Light (Nur)':           'النور',
+        'Paradise (Jannah)':     'الجنة'
+    }
+};
+
+function getTopicName(englishName) {
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    if (lang === 'english') return englishName;
+    var dict = TOPIC_TRANSLATIONS[lang];
+    return (dict && dict[englishName]) || englishName;
+}
+
 function openTopicsModal() {
     if (!isFeatureOn('topicsIndex')) return;
     var existing = document.getElementById('topicsModal');
@@ -3378,7 +3528,7 @@ function openTopicsModal() {
         item.className = 'topic-item';
         item.innerHTML =
             '<span class="topic-icon">' + t.icon + '</span>' +
-            '<span class="topic-name">' + t.name + '</span>' +
+            '<span class="topic-name">' + getTopicName(t.name) + '</span>' +
             '<span class="topic-count">' + t.verses.length + ' verses</span>';
         item.addEventListener('click', function() { openTopicVerses(idx); });
         list.appendChild(item);
@@ -3395,12 +3545,17 @@ function closeTopicsModal() {
 
 function openTopicVerses(topicIdx) {
     var topic = TOPICS[topicIdx]; if (!topic) return;
-    // Replace the list with verse details for this topic
+    // v10.12: If called from sidebar TOC tab, no modal exists yet — open it first
     var box = document.querySelector('#topicsModal .topics-modal-box');
-    if (!box) return;
+    if (!box) {
+        openTopicsModal();
+        // Wait for modal to render, then drill into topic
+        setTimeout(function() { openTopicVerses(topicIdx); }, 50);
+        return;
+    }
     var list = document.getElementById('topicsList');
     list.innerHTML = '<button class="topic-back" id="topicBackBtn">← All topics</button>' +
-                     '<div class="topic-detail-title">' + topic.icon + ' ' + topic.name + '</div>';
+                     '<div class="topic-detail-title">' + topic.icon + ' ' + getTopicName(topic.name) + '</div>';
     topic.verses.forEach(function(ref) {
         var parts = ref.split(':');
         var sNum = parseInt(parts[0]);
@@ -4047,82 +4202,29 @@ function attachVoiceSearchButton(inputEl) {
 // v10.7 — Settings UI integration
 // ════════════════════════════════════════════════════════════════════
 function appendV107SettingsUI(body) {
+    // v10.12: Topics moved to the Surahs sheet (mobile) and TOC tab (desktop) —
+    // removed from Settings to avoid duplication. Print stays as a quick action.
+    if (!isFeatureOn('pdfExport')) {
+        return; // nothing to add
+    }
     var sec = document.createElement('div');
     sec.className = 'mob-settings-section';
     var lbl = document.createElement('div');
     lbl.className = 'mob-settings-lbl';
-    lbl.textContent = 'Explore';
+    lbl.textContent = 'Quick actions';
     sec.appendChild(lbl);
 
-    // Topics button
-    if (isFeatureOn('topicsIndex')) {
-        var topicsBtn = document.createElement('button');
-        topicsBtn.className = 'mob-settings-btn';
-        topicsBtn.textContent = '💡 Browse topics';
-        topicsBtn.addEventListener('click', function() {
-            if (typeof closeMobileSheet === 'function') closeMobileSheet();
-            closeTafsirModal && closeTafsirModal();
-            setTimeout(openTopicsModal, 250);
-        });
-        sec.appendChild(topicsBtn);
-    }
-
-    // Print / Export current surah
-    if (isFeatureOn('pdfExport')) {
-        var printBtn = document.createElement('button');
-        printBtn.className = 'mob-settings-btn';
-        printBtn.textContent = '🖨 Print / Export this surah';
-        printBtn.addEventListener('click', function() {
-            if (typeof closeMobileSheet === 'function') closeMobileSheet();
-            setTimeout(printCurrentSurah, 300);
-        });
-        sec.appendChild(printBtn);
-    }
+    var printBtn = document.createElement('button');
+    printBtn.className = 'mob-settings-btn';
+    printBtn.textContent = '🖨 Print / Export this surah';
+    printBtn.addEventListener('click', function() {
+        if (typeof closeMobileSheet === 'function') closeMobileSheet();
+        setTimeout(printCurrentSurah, 300);
+    });
+    sec.appendChild(printBtn);
 
     body.appendChild(sec);
-
-    // Reading-time summary section
-    if (isFeatureOn('readingTimeAnalytics')) {
-        var rtSec = document.createElement('div');
-        rtSec.className = 'mob-settings-section';
-        var rtLbl = document.createElement('div');
-        rtLbl.className = 'mob-settings-lbl';
-        rtLbl.textContent = 'Reading time';
-        rtSec.appendChild(rtLbl);
-        var s = getReadingTimeSummary();
-        var rtBox = document.createElement('div');
-        rtBox.className = 'reading-time-box';
-        rtBox.innerHTML =
-            '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + s.thisWeek + ' min</span></div>' +
-            '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + s.avg4w + ' min/week</span></div>' +
-            '<div class="rt-footer"><button class="rt-reset-link" type="button">🗑 Reset</button></div>';
-        rtSec.appendChild(rtBox);
-        var rtReset = rtBox.querySelector('.rt-reset-link');
-        rtReset.addEventListener('click', function() {
-            var data = getReadingTime();
-            var weeksCount = Object.keys(data).length;
-            var totalMin = 0;
-            Object.values(data).forEach(function(m){ totalMin += m; });
-            var msg = 'This will erase your reading-time history (' + weeksCount + ' week' + (weeksCount === 1 ? '' : 's') + ' · ' + Math.round(totalMin) + ' total minutes). This cannot be undone.';
-            if (typeof showConfirm === 'function') {
-                showConfirm('Reset reading time?', msg, function() {
-                    try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
-                    _readingTimeStart = Date.now();
-                    if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
-                    if (typeof showToast === 'function') showToast('Reading time reset');
-                    var feat = document.getElementById('featuresModal');
-                    if (feat && feat.classList.contains('show') && typeof openFeaturesModal === 'function') {
-                        openFeaturesModal();
-                    }
-                });
-            } else if (confirm(msg)) {
-                try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
-                _readingTimeStart = Date.now();
-                if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
-            }
-        });
-        body.appendChild(rtSec);
-    }
+    // v10.12: Reading-time section moved to appendReadingPlanUI (lives right under Reading Plan)
 }
 
 // Inject the v10.7 settings UI into both mobile sheet and desktop modal
@@ -4659,14 +4761,29 @@ function openKhatmModal() {
     var existing = document.getElementById('khatmModal');
     if (existing) existing.remove();
 
+    // v10.12: Multi-language labels
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    var labels = {
+        arabic:  { title: '🎯 متتبع الختمات', reset: '🗑 إعادة تعيين', resetTitle: 'إعادة تعيين متتبع الختمات', resetConfirm: 'سيتم حذف عداد الختمات وسجل القراءة بالكامل. هل أنت متأكد؟', done: 'تمت إعادة التعيين', close: '✕' },
+        french:  { title: '🎯 Suivi des Khatm', reset: '🗑 Réinitialiser', resetTitle: 'Réinitialiser le suivi des Khatm', resetConfirm: 'Cela effacera complètement votre compteur de Khatm et votre historique de lecture. Êtes-vous sûr ?', done: 'Réinitialisé', close: '✕' },
+        english: { title: '🎯 Khatm tracker', reset: '🗑 Reset tracker', resetTitle: 'Reset Khatm tracker', resetConfirm: 'This will fully erase your Khatm counter and reading history. Are you sure?', done: 'Tracker reset', close: '✕' },
+        spanish: { title: '🎯 Rastreador de Khatm', reset: '🗑 Reiniciar', resetTitle: 'Reiniciar rastreador de Khatm', resetConfirm: 'Esto borrará por completo su contador de Khatm y su historial de lectura. ¿Está seguro?', done: 'Rastreador reiniciado', close: '✕' }
+    };
+    var L = labels[lang] || labels.english;
+    var isRtl = (lang === 'arabic');
+
     var overlay = document.createElement('div');
     overlay.id = 'khatmModal';
     overlay.className = 'khatm-modal-overlay';
+    if (isRtl) overlay.setAttribute('dir', 'rtl');
     overlay.innerHTML =
         '<div class="khatm-modal-box">' +
             '<div class="khatm-modal-header">' +
-                '<span class="khatm-modal-title">🎯 Khatm tracker</span>' +
-                '<button class="khatm-modal-close" id="khatmModalClose">✕</button>' +
+                '<span class="khatm-modal-title">' + L.title + '</span>' +
+                '<div class="khatm-modal-header-actions">' +
+                    '<button class="khatm-modal-reset" id="khatmModalReset" title="' + L.resetTitle + '">' + L.reset + '</button>' +
+                    '<button class="khatm-modal-close" id="khatmModalClose">' + L.close + '</button>' +
+                '</div>' +
             '</div>' +
             '<div class="khatm-modal-body" id="khatmModalBody"></div>' +
         '</div>';
@@ -4681,6 +4798,31 @@ function openKhatmModal() {
         if (e.target === overlay) close();
     });
     document.getElementById('khatmModalClose').addEventListener('click', close);
+
+    // Reset tracker
+    document.getElementById('khatmModalReset').addEventListener('click', function() {
+        if (typeof showConfirm === 'function') {
+            showConfirm(L.resetTitle, L.resetConfirm, function() {
+                try {
+                    localStorage.removeItem('quranReadingHistory');
+                    localStorage.removeItem('quranKhatmCount');
+                    localStorage.removeItem('quranKhatmLog');
+                } catch(e) {}
+                if (typeof showToast === 'function') showToast(L.done);
+                // Re-render
+                var body = document.getElementById('khatmModalBody');
+                if (body) { body.innerHTML = ''; if (typeof appendKhatmUI === 'function') appendKhatmUI(body); }
+            });
+        } else if (confirm(L.resetConfirm)) {
+            try {
+                localStorage.removeItem('quranReadingHistory');
+                localStorage.removeItem('quranKhatmCount');
+                localStorage.removeItem('quranKhatmLog');
+            } catch(e) {}
+            var body2 = document.getElementById('khatmModalBody');
+            if (body2) { body2.innerHTML = ''; if (typeof appendKhatmUI === 'function') appendKhatmUI(body2); }
+        }
+    });
 
     // Populate body using the existing appendKhatmUI helper (which renders heatmap + streak + mark button)
     var body = document.getElementById('khatmModalBody');

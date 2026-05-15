@@ -292,6 +292,26 @@ function hasSuraBeenRead(suraId) {
     return !!hx[String(suraId)];
 }
 
+// v10.12: Does this surah have any saved item (bookmark, note, highlight, or reflection)?
+function suraHasSavedItems(suraId) {
+    var sId = String(suraId);
+    // Bookmarks
+    var bms = lsGet(BOOKMARKS_KEY, []);
+    if (bms.some(function(b){ return String(b.suraId) === sId; })) return true;
+    // Notes
+    var notes = lsGet(NOTES_KEY, {});
+    if (Object.keys(notes).some(function(k){ return k.indexOf(sId + '_') === 0; })) return true;
+    // Highlights
+    var hls = lsGet(HIGHLIGHTS_KEY, {});
+    if (Object.keys(hls).some(function(k){ return k.indexOf(sId + '_') === 0; })) return true;
+    // Reflections
+    try {
+        var refs = JSON.parse(localStorage.getItem('quranReflections') || '{}');
+        if (refs[sId]) return true;
+    } catch(e) {}
+    return false;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // BOOKMARKS
 // ═══════════════════════════════════════════════════════════════════
@@ -812,11 +832,23 @@ function resetAllHighlights() {
 }
 
 function refreshSavedHub() {
+    // v10.12: Refresh BOTH mobile sheet (if showing) AND desktop saved panel (if visible)
     var sheet = document.getElementById('mobileSheet');
     if (sheet && sheet.classList.contains('open') && _sheetCurrentAction === 'bookmarks') {
         var body = document.getElementById('mobileSheetBody');
         var title = document.getElementById('mobileSheetTitle');
         if (body && title) { body.innerHTML = ''; buildSheetBookmarks(body, title); }
+    }
+    // Desktop saved panel
+    var panel = document.getElementById('bookmarksPanel');
+    if (panel && !panel.classList.contains('eraseDiv')) {
+        if (typeof renderSavedHubDesktop === 'function') {
+            renderSavedHubDesktop(_desktopSavedTab || 'bookmarks');
+        }
+    }
+    // v10.12: Re-render TOC so the golden dot (saved-dot) updates
+    if (typeof renderCurrentTOC === 'function') {
+        renderCurrentTOC();
     }
 }
 
@@ -1006,6 +1038,12 @@ function buildTocItem(name, city, displayIndex, clickHandler, suraId) {
         dot.className = 'history-dot'; dot.title = 'Previously read';
         nameSpan.appendChild(dot);
     }
+    // v10.12: Golden dot if this surah has any saved item (bookmark/note/highlight/reflection)
+    if (suraId !== undefined && suraHasSavedItems(suraId)) {
+        const sdot = document.createElement('span');
+        sdot.className = 'saved-dot'; sdot.title = 'Has saved items';
+        nameSpan.appendChild(sdot);
+    }
     left.appendChild(nameSpan);
     const right = document.createElement('span');
     right.classList.add('toc-item-right');
@@ -1148,7 +1186,16 @@ function generateTopicsTOC() {
     if (!tocEl) return;
     tocEl.innerHTML = '';
     const lbl = document.getElementById('toc-section-label');
-    if (lbl) lbl.textContent = 'Browse by theme';
+    if (lbl) {
+        var lang = currentLanguage || 'english';
+        var browseLabel = {
+            arabic:  'تصفح حسب الموضوع',
+            french:  'Parcourir par thème',
+            english: 'Browse by theme',
+            spanish: 'Explorar por tema'
+        }[lang] || 'Browse by theme';
+        lbl.textContent = browseLabel;
+    }
     // TOPICS array lives in features.js — fall back if not loaded yet
     var topics = (typeof TOPICS !== 'undefined') ? TOPICS : [];
     if (!topics.length) {
@@ -1160,7 +1207,7 @@ function generateTopicsTOC() {
         item.className = 'toc-item topic-toc-item';
         item.innerHTML =
             '<span class="toc-num" style="font-size:14px;">' + t.icon + '</span>' +
-            '<span class="toc-item-left">' + t.name + '</span>' +
+            '<span class="toc-item-left">' + (typeof getTopicName === 'function' ? getTopicName(t.name) : t.name) + '</span>' +
             '<span class="topic-count" style="font-size:11px;color:var(--accent);background:var(--accent-trace);padding:1px 7px;border-radius:99px;border:0.5px solid var(--accent-faint);">' + t.verses.length + '</span>';
         item.addEventListener('click', function() {
             if (typeof openTopicVerses === 'function') openTopicVerses(idx);
@@ -1512,6 +1559,8 @@ function displaySingleSura(suraId) {
     container.scrollTop = 0;
     clearSuraContext();
     markSuraAsRead(suraId);
+    // v10.12: SYNCHRONOUS audio button attach — eliminates race condition
+    if (typeof attachAudioButtons === 'function') attachAudioButtons();
     // v10.7 BUG FIX: re-apply additional languages on every sura change
     // (verses are recreated from scratch — secondary translations would otherwise be lost)
     if (additionalLanguages && additionalLanguages.length > 0) {
@@ -2013,8 +2062,13 @@ async function init() {
             setTimeout(function(){ document.getElementById('quranContainer').scrollTop = saved.scrollTop; }, 80);
         }
 
-        if (saved.contextOpen && saved.contextSuraIndex) {
-            await fetchAndDisplayContext(saved.contextSuraIndex);
+        // v10.12: Removed auto-restore of contextOpen — user found it intrusive
+        // (would auto-open Al-Baqara's context on every page refresh).
+        // User now opens context explicitly with the Surah Context button.
+        if (saved.contextOpen) {
+            // Best-effort cleanup of stale flag
+            saved.contextOpen = false;
+            saved.contextSuraIndex = null;
         }
 
         if (saved.searchOpen && saved.searchTerm) {
@@ -2135,6 +2189,9 @@ function openMobileSheet(action) {
     // v9.6: Clean up saved hub tabs row
     var existingTabs = sheetEl.querySelector('.mob-saved-tabs');
     if (existingTabs) existingTabs.remove();
+    // v10.12: Clean up TOC tabs row (added by buildSheetSurahs)
+    var existingTocTabs = sheetEl.querySelector('.mob-toc-tabs');
+    if (existingTocTabs) existingTocTabs.remove();
     if (action === 'surah')     buildSheetSurahs(body, title);
     else if (action === 'juz')  buildSheetJuz(body, title);
     else if (action === 'search')    buildSheetSearch(body, title);
@@ -2161,6 +2218,9 @@ function closeMobileSheet() {
     
     var overlay = document.getElementById('mobileSheetOverlay');
     var sheet   = document.getElementById('mobileSheet');
+    // v10.12: Clean up tab bars so they don't accumulate across sheet opens
+    var tocTabs = sheet.querySelector('.mob-toc-tabs'); if (tocTabs) tocTabs.remove();
+    var savedTabs = sheet.querySelector('.mob-saved-tabs'); if (savedTabs) savedTabs.remove();
     sheet.classList.remove('open');
     overlay.classList.remove('active');
     setTimeout(function() { sheet.classList.remove('ready'); }, 320);
@@ -2172,8 +2232,58 @@ function closeMobileSheet() {
 }
 
 // ── Surahs sheet ─────────────────────────────────────────────────
+// v10.12: Mobile sheet remembers which TOC tab was last active
+var _mobileTocTab = 'surah'; // 'surah' | 'juz' | 'revelation' | 'topics'
+
 function buildSheetSurahs(body, title) {
-    title.textContent = '📖 114 Surahs';
+    // v10.12: Sheet now contains TOC tab bar — single entry point for all 4 nav modes
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    var tabLabels = {
+        arabic:  { surah: '📖 السور', juz: '📚 الأجزاء', revelation: '🌙 الوحي', topics: '💡 المواضيع' },
+        french:  { surah: '📖 Sourates', juz: '📚 Juz', revelation: '🌙 Révélation', topics: '💡 Thèmes' },
+        english: { surah: '📖 Surahs', juz: '📚 Juz', revelation: '🌙 Revelation', topics: '💡 Topics' },
+        spanish: { surah: '📖 Suras', juz: '📚 Juz', revelation: '🌙 Revelación', topics: '💡 Temas' }
+    };
+    var L = tabLabels[lang] || tabLabels.english;
+
+    // Title from active tab
+    title.textContent = L[_mobileTocTab] || L.surah;
+
+    // Insert tab bar (above body)
+    var sheet = document.getElementById('mobileSheet');
+    var existingTabs = sheet.querySelector('.mob-toc-tabs');
+    if (existingTabs) existingTabs.remove();
+    var tabsRow = document.createElement('div');
+    tabsRow.className = 'mob-toc-tabs';
+    ['surah','juz','revelation','topics'].forEach(function(tab) {
+        var btn = document.createElement('button');
+        btn.className = 'mob-toc-tab' + (_mobileTocTab === tab ? ' active' : '');
+        btn.textContent = L[tab];
+        btn.addEventListener('click', function() {
+            _mobileTocTab = tab;
+            buildSheetSurahs(body, title);
+        });
+        tabsRow.appendChild(btn);
+    });
+    body.parentNode.insertBefore(tabsRow, body);
+
+    body.innerHTML = '';
+
+    // Dispatch to the right renderer based on active tab
+    if (_mobileTocTab === 'juz') {
+        buildSheetJuzInBody(body);
+        return;
+    }
+    if (_mobileTocTab === 'revelation') {
+        buildSheetRevelationInBody(body);
+        return;
+    }
+    if (_mobileTocTab === 'topics') {
+        buildSheetTopicsInBody(body);
+        return;
+    }
+
+    // Default: surahs
     var currentSuraEl = document.querySelector('.sura');
     var currentId = currentSuraEl ? currentSuraEl.id : '0';
 
@@ -2209,6 +2319,92 @@ function buildSheetSurahs(body, title) {
         var active = body.querySelector('.active-surah');
         if (active) active.scrollIntoView({ block: 'center' });
     }, 50);
+}
+
+// v10.12: Renderers that put Juz/Revelation/Topics into the SAME mobile sheet body
+function buildSheetJuzInBody(body) {
+    if (typeof JUZ_DATA === 'undefined') return;
+    JUZ_DATA.forEach(function(juz) {
+        var item = document.createElement('div');
+        item.className = 'mob-juz-item';
+        var num = document.createElement('div');
+        num.className = 'mob-juz-num'; num.textContent = juz[0];
+        var info = document.createElement('div');
+        info.className = 'mob-juz-info';
+        var ar = document.createElement('div');
+        ar.className = 'mob-juz-ar'; ar.textContent = juz[1];
+        var sub = document.createElement('div');
+        sub.className = 'mob-juz-sub'; sub.textContent = 'Starts: ' + juz[4] + (juz[3] > 1 ? ' v.' + juz[3] : '');
+        info.appendChild(ar); info.appendChild(sub);
+        item.appendChild(num); item.appendChild(info);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            clearAllSecondaryLanguages();
+            closeSearchResults();
+            displaySingleSura(juz[2]);
+            if (juz[3] > 1) {
+                setTimeout(function() {
+                    var verses = document.querySelectorAll('.sura .verse');
+                    if (verses[juz[3] - 1]) verses[juz[3] - 1].scrollIntoView({ behavior:'smooth' });
+                }, 200);
+            }
+        });
+        body.appendChild(item);
+    });
+}
+
+function buildSheetRevelationInBody(body) {
+    if (typeof REVELATION_ORDER === 'undefined') return;
+    REVELATION_ORDER.forEach(function(suraNum, idx) {
+        var sura = quranData.find(function(s){ return s.id === String(suraNum - 1); });
+        if (!sura) return;
+        var item = document.createElement('div');
+        item.className = 'mob-surah-item';
+        var name = document.createElement('span');
+        name.className = 'mob-surah-name';
+        name.textContent = (idx + 1) + '. ' + sura.name;
+        var num = document.createElement('span');
+        num.className = 'mob-surah-num';
+        num.textContent = suraNum;
+        item.appendChild(name); item.appendChild(num);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            clearAllSecondaryLanguages();
+            closeSearchResults();
+            displaySingleSura(suraNum - 1);
+            markSuraAsRead(suraNum - 1);
+        });
+        body.appendChild(item);
+    });
+}
+
+function buildSheetTopicsInBody(body) {
+    var topics = (typeof TOPICS !== 'undefined') ? TOPICS : [];
+    if (!topics.length) {
+        body.innerHTML = '<div style="padding:20px;text-align:center;opacity:0.7;font-size:13px;">Topics loading…</div>';
+        return;
+    }
+    topics.forEach(function(t, idx) {
+        var item = document.createElement('div');
+        item.className = 'mob-surah-item mob-topic-item';
+        var ico = document.createElement('span');
+        ico.style.cssText = 'font-size:18px;margin-right:6px;';
+        ico.textContent = t.icon;
+        var name = document.createElement('span');
+        name.className = 'mob-surah-name';
+        name.textContent = (typeof getTopicName === 'function' ? getTopicName(t.name) : t.name);
+        var num = document.createElement('span');
+        num.className = 'mob-surah-num';
+        num.textContent = t.verses.length;
+        item.appendChild(ico); item.appendChild(name); item.appendChild(num);
+        item.addEventListener('click', function() {
+            closeMobileSheet();
+            setTimeout(function() {
+                if (typeof openTopicVerses === 'function') openTopicVerses(idx);
+            }, 250);
+        });
+        body.appendChild(item);
+    });
 }
 
 // ── Juz sheet ────────────────────────────────────────────────────
@@ -2502,7 +2698,9 @@ function buildSheetBookmarks(body, title) {
     ].forEach(function(t) {
         var btn = document.createElement('button');
         btn.className = 'mob-saved-tab' + (_savedHubActiveTab === t.id ? ' active' : '');
-        btn.innerHTML = '<span class="mst-ico">' + t.icon + '</span><span class="mst-lbl">' + t.label + (t.count ? ' (' + t.count + ')' : '') + '</span>';
+        // v10.12: Count is in its own span so it stays visible on narrow screens (when label hides)
+        btn.innerHTML = '<span class="mst-ico">' + t.icon + '</span><span class="mst-lbl">' + t.label + '</span>' +
+                        (t.count ? '<span class="mst-count">' + t.count + '</span>' : '');
         btn.addEventListener('click', function() {
             _savedHubActiveTab = t.id;
             buildSheetBookmarks(body, title);

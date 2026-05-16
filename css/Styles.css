@@ -2748,6 +2748,23 @@ input[type="range"] {
         padding: 0;
     }
     .mob-drawer-close:hover { background: var(--accent-trace); color: var(--accent); }
+    .mob-drawer-dates {
+        padding: 10px 16px 6px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .mob-drawer-date-greg {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-family: var(--font-ui);
+    }
+    .mob-drawer-date-hijri-line {
+        font-size: 13px;
+        color: var(--accent);
+        font-family: var(--font-ui);
+        font-weight: 600;
+        margin-top: 2px;
+    }
     .mob-drawer-khatm {
         padding: 12px 14px 8px;
         flex-shrink: 0;

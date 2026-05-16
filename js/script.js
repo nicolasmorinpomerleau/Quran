@@ -2276,19 +2276,19 @@ function closeMobileSheet() {
 // ── Surahs sheet ─────────────────────────────────────────────────
 // v10.12: Mobile sheet remembers which TOC tab was last active
 // v10.13: 'topics' replaced by 'theme' tab in phone redesign
-var _mobileTocTab = 'surah'; // 'surah' | 'juz' | 'revelation' | 'theme'
+var _mobileTocTab = 'surah'; // 'surah' | 'juz' | 'revelation' | 'topics'
 
 function buildSheetSurahs(body, title) {
-    // Migration guard: reset if stale 'topics' value persists in memory
-    if (_mobileTocTab === 'topics') _mobileTocTab = 'surah';
+    // Migration guard: reset stale values from old tab names
+    if (_mobileTocTab === 'theme') _mobileTocTab = 'surah';
 
     // v10.12: Sheet now contains TOC tab bar — single entry point for all 4 nav modes
     var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
     var tabLabels = {
-        arabic:  { surah: '📖 السور', juz: '📚 الأجزاء', revelation: '🌙 الوحي', theme: '🎨 السمة' },
-        french:  { surah: '📖 Sourates', juz: '📚 Juz', revelation: '🌙 Révélation', theme: '🎨 Thème' },
-        english: { surah: '📖 Surahs', juz: '📚 Juz', revelation: '🌙 Revelation', theme: '🎨 Theme' },
-        spanish: { surah: '📖 Suras', juz: '📚 Juz', revelation: '🌙 Revelación', theme: '🎨 Tema' }
+        arabic:  { surah: '📖 السور', juz: '📚 الأجزاء', revelation: '🌙 الوحي', topics: '💡 المواضيع' },
+        french:  { surah: '📖 Sourates', juz: '📚 Juz', revelation: '🌙 Révélation', topics: '💡 Thèmes' },
+        english: { surah: '📖 Surahs', juz: '📚 Juz', revelation: '🌙 Revelation', topics: '💡 Topics' },
+        spanish: { surah: '📖 Suras', juz: '📚 Juz', revelation: '🌙 Revelación', topics: '💡 Temas' }
     };
     var L = tabLabels[lang] || tabLabels.english;
 
@@ -2304,7 +2304,7 @@ function buildSheetSurahs(body, title) {
     if (existingTabs) existingTabs.remove();
     var tabsRow = document.createElement('div');
     tabsRow.className = 'mob-toc-tabs';
-    ['surah','juz','revelation','theme'].forEach(function(tab) {
+    ['surah','juz','revelation','topics'].forEach(function(tab) {
         var btn = document.createElement('button');
         btn.className = 'mob-toc-tab' + (_mobileTocTab === tab ? ' active' : '');
         btn.textContent = L[tab];
@@ -2325,8 +2325,8 @@ function buildSheetSurahs(body, title) {
         buildSheetRevelationInBody(body);
         return;
     }
-    if (_mobileTocTab === 'theme') {
-        buildSheetThemeTab(body);
+    if (_mobileTocTab === 'topics') {
+        buildSheetTopicsInBody(body);
         return;
     }
 
@@ -3122,6 +3122,9 @@ function buildSheetShare(body, title) {
 
 // ── Mobile left drawer (Group E) ──────────────────────────────────
 function openMobileDrawer() {
+    // Always dismiss the bottom sheet first — otherwise it reappears when drawer closes
+    closeMobileSheet();
+
     var drawer  = document.getElementById('mobileDrawer');
     var overlay = document.getElementById('mobileDrawerOverlay');
     if (!drawer || !overlay) return;
@@ -3131,6 +3134,18 @@ function openMobileDrawer() {
     drawer.querySelectorAll('.mob-drawer-lang').forEach(function(btn) {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
     });
+
+    // Date display (gregorian + hijri)
+    var datesEl = document.getElementById('mobileDrawerDates');
+    if (datesEl) {
+        var gregEl  = document.querySelector('#hijriMonth .date-gregorian');
+        var hijriEl = document.querySelector('#hijriMonth .date-hijri');
+        var gregText  = gregEl  ? gregEl.textContent.trim()  : '';
+        var hijriText = hijriEl ? hijriEl.textContent.trim() : '';
+        datesEl.innerHTML =
+            (gregText  ? '<div class="mob-drawer-date-greg">'  + gregText  + '</div>' : '') +
+            (hijriText ? '<div class="mob-drawer-date-hijri-line">' + hijriText + '</div>' : '');
+    }
 
     // Khatm / reading progress
     var khatmEl = document.getElementById('mobileDrawerKhatm');
@@ -3503,10 +3518,11 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
 }());
 
 // ── Phone settings button (top-right header icon, ≤767px) ────────
+// Uses the mobile sheet (features-modal-overlay is CSS-blocked on ≤900px)
 (function() {
     var btn = document.getElementById('phoneSettingsBtn');
     if (btn) btn.addEventListener('click', function() {
-        if (typeof openFeaturesModal === 'function') openFeaturesModal();
+        openMobileSheet('settings');
     });
 }());
 

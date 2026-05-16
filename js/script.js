@@ -2000,8 +2000,6 @@ document.getElementById('bookmarksClose').addEventListener('click', function(){
 
 // v9.6: bookmarksReset onclick set per-tab in renderSavedHubDesktop
 
-document.getElementById('burgerMenu').addEventListener('click', toggleSidebar);
-
 document.querySelectorAll('.theme-btn').forEach(function(btn){
     btn.addEventListener('click', function(){ applyTheme(btn.getAttribute('data-theme')); saveState(); });
 });

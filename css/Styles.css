@@ -927,6 +927,17 @@ footer {
     border-top-color: var(--accent);
 }
 
+/* Pill wrapper — transparent by default, gains background on phone active state */
+.bnav-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    transition: background 0.2s;
+}
+
 .bnav-ico {
     font-size: 20px;
     line-height: 1;
@@ -943,6 +954,46 @@ footer {
 }
 
 .bnav-btn.bnav-active .bnav-lbl { color: var(--accent); }
+
+/* ── Phone progress bar (hidden on desktop/tablet) ── */
+.surah-progress-bar {
+    display: none;
+    height: 3px;
+    background: var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 9;
+}
+.surah-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.25s ease;
+}
+
+/* ── Phone left drawer (hidden by default) ── */
+.mob-drawer {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 280px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    z-index: 1100;
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    flex-direction: column;
+    overflow-y: auto;
+}
+.mob-drawer.open { transform: translateX(0); }
+.mob-drawer-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1099;
+}
+.mob-drawer-overlay.active { display: block; }
 
 
 
@@ -2559,3 +2610,228 @@ input[type="range"] {
     -webkit-backdrop-filter: blur(8px);
 }
 .zoom-indicator.show { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════════════════
+   PHONE REDESIGN — max-width: 767px  (Groups A–F)
+   DO NOT change desktop layout. These rules are phone-only.
+   ════════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+    /* Group A — Gold pill active state, 48px tap targets */
+    .bnav-btn {
+        min-height: 48px;
+        border-top: none;
+        padding: 6px 2px 8px;
+    }
+    .bnav-btn.bnav-active {
+        background: transparent;
+        border-top-color: transparent;
+    }
+    .bnav-btn.bnav-active .bnav-pill {
+        background: var(--accent);
+    }
+    .bnav-btn.bnav-active .bnav-lbl {
+        color: var(--bg-content);
+        font-weight: 700;
+    }
+    .bnav-btn.bnav-active .bnav-ico {
+        /* emoji icons don't change color — pill bg is enough */
+    }
+    .bnav-lbl { font-size: 11px; }
+
+    /* Group F — Reading progress bar visible */
+    .surah-progress-bar { display: block; }
+
+    /* Group F — Verse tap highlight */
+    .verse.verse-selected {
+        outline: 2px solid var(--accent);
+        outline-offset: 4px;
+        border-radius: 6px;
+    }
+
+    /* Group E — Left drawer visible/interactive */
+    .mob-drawer { display: flex; }
+    .mob-drawer-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 18px 14px 14px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .mob-drawer-icon {
+        width: 36px; height: 36px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .mob-drawer-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--accent);
+        font-family: var(--font-ui);
+        flex: 1;
+    }
+    .mob-drawer-close {
+        background: none; border: none;
+        font-size: 18px;
+        color: var(--text-muted);
+        cursor: pointer;
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 50%;
+        padding: 0;
+    }
+    .mob-drawer-close:hover { background: var(--accent-trace); color: var(--accent); }
+    .mob-drawer-khatm {
+        padding: 12px 14px 8px;
+        flex-shrink: 0;
+    }
+    .mob-drawer-prog-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        font-family: var(--font-ui);
+        margin-bottom: 6px;
+    }
+    .mob-drawer-prog-bar {
+        height: 4px;
+        background: var(--border);
+        border-radius: 99px;
+        overflow: hidden;
+    }
+    .mob-drawer-prog-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 99px;
+        transition: width 0.3s;
+    }
+    .mob-drawer-nav { flex: 1; padding: 8px 0; }
+    .mob-drawer-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 14px 16px;
+        background: none;
+        border: none;
+        font-size: 16px;
+        color: var(--text-primary);
+        font-family: var(--font-ui);
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s;
+        border-radius: 0;
+    }
+    .mob-drawer-item:hover { background: var(--accent-trace); }
+    .mob-drawer-ico { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+    .mob-drawer-lbl { flex: 1; }
+    .mob-drawer-chevron { color: var(--text-muted); font-size: 18px; flex-shrink: 0; }
+    .mob-drawer-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 8px 16px;
+    }
+    .mob-drawer-lang-section { padding: 8px 16px 12px; }
+    .mob-drawer-lang-label {
+        font-size: 11px;
+        color: var(--text-muted);
+        font-family: var(--font-ui);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 10px;
+    }
+    .mob-drawer-langs { display: flex; gap: 8px; }
+    .mob-drawer-lang {
+        flex: 1;
+        padding: 8px 4px;
+        background: var(--bg-btn);
+        border: 1px solid var(--border-btn);
+        border-radius: var(--radius);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        font-family: var(--font-ui);
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s;
+    }
+    .mob-drawer-lang.active {
+        background: var(--accent);
+        border-color: transparent;
+        color: var(--bg-page);
+    }
+
+    /* Group B — Theme tab cards in Read panel */
+    .mob-theme-cards {
+        display: flex;
+        gap: 8px;
+        padding: 14px;
+        flex-shrink: 0;
+    }
+    .mob-theme-card {
+        flex: 1;
+        padding: 10px 6px;
+        background: var(--bg-btn);
+        border: 1px solid var(--border-btn);
+        border-radius: var(--radius);
+        font-size: 12px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        text-align: center;
+        font-family: var(--font-ui);
+        transition: all 0.15s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    .mob-theme-card.active {
+        background: var(--accent);
+        color: var(--bg-page);
+        border-color: transparent;
+        font-weight: 600;
+    }
+    .mob-theme-card-primary { font-size: 13px; }
+    .mob-theme-card-desc { font-size: 11px; opacity: 0.8; }
+
+    /* Group C — Share panel items */
+    .mob-share-preview {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+    .mob-share-preview-arabic {
+        font-family: var(--font-arabic);
+        font-size: 1.3rem;
+        color: var(--text-primary);
+        line-height: 2;
+        text-align: right;
+        direction: rtl;
+        margin-bottom: 4px;
+    }
+    .mob-share-preview-trans {
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+        font-family: var(--font-ui);
+    }
+    .mob-share-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 16px 14px;
+        background: none;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-ui);
+        cursor: pointer;
+        text-align: left;
+        transition: background 0.15s;
+    }
+    .mob-share-item:last-child { border-bottom: none; }
+    .mob-share-item:hover { background: var(--accent-trace); }
+    .mob-share-ico { font-size: 24px; width: 36px; text-align: center; flex-shrink: 0; }
+    .mob-share-info { flex: 1; }
+    .mob-share-label { font-size: 16px; color: var(--text-primary); font-weight: 500; }
+    .mob-share-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+}

@@ -51,6 +51,11 @@
         </div>
     </header>
 
+    <!-- Phone reading progress bar (hidden on desktop via CSS) -->
+    <div id="surahProgressBar" class="surah-progress-bar">
+        <div id="surahProgressFill" class="surah-progress-fill"></div>
+    </div>
+
     <main>
         <aside class="sidebar1" id="sidebar">
             <div id="sidebarHeader">
@@ -249,27 +254,31 @@
     <!-- Mobile overlay for sidebar drawer -->
     <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-    <!-- Bottom navigation bar (tablet + mobile) -->
+    <!-- Bottom navigation bar (tablet + mobile) — v10.13 phone redesign: 4 tabs -->
     <nav id="bottomNav" class="bottom-nav">
-        <button class="bnav-btn bnav-active" data-action="surah">
-            <span class="bnav-ico">📖</span>
-            <span class="bnav-lbl" id="bnav-surah">Surahs</span>
+        <button class="bnav-btn bnav-active" data-action="read">
+            <span class="bnav-pill">
+                <span class="bnav-ico">📖</span>
+                <span class="bnav-lbl">Read</span>
+            </span>
         </button>
-        <button class="bnav-btn" data-action="juz">
-            <span class="bnav-ico">📚</span>
-            <span class="bnav-lbl" id="bnav-juz">Juz</span>
+        <button class="bnav-btn" data-action="share">
+            <span class="bnav-pill">
+                <span class="bnav-ico">📤</span>
+                <span class="bnav-lbl">Share</span>
+            </span>
+        </button>
+        <button class="bnav-btn" data-action="bookmark">
+            <span class="bnav-pill">
+                <span class="bnav-ico">🔖</span>
+                <span class="bnav-lbl">Bookmark</span>
+            </span>
         </button>
         <button class="bnav-btn" data-action="search">
-            <span class="bnav-ico">🔍</span>
-            <span class="bnav-lbl" id="bnav-search">Search</span>
-        </button>
-        <button class="bnav-btn" data-action="bookmarks">
-            <span class="bnav-ico">🔖</span>
-            <span class="bnav-lbl" id="bnav-bookmarks">Saved</span>
-        </button>
-        <button class="bnav-btn" data-action="settings">
-            <span class="bnav-ico">⚙️</span>
-            <span class="bnav-lbl" id="bnav-settings">Settings</span>
+            <span class="bnav-pill">
+                <span class="bnav-ico">🔍</span>
+                <span class="bnav-lbl">Search</span>
+            </span>
         </button>
     </nav>
 
@@ -309,6 +318,44 @@
             <div class="features-modal-body" id="featuresModalBody"></div>
         </div>
     </div>
+
+    <!-- Phone hamburger drawer (left side, ≤767px only) -->
+    <div id="mobileDrawer" class="mob-drawer">
+        <div class="mob-drawer-header">
+            <img src="img/icon-64.png" class="mob-drawer-icon" alt="">
+            <span class="mob-drawer-title">Quran App</span>
+            <button class="mob-drawer-close" id="mobileDrawerClose">✕</button>
+        </div>
+        <div class="mob-drawer-khatm" id="mobileDrawerKhatm"></div>
+        <nav class="mob-drawer-nav">
+            <button class="mob-drawer-item" id="mdKhatmBtn">
+                <span class="mob-drawer-ico">🎯</span>
+                <span class="mob-drawer-lbl">Khatm Tracker</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+            <button class="mob-drawer-item" id="mdTopicsBtn">
+                <span class="mob-drawer-ico">💡</span>
+                <span class="mob-drawer-lbl">Topics</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+            <button class="mob-drawer-item" id="mdDailyVerseBtn">
+                <span class="mob-drawer-ico">🌅</span>
+                <span class="mob-drawer-lbl">Daily Verse</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+            <div class="mob-drawer-divider"></div>
+            <div class="mob-drawer-lang-section">
+                <div class="mob-drawer-lang-label">Language</div>
+                <div class="mob-drawer-langs" id="mobileDrawerLangs">
+                    <button class="mob-drawer-lang" data-lang="arabic">AR</button>
+                    <button class="mob-drawer-lang" data-lang="french">FR</button>
+                    <button class="mob-drawer-lang" data-lang="english">EN</button>
+                    <button class="mob-drawer-lang" data-lang="spanish">ES</button>
+                </div>
+            </div>
+        </nav>
+    </div>
+    <div id="mobileDrawerOverlay" class="mob-drawer-overlay"></div>
 
     <footer id="appFooter">Quran Display v10.13 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>

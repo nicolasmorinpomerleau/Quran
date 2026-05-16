@@ -3115,7 +3115,7 @@ header {
     .topics-modal-overlay, .daily-verse-overlay, .reflection-overlay,
     .tafsir-modal-overlay, .tafsir-compare-overlay, .features-modal-overlay,
     .header-install-btn, #burgerMenu, .lastread-banner, .update-banner,
-    .toast-host {
+    .toast-host, .surah-progress-bar, .mob-drawer, .mob-drawer-overlay {
         display: none !important;
     }
     body { background: white !important; color: black !important; }

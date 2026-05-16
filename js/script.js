@@ -2229,8 +2229,13 @@ function openMobileSheet(action) {
     // v10.12: Clean up TOC tabs row (added by buildSheetSurahs)
     var existingTocTabs = sheetEl.querySelector('.mob-toc-tabs');
     if (existingTocTabs) existingTocTabs.remove();
-    if (action === 'surah')     buildSheetSurahs(body, title);
-    else if (action === 'juz')  buildSheetJuz(body, title);
+    // v10.13 phone redesign — new 4-tab actions
+    if (action === 'read')           buildSheetSurahs(body, title);
+    else if (action === 'share')     buildSheetShare(body, title);
+    else if (action === 'bookmark')  buildSheetBookmarks(body, title);
+    // legacy / tablet actions kept for backward compat
+    else if (action === 'surah')     buildSheetSurahs(body, title);
+    else if (action === 'juz')       buildSheetJuz(body, title);
     else if (action === 'search')    buildSheetSearch(body, title);
     else if (action === 'bookmarks') buildSheetBookmarks(body, title);
     else if (action === 'settings')  buildSheetSettings(body, title);
@@ -2270,16 +2275,20 @@ function closeMobileSheet() {
 
 // ── Surahs sheet ─────────────────────────────────────────────────
 // v10.12: Mobile sheet remembers which TOC tab was last active
-var _mobileTocTab = 'surah'; // 'surah' | 'juz' | 'revelation' | 'topics'
+// v10.13: 'topics' replaced by 'theme' tab in phone redesign
+var _mobileTocTab = 'surah'; // 'surah' | 'juz' | 'revelation' | 'theme'
 
 function buildSheetSurahs(body, title) {
+    // Migration guard: reset if stale 'topics' value persists in memory
+    if (_mobileTocTab === 'topics') _mobileTocTab = 'surah';
+
     // v10.12: Sheet now contains TOC tab bar — single entry point for all 4 nav modes
     var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
     var tabLabels = {
-        arabic:  { surah: '📖 السور', juz: '📚 الأجزاء', revelation: '🌙 الوحي', topics: '💡 المواضيع' },
-        french:  { surah: '📖 Sourates', juz: '📚 Juz', revelation: '🌙 Révélation', topics: '💡 Thèmes' },
-        english: { surah: '📖 Surahs', juz: '📚 Juz', revelation: '🌙 Revelation', topics: '💡 Topics' },
-        spanish: { surah: '📖 Suras', juz: '📚 Juz', revelation: '🌙 Revelación', topics: '💡 Temas' }
+        arabic:  { surah: '📖 السور', juz: '📚 الأجزاء', revelation: '🌙 الوحي', theme: '🎨 السمة' },
+        french:  { surah: '📖 Sourates', juz: '📚 Juz', revelation: '🌙 Révélation', theme: '🎨 Thème' },
+        english: { surah: '📖 Surahs', juz: '📚 Juz', revelation: '🌙 Revelation', theme: '🎨 Theme' },
+        spanish: { surah: '📖 Suras', juz: '📚 Juz', revelation: '🌙 Revelación', theme: '🎨 Tema' }
     };
     var L = tabLabels[lang] || tabLabels.english;
 
@@ -2292,7 +2301,7 @@ function buildSheetSurahs(body, title) {
     if (existingTabs) existingTabs.remove();
     var tabsRow = document.createElement('div');
     tabsRow.className = 'mob-toc-tabs';
-    ['surah','juz','revelation','topics'].forEach(function(tab) {
+    ['surah','juz','revelation','theme'].forEach(function(tab) {
         var btn = document.createElement('button');
         btn.className = 'mob-toc-tab' + (_mobileTocTab === tab ? ' active' : '');
         btn.textContent = L[tab];
@@ -2315,8 +2324,8 @@ function buildSheetSurahs(body, title) {
         buildSheetRevelationInBody(body);
         return;
     }
-    if (_mobileTocTab === 'topics') {
-        buildSheetTopicsInBody(body);
+    if (_mobileTocTab === 'theme') {
+        buildSheetThemeTab(body);
         return;
     }
 
@@ -2930,6 +2939,185 @@ function renderReflectionsInBody(body, refsArr) {
     });
 }
 
+// ── Theme tab (Group B — inside Read panel) ───────────────────────
+function buildSheetThemeTab(body) {
+    var currentTheme = document.documentElement.getAttribute('data-theme') || 'manuscript';
+    var themes = [
+        { id: 'manuscript', primary: '🌙 Sepia',  desc: 'Manuscript' },
+        { id: 'minimal',    primary: '☀️ Light',  desc: 'Minimal' },
+        { id: 'scholar',    primary: '🌑 Dark',   desc: 'Scholar' }
+    ];
+    var cardsWrap = document.createElement('div');
+    cardsWrap.className = 'mob-theme-cards';
+    themes.forEach(function(t) {
+        var card = document.createElement('button');
+        card.className = 'mob-theme-card' + (currentTheme === t.id ? ' active' : '');
+        card.innerHTML =
+            '<span class="mob-theme-swatch mob-theme-swatch-' + t.id + '"></span>' +
+            '<span class="mob-theme-card-primary">' + t.primary + '</span>' +
+            '<span class="mob-theme-card-desc">' + t.desc + '</span>';
+        card.addEventListener('click', function() {
+            applyTheme(t.id); saveState();
+            cardsWrap.querySelectorAll('.mob-theme-card').forEach(function(c) { c.classList.remove('active'); });
+            card.classList.add('active');
+        });
+        cardsWrap.appendChild(card);
+    });
+    body.appendChild(cardsWrap);
+
+    // Font sliders
+    var fontSection = document.createElement('div');
+    fontSection.className = 'mob-settings-section';
+    var fontLbl = document.createElement('div');
+    fontLbl.className = 'mob-settings-lbl';
+    fontLbl.textContent = 'Font size';
+    fontSection.appendChild(fontLbl);
+    [
+        { label: 'Verse',       id: 'arabicFontSlider' },
+        { label: 'Translation', id: 'transFontSlider' }
+    ].forEach(function(cfg) {
+        var src = document.getElementById(cfg.id);
+        var row = document.createElement('div');
+        row.className = 'mob-slider-row';
+        var lbl = document.createElement('span');
+        lbl.className = 'mob-slider-label';
+        lbl.textContent = cfg.label;
+        var inp = document.createElement('input');
+        inp.type = 'range';
+        if (src) { inp.min = src.min; inp.max = src.max; inp.step = src.step; inp.value = src.value; }
+        inp.style.flex = '1';
+        inp.style.accentColor = 'var(--accent)';
+        inp.addEventListener('input', function() {
+            if (src) { src.value = this.value; src.dispatchEvent(new Event('input')); }
+        });
+        row.appendChild(lbl);
+        row.appendChild(inp);
+        fontSection.appendChild(row);
+    });
+    body.appendChild(fontSection);
+}
+
+// ── Share sheet (Group C) ─────────────────────────────────────────
+function buildSheetShare(body, title) {
+    title.textContent = '📤 Share';
+
+    // Show a preview of the selected verse (or first verse)
+    var selVerse = document.querySelector('.verse.verse-selected') || document.querySelector('.verse');
+    if (selVerse) {
+        var preview = document.createElement('div');
+        preview.className = 'mob-share-preview';
+        var arabicEl = selVerse.querySelector('.arabic-verse');
+        var transEl  = selVerse.querySelector('.translated-verse');
+        if (arabicEl) {
+            var ar = document.createElement('div');
+            ar.className = 'mob-share-preview-arabic';
+            ar.dir = 'rtl';
+            ar.textContent = arabicEl.textContent.trim();
+            preview.appendChild(ar);
+        }
+        if (transEl) {
+            var raw = transEl.textContent.trim();
+            var tr = document.createElement('div');
+            tr.className = 'mob-share-preview-trans';
+            tr.textContent = raw.length > 130 ? raw.substring(0, 130) + '…' : raw;
+            preview.appendChild(tr);
+        }
+        body.appendChild(preview);
+    }
+
+    var verseText = selVerse ? selVerse.textContent.trim() : document.title;
+    var actions = [
+        { icon: '🖼', label: 'Share as image', sub: 'Beautiful verse card', fn: function() {
+            if (typeof showToast === 'function') showToast('Image sharing coming soon');
+        }},
+        { icon: '🔗', label: 'Copy link', sub: 'Direct link to this surah', fn: function() {
+            var url = window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function() {
+                    if (typeof showToast === 'function') showToast('Link copied!');
+                }).catch(function() {
+                    if (typeof showToast === 'function') showToast('Could not copy');
+                });
+            }
+        }},
+        { icon: '📋', label: 'Copy text', sub: 'Copy verse to clipboard', fn: function() {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(verseText).then(function() {
+                    if (typeof showToast === 'function') showToast('Text copied!');
+                }).catch(function() {
+                    if (typeof showToast === 'function') showToast('Could not copy');
+                });
+            }
+        }},
+        { icon: '↗️', label: 'Share via system', sub: "Use your phone's share menu", fn: function() {
+            if (navigator.share) {
+                navigator.share({ title: 'Quran', text: verseText, url: window.location.href }).catch(function() {});
+            } else {
+                if (typeof showToast === 'function') showToast('Not supported on this browser');
+            }
+        }}
+    ];
+
+    actions.forEach(function(a) {
+        var item = document.createElement('button');
+        item.className = 'mob-share-item';
+        item.innerHTML =
+            '<span class="mob-share-ico">' + a.icon + '</span>' +
+            '<div class="mob-share-info">' +
+                '<div class="mob-share-label">' + a.label + '</div>' +
+                '<div class="mob-share-sub">' + a.sub + '</div>' +
+            '</div>';
+        item.addEventListener('click', function() {
+            a.fn();
+            // Close after a short delay so native share dialog can open without sheet animation interference
+            setTimeout(closeMobileSheet, 50);
+        });
+        body.appendChild(item);
+    });
+}
+
+// ── Mobile left drawer (Group E) ──────────────────────────────────
+function openMobileDrawer() {
+    var drawer  = document.getElementById('mobileDrawer');
+    var overlay = document.getElementById('mobileDrawerOverlay');
+    if (!drawer || !overlay) return;
+
+    // Mark active language
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    drawer.querySelectorAll('.mob-drawer-lang').forEach(function(btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+    });
+
+    // Khatm / reading progress
+    var khatmEl = document.getElementById('mobileDrawerKhatm');
+    if (khatmEl) {
+        try {
+            var history = JSON.parse(localStorage.getItem('quranReadHistory') || '{}');
+            var readCount = Object.keys(history).length;
+            if (readCount > 0) {
+                var pct = Math.round(readCount / 114 * 100);
+                khatmEl.innerHTML =
+                    '<div class="mob-drawer-prog-label">Surahs read: ' + readCount + ' / 114</div>' +
+                    '<div class="mob-drawer-prog-bar"><div class="mob-drawer-prog-fill" style="width:' + pct + '%"></div></div>';
+            } else {
+                khatmEl.innerHTML = '';
+            }
+        } catch(e) { khatmEl.innerHTML = ''; }
+    }
+
+    drawer.classList.add('open');
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeMobileDrawer() {
+    var drawer  = document.getElementById('mobileDrawer');
+    var overlay = document.getElementById('mobileDrawerOverlay');
+    if (drawer)  drawer.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
 // ── Settings sheet ────────────────────────────────────────────────
 function buildSheetSettings(body, title) {
     title.textContent = '⚙️ Settings';
@@ -3139,7 +3327,11 @@ function closeSidebar() {
 }
 
 document.getElementById('burgerMenu').addEventListener('click', function() {
-    if (isMobile()) {
+    if (window.innerWidth <= 767) {
+        // v10.13 phone redesign: burger opens left drawer instead of settings sheet
+        openMobileDrawer();
+    } else if (isMobile()) {
+        // Tablet (768–900px): keep settings sheet behavior
         openMobileSheet('settings');
     } else {
         var sidebar = document.getElementById('sidebar');
@@ -3216,6 +3408,82 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
         openMobileSheet(btn.getAttribute('data-action'));
     });
 });
+
+// ── Phone drawer event wiring (Group E) ─────────────────────────
+(function() {
+    var closeBtn = document.getElementById('mobileDrawerClose');
+    var overlay  = document.getElementById('mobileDrawerOverlay');
+    if (closeBtn) closeBtn.addEventListener('click', closeMobileDrawer);
+    if (overlay)  overlay.addEventListener('click', closeMobileDrawer);
+
+    var khatmBtn = document.getElementById('mdKhatmBtn');
+    if (khatmBtn) khatmBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        if (typeof openKhatmModal === 'function') openKhatmModal();
+    });
+
+    var topicsBtn = document.getElementById('mdTopicsBtn');
+    if (topicsBtn) topicsBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        if (typeof openTopicsModal === 'function') openTopicsModal();
+    });
+
+    var dvBtn = document.getElementById('mdDailyVerseBtn');
+    if (dvBtn) dvBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        // Force-show daily verse regardless of today's flag
+        var existing = document.getElementById('dailyVerseModal');
+        if (existing) existing.remove();
+        try { localStorage.removeItem('quranDailyVerseLast'); } catch(e) {}
+        if (typeof maybeShowDailyVerse === 'function') maybeShowDailyVerse();
+    });
+
+    var langBtns = document.querySelectorAll('.mob-drawer-lang');
+    langBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var langCode = btn.getAttribute('data-lang');
+            var sel = document.getElementById('languageSelector');
+            if (sel) {
+                sel.value = langCode;
+                sel.dispatchEvent(new Event('change'));
+            }
+            // Update active state immediately
+            langBtns.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            closeMobileDrawer();
+        });
+    });
+}());
+
+// ── Phone verse tap highlight (Group F) ──────────────────────────
+document.addEventListener('click', function(e) {
+    if (window.innerWidth > 767) return;
+    if (e.target.closest('.verse-action-btn') || e.target.closest('.verse-actions')) return;
+    var verse = e.target.closest('.verse');
+    if (!verse) return;
+    var wasSelected = verse.classList.contains('verse-selected');
+    document.querySelectorAll('.verse.verse-selected').forEach(function(v) {
+        v.classList.remove('verse-selected');
+    });
+    if (!wasSelected) verse.classList.add('verse-selected');
+});
+
+// ── Phone reading progress bar (Group F) ─────────────────────────
+function updateSurahProgressBar() {
+    if (window.innerWidth > 767) return;
+    var fill = document.getElementById('surahProgressFill');
+    if (!fill) return;
+    var container = document.getElementById('quranContainer');
+    if (!container) return;
+    var scrollTop = container.scrollTop;
+    var scrollHeight = container.scrollHeight - container.clientHeight;
+    var pct = scrollHeight > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100)) : 0;
+    fill.style.width = pct + '%';
+}
+(function() {
+    var qc = document.getElementById('quranContainer');
+    if (qc) qc.addEventListener('scroll', updateSurahProgressBar, { passive: true });
+}());
 
 // ── After desktop search runs on mobile, refresh the sheet ───────
 // Patch searchQuran and searchSourat to auto-open sheet on mobile

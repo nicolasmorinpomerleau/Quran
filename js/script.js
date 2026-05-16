@@ -2295,7 +2295,10 @@ function buildSheetSurahs(body, title) {
     // Title from active tab
     title.textContent = L[_mobileTocTab] || L.surah;
 
-    // Insert tab bar (above body)
+    // Clear body first so prepend + content rendering don't conflict
+    body.innerHTML = '';
+
+    // Insert tab bar as first child of body (sticky so it stays visible while list scrolls)
     var sheet = document.getElementById('mobileSheet');
     var existingTabs = sheet.querySelector('.mob-toc-tabs');
     if (existingTabs) existingTabs.remove();
@@ -2311,9 +2314,7 @@ function buildSheetSurahs(body, title) {
         });
         tabsRow.appendChild(btn);
     });
-    body.parentNode.insertBefore(tabsRow, body);
-
-    body.innerHTML = '';
+    body.prepend(tabsRow);
 
     // Dispatch to the right renderer based on active tab
     if (_mobileTocTab === 'juz') {
@@ -2731,7 +2732,10 @@ function buildSheetBookmarks(body, title) {
     }
     ensureReset(_savedHubActiveTab);
 
-    // ── Tab bar — v10.10: 4 tabs with icons + labels ──
+    // ── Body content ──
+    body.innerHTML = '';
+
+    // ── Tab bar — sticky at top of scrollable body ──
     var tabsRow = sheet.querySelector('.mob-saved-tabs');
     if (tabsRow) tabsRow.remove();
     tabsRow = document.createElement('div');
@@ -2753,10 +2757,7 @@ function buildSheetBookmarks(body, title) {
         });
         tabsRow.appendChild(btn);
     });
-    body.parentNode.insertBefore(tabsRow, body);
-
-    // ── Body content ──
-    body.innerHTML = '';
+    body.prepend(tabsRow);
     if (_savedHubActiveTab === 'bookmarks') {
         renderBookmarksInBody(body, bms);
     } else if (_savedHubActiveTab === 'notes') {
@@ -3465,20 +3466,23 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
         if (typeof openKhatmModal === 'function') openKhatmModal();
     });
 
-    var topicsBtn = document.getElementById('mdTopicsBtn');
-    if (topicsBtn) topicsBtn.addEventListener('click', function() {
+    var helpBtn = document.getElementById('mdHelpBtn');
+    if (helpBtn) helpBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        if (typeof openTopicsModal === 'function') openTopicsModal();
+        var msg = 'Quran App v10.13\n\n' +
+                  '• Read — browse Surahs, Juz, Revelation order, or change Theme\n' +
+                  '• Bookmark — access saved verses, notes, highlights, and reflections\n' +
+                  '• Search — find any verse across the Quran\n' +
+                  '• Share — share a selected verse\n' +
+                  '• ⚙ Settings — advanced features & toggles\n\n' +
+                  'Tap ☰ to change language or return to this menu.';
+        alert(msg);
     });
 
-    var dvBtn = document.getElementById('mdDailyVerseBtn');
-    if (dvBtn) dvBtn.addEventListener('click', function() {
+    var feedbackBtn = document.getElementById('mdFeedbackBtn');
+    if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        // Force-show daily verse regardless of today's flag
-        var existing = document.getElementById('dailyVerseModal');
-        if (existing) existing.remove();
-        try { localStorage.removeItem('quranDailyVerseLast'); } catch(e) {}
-        if (typeof maybeShowDailyVerse === 'function') maybeShowDailyVerse();
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.13%0A%0A', '_blank');
     });
 
     var langBtns = document.querySelectorAll('.mob-drawer-lang');
@@ -3502,7 +3506,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
 (function() {
     var btn = document.getElementById('phoneSettingsBtn');
     if (btn) btn.addEventListener('click', function() {
-        openMobileSheet('settings');
+        if (typeof openFeaturesModal === 'function') openFeaturesModal();
     });
 }());
 

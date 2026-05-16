@@ -3523,6 +3523,11 @@ body.feature-off-savetools.feature-off-share.feature-off-tafsir .verse-actions {
     border-bottom: 1px solid var(--border);
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-sidebar);
+    flex-shrink: 0;
 }
 .mob-saved-tabs::-webkit-scrollbar { display: none; }
 .mob-saved-tab {
@@ -3745,6 +3750,10 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     background: var(--bg-sidebar);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-shrink: 0;
 }
 .mob-toc-tabs::-webkit-scrollbar { display: none; }
 

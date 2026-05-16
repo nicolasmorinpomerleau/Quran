@@ -2612,6 +2612,50 @@ input[type="range"] {
 .zoom-indicator.show { opacity: 1; }
 
 /* ════════════════════════════════════════════════════════════════════
+   v10.13 — Share panel (inside mobile sheet, hidden on desktop)
+   ════════════════════════════════════════════════════════════════════ */
+.mob-share-preview {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.mob-share-preview-arabic {
+    font-family: var(--font-arabic);
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    line-height: 2;
+    text-align: right;
+    direction: rtl;
+    margin-bottom: 4px;
+}
+.mob-share-preview-trans {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    font-family: var(--font-ui);
+}
+.mob-share-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 14px;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--font-ui);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+}
+.mob-share-item:last-child { border-bottom: none; }
+.mob-share-item:hover { background: var(--accent-trace); }
+.mob-share-ico { font-size: 24px; width: 36px; text-align: center; flex-shrink: 0; }
+.mob-share-info { flex: 1; }
+.mob-share-label { font-size: 16px; color: var(--text-primary); font-weight: 500; }
+.mob-share-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+/* ════════════════════════════════════════════════════════════════════
    PHONE REDESIGN — max-width: 767px  (Groups A–F)
    DO NOT change desktop layout. These rules are phone-only.
    ════════════════════════════════════════════════════════════════════ */
@@ -2784,45 +2828,5 @@ input[type="range"] {
 
     /* (Group B theme card CSS is defined globally below, not here) */
 
-    /* Group C — Share panel items */
-    .mob-share-preview {
-        padding: 12px 14px;
-        border-bottom: 1px solid var(--border);
-        flex-shrink: 0;
-    }
-    .mob-share-preview-arabic {
-        font-family: var(--font-arabic);
-        font-size: 1.3rem;
-        color: var(--text-primary);
-        line-height: 2;
-        text-align: right;
-        direction: rtl;
-        margin-bottom: 4px;
-    }
-    .mob-share-preview-trans {
-        font-size: 13px;
-        color: var(--text-secondary);
-        line-height: 1.5;
-        font-family: var(--font-ui);
-    }
-    .mob-share-item {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        width: 100%;
-        padding: 16px 14px;
-        background: none;
-        border: none;
-        border-bottom: 1px solid var(--border);
-        font-family: var(--font-ui);
-        cursor: pointer;
-        text-align: left;
-        transition: background 0.15s;
-    }
-    .mob-share-item:last-child { border-bottom: none; }
-    .mob-share-item:hover { background: var(--accent-trace); }
-    .mob-share-ico { font-size: 24px; width: 36px; text-align: center; flex-shrink: 0; }
-    .mob-share-info { flex: 1; }
-    .mob-share-label { font-size: 16px; color: var(--text-primary); font-weight: 500; }
-    .mob-share-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    /* (Share panel CSS moved to global section below) */
 }

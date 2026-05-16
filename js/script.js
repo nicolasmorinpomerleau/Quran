@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.13 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.13 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.13 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.13 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3468,38 +3468,70 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     });
 });
 
-// ── Phone drawer event wiring (Group E) ─────────────────────────
+// ── Phone drawer event wiring ────────────────────────────────────
 (function() {
     var closeBtn = document.getElementById('mobileDrawerClose');
     var overlay  = document.getElementById('mobileDrawerOverlay');
     if (closeBtn) closeBtn.addEventListener('click', closeMobileDrawer);
     if (overlay)  overlay.addEventListener('click', closeMobileDrawer);
 
+    // ── Quran Journey ──
     var khatmBtn = document.getElementById('mdKhatmBtn');
     if (khatmBtn) khatmBtn.addEventListener('click', function() {
         closeMobileDrawer();
         if (typeof openKhatmModal === 'function') openKhatmModal();
     });
 
+    var readingPlanBtn = document.getElementById('mdReadingPlanBtn');
+    if (readingPlanBtn) readingPlanBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        if (typeof openReadingPlanModal === 'function') openReadingPlanModal();
+    });
+
+    var readingTimeBtn = document.getElementById('mdReadingTimeBtn');
+    if (readingTimeBtn) readingTimeBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        openReadingTimeScreen();
+    });
+
+    // ── Daily Content ──
+    var dailyVerseBtn = document.getElementById('mdDailyVerseBtn');
+    if (dailyVerseBtn) dailyVerseBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        var existing = document.getElementById('dailyVerseModal');
+        if (existing) existing.remove();
+        try { localStorage.removeItem('quranDailyVerseLast'); } catch(e) {}
+        if (typeof maybeShowDailyVerse === 'function') maybeShowDailyVerse();
+    });
+
+    var reflectionBtn = document.getElementById('mdReflectionBtn');
+    if (reflectionBtn) reflectionBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        var suraEl = document.querySelector('.sura');
+        var suraId = suraEl ? suraEl.id : '0';
+        if (typeof openReflectionModal === 'function') openReflectionModal(suraId);
+    });
+
+    var hijriBtn = document.getElementById('mdHijriBtn');
+    if (hijriBtn) hijriBtn.addEventListener('click', function() {
+        closeMobileDrawer();
+        openHijriCalendarScreen();
+    });
+
+    // ── Support ──
     var helpBtn = document.getElementById('mdHelpBtn');
     if (helpBtn) helpBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        var msg = 'Quran App v10.13\n\n' +
-                  '• Read — browse Surahs, Juz, Revelation order, or change Theme\n' +
-                  '• Bookmark — access saved verses, notes, highlights, and reflections\n' +
-                  '• Search — find any verse across the Quran\n' +
-                  '• Share — share a selected verse\n' +
-                  '• ⚙ Settings — advanced features & toggles\n\n' +
-                  'Tap ☰ to change language or return to this menu.';
-        alert(msg);
+        openHelpScreen();
     });
 
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.13%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14%0A%0A', '_blank');
     });
 
+    // ── Language ──
     var langBtns = document.querySelectorAll('.mob-drawer-lang');
     langBtns.forEach(function(btn) {
         btn.addEventListener('click', function() {
@@ -3509,13 +3541,120 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
                 sel.value = langCode;
                 sel.dispatchEvent(new Event('change'));
             }
-            // Update active state immediately
             langBtns.forEach(function(b) { b.classList.remove('active'); });
             btn.classList.add('active');
             closeMobileDrawer();
         });
     });
 }());
+
+// ── Reading Time screen ───────────────────────────────────────────
+function openReadingTimeScreen() {
+    var s = (typeof getReadingTimeSummary === 'function') ? getReadingTimeSummary() : { thisWeek: 0, avg4w: 0 };
+    var history = {};
+    try { history = JSON.parse(localStorage.getItem('quranReadHistory') || '{}'); } catch(e) {}
+    var surahsRead = Object.keys(history).length;
+
+    var overlay = document.createElement('div');
+    overlay.className = 'mob-info-overlay';
+    overlay.innerHTML =
+        '<div class="mob-info-box">' +
+            '<div class="mob-info-header">' +
+                '<span class="mob-info-title">⏱ Reading Time</span>' +
+                '<button class="mob-info-close">✕</button>' +
+            '</div>' +
+            '<div class="mob-info-body">' +
+                '<div class="mob-stat-row"><div class="mob-stat-val">' + s.thisWeek + '<span class="mob-stat-unit"> min</span></div><div class="mob-stat-lbl">This week</div></div>' +
+                '<div class="mob-stat-row"><div class="mob-stat-val">' + s.avg4w + '<span class="mob-stat-unit"> min</span></div><div class="mob-stat-lbl">4-week average</div></div>' +
+                '<div class="mob-stat-row"><div class="mob-stat-val">' + surahsRead + '<span class="mob-stat-unit"> / 114</span></div><div class="mob-stat-lbl">Surahs read</div></div>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+    overlay.querySelector('.mob-info-close').addEventListener('click', function() {
+        overlay.classList.remove('show');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+    });
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.classList.remove('show');
+            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+        }
+    });
+}
+
+// ── Hijri Calendar screen ─────────────────────────────────────────
+function openHijriCalendarScreen() {
+    var gregEl  = document.querySelector('#hijriMonth .date-gregorian');
+    var hijriEl = document.querySelector('#hijriMonth .date-hijri');
+    var gregText  = gregEl  ? gregEl.textContent.trim()  : '';
+    var hijriText = hijriEl ? hijriEl.textContent.trim() : '';
+    var specialHtml = '';
+    if (typeof getHijriSpecialDate === 'function') {
+        var special = getHijriSpecialDate();
+        if (special) specialHtml = '<div class="mob-hijri-special">✨ ' + special + '</div>';
+    }
+
+    var overlay = document.createElement('div');
+    overlay.className = 'mob-info-overlay';
+    overlay.innerHTML =
+        '<div class="mob-info-box">' +
+            '<div class="mob-info-header">' +
+                '<span class="mob-info-title">📆 Hijri Calendar</span>' +
+                '<button class="mob-info-close">✕</button>' +
+            '</div>' +
+            '<div class="mob-info-body mob-hijri-body">' +
+                '<div class="mob-hijri-date">' + (hijriText || '—') + '</div>' +
+                '<div class="mob-hijri-greg">' + (gregText || '') + '</div>' +
+                specialHtml +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+    overlay.querySelector('.mob-info-close').addEventListener('click', function() {
+        overlay.classList.remove('show');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+    });
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.classList.remove('show');
+            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+        }
+    });
+}
+
+// ── Help screen ───────────────────────────────────────────────────
+function openHelpScreen() {
+    var overlay = document.createElement('div');
+    overlay.className = 'mob-info-overlay';
+    overlay.innerHTML =
+        '<div class="mob-info-box">' +
+            '<div class="mob-info-header">' +
+                '<span class="mob-info-title">❓ Help &amp; Tutorial</span>' +
+                '<button class="mob-info-close">✕</button>' +
+            '</div>' +
+            '<div class="mob-info-body mob-help-body">' +
+                '<div class="mob-help-item"><span class="mob-help-ico">📖</span><div><b>Read</b> — Browse Surahs, Juz, Revelation order, or Topics</div></div>' +
+                '<div class="mob-help-item"><span class="mob-help-ico">🔖</span><div><b>Bookmark</b> — Your saved verses, notes, highlights &amp; reflections</div></div>' +
+                '<div class="mob-help-item"><span class="mob-help-ico">🔍</span><div><b>Search</b> — Find any verse across the full Quran</div></div>' +
+                '<div class="mob-help-item"><span class="mob-help-ico">📤</span><div><b>Share</b> — Share or copy any selected verse</div></div>' +
+                '<div class="mob-help-item"><span class="mob-help-ico">☰</span><div><b>Menu</b> — Track your journey, daily content &amp; language</div></div>' +
+                '<div class="mob-help-item"><span class="mob-help-ico">⚙️</span><div><b>Settings</b> — Theme, font, audio, and all features</div></div>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+    overlay.querySelector('.mob-info-close').addEventListener('click', function() {
+        overlay.classList.remove('show');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+    });
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.classList.remove('show');
+            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+        }
+    });
+}
 
 // ── Phone settings button (top-right header icon, ≤767px) ────────
 // Uses the mobile sheet (features-modal-overlay is CSS-blocked on ≤900px)

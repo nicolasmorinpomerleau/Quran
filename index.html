@@ -329,16 +329,53 @@
             <button class="mob-drawer-close" id="mobileDrawerClose">✕</button>
         </div>
         <div class="mob-drawer-dates" id="mobileDrawerDates"></div>
-        <div class="mob-drawer-khatm" id="mobileDrawerKhatm"></div>
+
+        <!-- Quran Journey -->
+        <div class="mob-drawer-section-label">Quran Journey</div>
         <nav class="mob-drawer-nav">
             <button class="mob-drawer-item" id="mdKhatmBtn">
                 <span class="mob-drawer-ico">🎯</span>
                 <span class="mob-drawer-lbl">Khatm Tracker</span>
                 <span class="mob-drawer-chevron">›</span>
             </button>
+            <button class="mob-drawer-item" id="mdReadingPlanBtn">
+                <span class="mob-drawer-ico">📅</span>
+                <span class="mob-drawer-lbl">Reading Plan</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+            <button class="mob-drawer-item" id="mdReadingTimeBtn">
+                <span class="mob-drawer-ico">⏱</span>
+                <span class="mob-drawer-lbl">Reading Time</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+        </nav>
+
+        <!-- Daily Content -->
+        <div class="mob-drawer-section-label">Daily Content</div>
+        <nav class="mob-drawer-nav">
+            <button class="mob-drawer-item" id="mdDailyVerseBtn">
+                <span class="mob-drawer-ico">🌅</span>
+                <span class="mob-drawer-lbl">Daily Verse</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+            <button class="mob-drawer-item" id="mdReflectionBtn">
+                <span class="mob-drawer-ico">✍️</span>
+                <span class="mob-drawer-lbl">Reflection Prompt</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+            <button class="mob-drawer-item" id="mdHijriBtn">
+                <span class="mob-drawer-ico">📆</span>
+                <span class="mob-drawer-lbl">Hijri Calendar</span>
+                <span class="mob-drawer-chevron">›</span>
+            </button>
+        </nav>
+
+        <!-- Support -->
+        <div class="mob-drawer-section-label">Support</div>
+        <nav class="mob-drawer-nav">
             <button class="mob-drawer-item" id="mdHelpBtn">
                 <span class="mob-drawer-ico">❓</span>
-                <span class="mob-drawer-lbl">Help</span>
+                <span class="mob-drawer-lbl">Help &amp; Tutorial</span>
                 <span class="mob-drawer-chevron">›</span>
             </button>
             <button class="mob-drawer-item" id="mdFeedbackBtn">
@@ -346,21 +383,23 @@
                 <span class="mob-drawer-lbl">Feedback</span>
                 <span class="mob-drawer-chevron">›</span>
             </button>
-            <div class="mob-drawer-divider"></div>
-            <div class="mob-drawer-lang-section">
-                <div class="mob-drawer-lang-label">Language</div>
-                <div class="mob-drawer-langs" id="mobileDrawerLangs">
-                    <button class="mob-drawer-lang" data-lang="arabic">AR</button>
-                    <button class="mob-drawer-lang" data-lang="french">FR</button>
-                    <button class="mob-drawer-lang" data-lang="english">EN</button>
-                    <button class="mob-drawer-lang" data-lang="spanish">ES</button>
-                </div>
-            </div>
         </nav>
+
+        <!-- Language -->
+        <div class="mob-drawer-divider"></div>
+        <div class="mob-drawer-lang-section">
+            <div class="mob-drawer-lang-label">Language</div>
+            <div class="mob-drawer-langs" id="mobileDrawerLangs">
+                <button class="mob-drawer-lang" data-lang="arabic">AR</button>
+                <button class="mob-drawer-lang" data-lang="french">FR</button>
+                <button class="mob-drawer-lang" data-lang="english">EN</button>
+                <button class="mob-drawer-lang" data-lang="spanish">ES</button>
+            </div>
+        </div>
     </div>
     <div id="mobileDrawerOverlay" class="mob-drawer-overlay"></div>
 
-    <footer id="appFooter">Quran Display v10.13 — May you read with a mindful heart</footer>
+    <footer id="appFooter">Quran Display v10.14 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

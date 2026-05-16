@@ -2765,6 +2765,17 @@ input[type="range"] {
         font-weight: 600;
         margin-top: 2px;
     }
+    .mob-drawer-section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-family: var(--font-ui);
+        padding: 14px 16px 4px;
+        flex-shrink: 0;
+        opacity: 0.85;
+    }
     .mob-drawer-khatm {
         padding: 12px 14px 8px;
         flex-shrink: 0;

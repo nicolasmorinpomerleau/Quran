@@ -3135,15 +3135,15 @@ function openMobileDrawer() {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
     });
 
-    // Date display (gregorian + hijri)
+    // Date display (gregorian + hijri) — JS fallback if API hasn't loaded yet
     var datesEl = document.getElementById('mobileDrawerDates');
     if (datesEl) {
         var gregEl  = document.querySelector('#hijriMonth .date-gregorian');
         var hijriEl = document.querySelector('#hijriMonth .date-hijri');
-        var gregText  = gregEl  ? gregEl.textContent.trim()  : '';
-        var hijriText = hijriEl ? hijriEl.textContent.trim() : '';
+        var gregText  = (gregEl  && gregEl.textContent.trim())  ? gregEl.textContent.trim()  : new Date().toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+        var hijriText = (hijriEl && hijriEl.textContent.trim()) ? hijriEl.textContent.trim() : '';
         datesEl.innerHTML =
-            (gregText  ? '<div class="mob-drawer-date-greg">'  + gregText  + '</div>' : '') +
+            '<div class="mob-drawer-date-greg">'  + gregText  + '</div>' +
             (hijriText ? '<div class="mob-drawer-date-hijri-line">' + hijriText + '</div>' : '');
     }
 
@@ -3468,6 +3468,19 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     });
 });
 
+// ── Helper: reopen drawer when a feature modal is dismissed ──────
+// Polls until the element with `modalId` is gone from DOM, then calls openMobileDrawer.
+function watchForModalClose(modalId) {
+    var timer = setInterval(function() {
+        if (!document.getElementById(modalId)) {
+            clearInterval(timer);
+            openMobileDrawer();
+        }
+    }, 150);
+    // Safety: stop polling after 5 minutes even if modal never closes
+    setTimeout(function() { clearInterval(timer); }, 300000);
+}
+
 // ── Phone drawer event wiring ────────────────────────────────────
 (function() {
     var closeBtn = document.getElementById('mobileDrawerClose');
@@ -3479,19 +3492,25 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var khatmBtn = document.getElementById('mdKhatmBtn');
     if (khatmBtn) khatmBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        if (typeof openKhatmModal === 'function') openKhatmModal();
+        if (typeof openKhatmModal === 'function') {
+            openKhatmModal();
+            watchForModalClose('khatmModal');
+        }
     });
 
     var readingPlanBtn = document.getElementById('mdReadingPlanBtn');
     if (readingPlanBtn) readingPlanBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        if (typeof openReadingPlanModal === 'function') openReadingPlanModal();
+        if (typeof openReadingPlanModal === 'function') {
+            openReadingPlanModal();
+            watchForModalClose('readingPlanModal');
+        }
     });
 
     var readingTimeBtn = document.getElementById('mdReadingTimeBtn');
     if (readingTimeBtn) readingTimeBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        openReadingTimeScreen();
+        openReadingTimeScreen(); // reopens drawer in its own close handler
     });
 
     // ── Daily Content ──
@@ -3501,7 +3520,10 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
         var existing = document.getElementById('dailyVerseModal');
         if (existing) existing.remove();
         try { localStorage.removeItem('quranDailyVerseLast'); } catch(e) {}
-        if (typeof maybeShowDailyVerse === 'function') maybeShowDailyVerse();
+        if (typeof maybeShowDailyVerse === 'function') {
+            maybeShowDailyVerse();
+            watchForModalClose('dailyVerseModal');
+        }
     });
 
     var reflectionBtn = document.getElementById('mdReflectionBtn');
@@ -3509,26 +3531,31 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
         closeMobileDrawer();
         var suraEl = document.querySelector('.sura');
         var suraId = suraEl ? suraEl.id : '0';
-        if (typeof openReflectionModal === 'function') openReflectionModal(suraId);
+        if (typeof openReflectionModal === 'function') {
+            openReflectionModal(suraId);
+            watchForModalClose('reflectionModal');
+        }
     });
 
     var hijriBtn = document.getElementById('mdHijriBtn');
     if (hijriBtn) hijriBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        openHijriCalendarScreen();
+        openHijriCalendarScreen(); // reopens drawer in its own close handler
     });
 
     // ── Support ──
     var helpBtn = document.getElementById('mdHelpBtn');
     if (helpBtn) helpBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        openHelpScreen();
+        openHelpScreen(); // reopens drawer in its own close handler
     });
 
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.1%0A%0A', '_blank');
+        // Reopen drawer after mail client is opened (slight delay for UX)
+        setTimeout(openMobileDrawer, 600);
     });
 
     // ── Language ──
@@ -3571,16 +3598,15 @@ function openReadingTimeScreen() {
         '</div>';
     document.body.appendChild(overlay);
     requestAnimationFrame(function() { overlay.classList.add('show'); });
-    overlay.querySelector('.mob-info-close').addEventListener('click', function() {
+    function closeScreen() {
         overlay.classList.remove('show');
-        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
-    });
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            overlay.classList.remove('show');
-            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
-        }
-    });
+        setTimeout(function() {
+            if (overlay.parentNode) overlay.remove();
+            openMobileDrawer();
+        }, 280);
+    }
+    overlay.querySelector('.mob-info-close').addEventListener('click', closeScreen);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeScreen(); });
 }
 
 // ── Hijri Calendar screen ─────────────────────────────────────────
@@ -3611,16 +3637,15 @@ function openHijriCalendarScreen() {
         '</div>';
     document.body.appendChild(overlay);
     requestAnimationFrame(function() { overlay.classList.add('show'); });
-    overlay.querySelector('.mob-info-close').addEventListener('click', function() {
+    function closeScreen() {
         overlay.classList.remove('show');
-        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
-    });
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            overlay.classList.remove('show');
-            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
-        }
-    });
+        setTimeout(function() {
+            if (overlay.parentNode) overlay.remove();
+            openMobileDrawer();
+        }, 280);
+    }
+    overlay.querySelector('.mob-info-close').addEventListener('click', closeScreen);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeScreen(); });
 }
 
 // ── Help screen ───────────────────────────────────────────────────
@@ -3644,16 +3669,15 @@ function openHelpScreen() {
         '</div>';
     document.body.appendChild(overlay);
     requestAnimationFrame(function() { overlay.classList.add('show'); });
-    overlay.querySelector('.mob-info-close').addEventListener('click', function() {
+    function closeScreen() {
         overlay.classList.remove('show');
-        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
-    });
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) {
-            overlay.classList.remove('show');
-            setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
-        }
-    });
+        setTimeout(function() {
+            if (overlay.parentNode) overlay.remove();
+            openMobileDrawer();
+        }, 280);
+    }
+    overlay.querySelector('.mob-info-close').addEventListener('click', closeScreen);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closeScreen(); });
 }
 
 // ── Phone settings button (top-right header icon, ≤767px) ────────

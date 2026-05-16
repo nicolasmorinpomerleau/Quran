@@ -3115,7 +3115,8 @@ header {
     .topics-modal-overlay, .daily-verse-overlay, .reflection-overlay,
     .tafsir-modal-overlay, .tafsir-compare-overlay, .features-modal-overlay,
     .header-install-btn, #burgerMenu, .lastread-banner, .update-banner,
-    .toast-host, .surah-progress-bar, .mob-drawer, .mob-drawer-overlay {
+    .toast-host, .surah-progress-bar, .mob-drawer, .mob-drawer-overlay,
+    .phone-settings-btn {
         display: none !important;
     }
     body { background: white !important; color: black !important; }
@@ -3751,14 +3752,14 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    padding: 7px 13px;
+    padding: 9px 16px;
     background: var(--accent-trace);
     border: 1px solid var(--accent-faint);
     color: var(--text-secondary);
     border-radius: 99px;
     cursor: pointer;
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 500;
     flex-shrink: 0;
     width: auto;
@@ -3831,3 +3832,61 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     line-height: 1;
 }
 .update-banner-close:hover { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════════════════
+   v10.13 — Theme tab cards in Read panel (Group B)
+   ════════════════════════════════════════════════════════════════════ */
+.mob-theme-cards {
+    display: flex;
+    gap: 10px;
+    padding: 16px 14px 8px;
+    flex-shrink: 0;
+}
+
+.mob-theme-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 18px 8px 14px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    min-height: 100px;
+    transition: border-color 0.2s, transform 0.15s;
+    font-family: var(--font-ui);
+    /* background and borderColor set inline via JS */
+}
+
+.mob-theme-card:active { transform: scale(0.97); }
+
+.mob-tc-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.mob-tc-label {
+    font-size: 15px;
+    font-weight: 700;
+    /* color set inline via JS */
+}
+
+.mob-tc-bar {
+    width: 32px;
+    height: 3px;
+    border-radius: 99px;
+    /* background set inline via JS */
+}
+
+.mob-tc-active {
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 7px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-family: var(--font-ui);
+    /* background and color set inline via JS */
+}

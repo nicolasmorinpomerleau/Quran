@@ -1027,8 +1027,8 @@ footer {
     #themeSwitcher { flex-shrink: 0; }
     .theme-btn { font-size: 12px; padding: 5px 11px; }
 
-    /* Burger visible */
-    .burger-menu { display: none; } /* replaced by sidebar header close btn */
+    /* Burger visible on all mobile/tablet (opens settings sheet; phone uses drawer) */
+    .burger-menu { display: flex; }
 
     /* Sidebar: full-height drawer */
     .sidebar1 {
@@ -2615,7 +2615,29 @@ input[type="range"] {
    PHONE REDESIGN — max-width: 767px  (Groups A–F)
    DO NOT change desktop layout. These rules are phone-only.
    ════════════════════════════════════════════════════════════════════ */
+/* Phone settings button — hidden on desktop/tablet */
+.phone-settings-btn {
+    display: none;
+    position: fixed;
+    top: 10px; right: 10px;
+    z-index: 200;
+    width: 40px; height: 40px;
+    font-size: 20px;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--accent);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+}
+
 @media (max-width: 767px) {
+    /* Show phone settings icon (hamburger already shown via ≤900px block) */
+    .phone-settings-btn { display: flex; }
+
     /* Group A — Gold pill active state, 48px tap targets */
     .bnav-btn {
         min-height: 48px;
@@ -2760,38 +2782,7 @@ input[type="range"] {
         color: var(--bg-page);
     }
 
-    /* Group B — Theme tab cards in Read panel */
-    .mob-theme-cards {
-        display: flex;
-        gap: 8px;
-        padding: 14px;
-        flex-shrink: 0;
-    }
-    .mob-theme-card {
-        flex: 1;
-        padding: 10px 6px;
-        background: var(--bg-btn);
-        border: 1px solid var(--border-btn);
-        border-radius: var(--radius);
-        font-size: 12px;
-        color: var(--text-secondary);
-        cursor: pointer;
-        text-align: center;
-        font-family: var(--font-ui);
-        transition: all 0.15s;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-    }
-    .mob-theme-card.active {
-        background: var(--accent);
-        color: var(--bg-page);
-        border-color: transparent;
-        font-weight: 600;
-    }
-    .mob-theme-card-primary { font-size: 13px; }
-    .mob-theme-card-desc { font-size: 11px; opacity: 0.8; }
+    /* (Group B theme card CSS is defined globally below, not here) */
 
     /* Group C — Share panel items */
     .mob-share-preview {

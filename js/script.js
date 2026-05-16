@@ -152,7 +152,7 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · الإصدار ١٠٫١٣ · اقرأ بقلب واعٍ', rtl:true },
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.13 · اقرأ بقلب واعٍ', rtl:true },
     french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.13 — Lisez avec un cœur attentif', rtl:false },
     english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.13 — May you read with a mindful heart', rtl:false },
     spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.13 — Que leas con un corazón atento', rtl:false }
@@ -2400,8 +2400,8 @@ function buildSheetJuzInBody(body) {
 }
 
 function buildSheetRevelationInBody(body) {
-    if (typeof REVELATION_ORDER === 'undefined') return;
-    REVELATION_ORDER.forEach(function(suraNum, idx) {
+    if (typeof RevelationOrder === 'undefined') return;
+    RevelationOrder.forEach(function(suraNum, idx) {
         var sura = quranData.find(function(s){ return s.id === String(suraNum - 1); });
         if (!sura) return;
         var item = document.createElement('div');
@@ -2942,30 +2942,73 @@ function renderReflectionsInBody(body, refsArr) {
 // ── Theme tab (Group B — inside Read panel) ───────────────────────
 function buildSheetThemeTab(body) {
     var currentTheme = document.documentElement.getAttribute('data-theme') || 'manuscript';
+
+    // Theme definitions with actual preview colors
     var themes = [
-        { id: 'manuscript', primary: '🌙 Sepia',  desc: 'Manuscript' },
-        { id: 'minimal',    primary: '☀️ Light',  desc: 'Minimal' },
-        { id: 'scholar',    primary: '🌑 Dark',   desc: 'Scholar' }
+        {
+            id: 'scholar',
+            label: 'Dark',
+            icon: '🌑',
+            bg: '#0d1117',
+            surface: '#161b22',
+            textColor: '#e6edf3',
+            accentColor: '#c9a444'
+        },
+        {
+            id: 'minimal',
+            label: 'Light',
+            icon: '☀️',
+            bg: '#f8f7f4',
+            surface: '#eeece5',
+            textColor: '#2c2416',
+            accentColor: '#9c7a2e'
+        },
+        {
+            id: 'manuscript',
+            label: 'Sepia',
+            icon: '🌙',
+            bg: '#1a1208',
+            surface: '#251a0c',
+            textColor: '#e8d5a3',
+            accentColor: '#c9a444'
+        }
     ];
+
     var cardsWrap = document.createElement('div');
     cardsWrap.className = 'mob-theme-cards';
+
     themes.forEach(function(t) {
+        var isActive = (currentTheme === t.id);
         var card = document.createElement('button');
-        card.className = 'mob-theme-card' + (currentTheme === t.id ? ' active' : '');
+        card.className = 'mob-theme-card' + (isActive ? ' active' : '');
+        card.style.background = t.bg;
+        card.style.borderColor = isActive ? t.accentColor : 'transparent';
         card.innerHTML =
-            '<span class="mob-theme-swatch mob-theme-swatch-' + t.id + '"></span>' +
-            '<span class="mob-theme-card-primary">' + t.primary + '</span>' +
-            '<span class="mob-theme-card-desc">' + t.desc + '</span>';
+            '<span class="mob-tc-icon">' + t.icon + '</span>' +
+            '<span class="mob-tc-label" style="color:' + t.accentColor + '">' + t.label + '</span>' +
+            '<span class="mob-tc-bar" style="background:' + t.accentColor + ';opacity:0.6"></span>' +
+            (isActive ? '<span class="mob-tc-active" style="background:' + t.accentColor + ';color:' + t.bg + '">Active</span>' : '');
         card.addEventListener('click', function() {
             applyTheme(t.id); saveState();
-            cardsWrap.querySelectorAll('.mob-theme-card').forEach(function(c) { c.classList.remove('active'); });
+            cardsWrap.querySelectorAll('.mob-theme-card').forEach(function(c) {
+                c.classList.remove('active');
+                c.style.borderColor = 'transparent';
+                var al = c.querySelector('.mob-tc-active');
+                if (al) al.remove();
+            });
             card.classList.add('active');
+            card.style.borderColor = t.accentColor;
+            var al = document.createElement('span');
+            al.className = 'mob-tc-active';
+            al.style.cssText = 'background:' + t.accentColor + ';color:' + t.bg;
+            al.textContent = 'Active';
+            card.appendChild(al);
         });
         cardsWrap.appendChild(card);
     });
     body.appendChild(cardsWrap);
 
-    // Font sliders
+    // Font size sliders (per spec2.png — also shown in Theme tab)
     var fontSection = document.createElement('div');
     fontSection.className = 'mob-settings-section';
     var fontLbl = document.createElement('div');
@@ -2973,8 +3016,8 @@ function buildSheetThemeTab(body) {
     fontLbl.textContent = 'Font size';
     fontSection.appendChild(fontLbl);
     [
-        { label: 'Verse',       id: 'arabicFontSlider' },
-        { label: 'Translation', id: 'transFontSlider' }
+        { label: 'Arabic',       id: 'arabicFontSlider' },
+        { label: 'Translation',  id: 'transFontSlider' }
     ].forEach(function(cfg) {
         var src = document.getElementById(cfg.id);
         var row = document.createElement('div');
@@ -3452,6 +3495,14 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
             btn.classList.add('active');
             closeMobileDrawer();
         });
+    });
+}());
+
+// ── Phone settings button (top-right header icon, ≤767px) ────────
+(function() {
+    var btn = document.getElementById('phoneSettingsBtn');
+    if (btn) btn.addEventListener('click', function() {
+        openMobileSheet('settings');
     });
 }());
 

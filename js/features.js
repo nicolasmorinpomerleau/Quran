@@ -1193,7 +1193,7 @@ function loadArabicFontChoice() {
         orig(body, title);
         appendFeaturesUI(body);
         appendFocusModeButton(body);
-        appendKhatmUI(body);
+        if (window.innerWidth > 767) appendKhatmUI(body);
         // v10.10: appendDataUI moved to a final injection layer (always last)
     };
 }());
@@ -2735,6 +2735,14 @@ function onAudioEnded() {
         return;
     }
 
+    // Next-surah: advance to next surah at end; wrap from 114 back to Al-Fatiha
+    if (prefs.repeat === 'next-surah' && _audioState.verseIdx + 1 >= _audioState.totalVerses) {
+        var nextId = parseInt(_audioState.suraId) + 1;
+        if (nextId >= 114) nextId = 0;
+        playVerse(String(nextId), 0);
+        return;
+    }
+
     if (prefs.autoAdvance) {
         nextAudio();
     } else {
@@ -2999,7 +3007,7 @@ function appendAudioUI(body) {
     var rptSel = document.createElement('select');
     rptSel.className = 'mob-settings-select';
     rptSel.style.flex = '1';
-    [['none','No repeat'],['verse','Repeat verse'],['surah','Repeat surah']].forEach(function(p) {
+    [['none','No repeat'],['verse','Repeat verse'],['surah','Repeat surah'],['next-surah','Next Surah']].forEach(function(p) {
         var opt = document.createElement('option');
         opt.value = p[0]; opt.textContent = p[1];
         rptSel.appendChild(opt);

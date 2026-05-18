@@ -3978,28 +3978,97 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .mob-stat-lbl { font-size: 14px; color: var(--text-secondary); }
 
 /* Hijri Calendar */
-.mob-hijri-body { text-align: center; padding: 30px 20px; }
-.mob-hijri-date {
-    font-size: 26px;
+/* Hijri Calendar — today card */
+.mob-hijri-today-card {
+    text-align: center;
+    padding: 20px 20px 14px;
+    background: var(--accent-trace);
+    border-bottom: 1px solid var(--border);
+}
+.mob-hijri-today-hijri {
+    font-size: 20px;
     font-weight: 700;
     color: var(--accent);
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     font-family: var(--font-arabic, var(--font-ui));
 }
-.mob-hijri-greg {
-    font-size: 15px;
+.mob-hijri-today-greg {
+    font-size: 13px;
     color: var(--text-muted);
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
-.mob-hijri-special {
-    font-size: 15px;
+.mob-hijri-today-special {
+    font-size: 14px;
+    font-weight: 600;
     color: var(--text-secondary);
-    background: var(--accent-trace);
-    border: 1px solid var(--accent-faint);
-    border-radius: 10px;
-    padding: 12px 16px;
-    margin-top: 8px;
+    background: var(--accent-faint);
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: inline-block;
+    margin-top: 4px;
 }
+/* Scrollable wrapper inside the box */
+.mob-hijri-scroll {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+/* Events list */
+.mob-hijri-events-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.8;
+    padding: 14px 16px 6px;
+}
+.mob-hijri-events-list {
+    padding: 0 0 16px;
+    overflow-y: auto;
+}
+.mob-hijri-event {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-verse);
+}
+.mob-hijri-event-today {
+    background: var(--accent-trace);
+}
+.mob-hijri-event-ico {
+    font-size: 22px;
+    flex-shrink: 0;
+    width: 30px;
+    text-align: center;
+}
+.mob-hijri-event-info { flex: 1; }
+.mob-hijri-event-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+.mob-hijri-event-date {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+.mob-hijri-today-badge {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--bg-page);
+    background: var(--accent);
+    border-radius: 99px;
+    padding: 3px 9px;
+    flex-shrink: 0;
+}
+/* Legacy classes kept for safety */
+.mob-hijri-body { text-align: center; padding: 30px 20px; }
+.mob-hijri-date { font-size: 26px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.mob-hijri-greg { font-size: 15px; color: var(--text-muted); margin-bottom: 20px; }
+.mob-hijri-special { font-size: 15px; color: var(--text-secondary); background: var(--accent-trace); border: 1px solid var(--accent-faint); border-radius: 10px; padding: 12px 16px; margin-top: 8px; }
 
 /* Help screen */
 .mob-help-item {

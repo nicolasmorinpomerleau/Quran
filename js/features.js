@@ -2309,6 +2309,7 @@ function startPlan(planType, customDays) {
         if (typeof showToast === 'function') showToast('🎉 App installed');
         window._pwaInstallable = false;
         deferredPrompt = null;
+        try { localStorage.setItem('quranPWAInstalled', '1'); } catch(e) {}
         if (typeof updateInstallPill === 'function') updateInstallPill();
     });
 
@@ -2402,23 +2403,27 @@ function showInstallInstructions() {
     });
 }
 
-// ── v10.5: Update visibility of install banner — show on ALL mobile devices ──
-// We don't wait for beforeinstallprompt because some browsers (Samsung Internet,
-// older Android Chrome) don't fire it reliably or don't fire it at all.
+// ── Update visibility of install banner ──────────────────────────────────────
 window.updateInstallPill = function() {
     var btn = document.getElementById('headerInstallBtn');
     if (!btn) return;
+    // Never show when already running as installed PWA
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
-    var dismissed = false;
-    try { dismissed = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
-    if (isStandalone || dismissed) {
-        btn.style.display = 'none';
-        return;
-    }
-    // Show on all phones AND when desktop has triggered beforeinstallprompt
-    var isMobile = window.innerWidth <= 900;
-    var shouldShow = isMobile || window._pwaInstallable === true;
+    if (isStandalone) { btn.style.display = 'none'; return; }
+    // Never show if user dismissed or app was already installed
+    var dismissed = false, wasInstalled = false;
+    try { dismissed    = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
+    try { wasInstalled = localStorage.getItem('quranPWAInstalled')      === '1'; } catch(e) {}
+    if (dismissed || wasInstalled) { btn.style.display = 'none'; return; }
+    // iOS: always show — 'beforeinstallprompt' never fires on iOS, but we still
+    //   want to guide users through the Share → Add to Home Screen flow.
+    // Android / Desktop: only show once the browser has confirmed the app is
+    //   installable (i.e. deferredPrompt is ready), so the button always triggers
+    //   the native prompt rather than just showing manual instructions.
+    var ua = navigator.userAgent.toLowerCase();
+    var isIOS = /iphone|ipad|ipod/.test(ua);
+    var shouldShow = isIOS || window._pwaInstallable === true;
     btn.style.display = shouldShow ? '' : 'none';
 };
 

@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.4 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.4 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.4 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.4 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.6 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.6 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.6 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.6 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3532,7 +3532,8 @@ function watchForModalClose(modalId) {
     var hijriBtn = document.getElementById('mdHijriBtn');
     if (hijriBtn) hijriBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        openHijriCalendarScreen(); // reopens drawer in its own close handler
+        // Delay so drawer slide-out animation doesn't compete with overlay entrance
+        setTimeout(openHijriCalendarScreen, 80);
     });
 
     // ── Support ──
@@ -3545,7 +3546,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.3%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.6%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });
@@ -3622,15 +3623,15 @@ function openReadingTimeScreen() {
 
 // ── Hijri Calendar screen ─────────────────────────────────────────
 function openHijriCalendarScreen() {
-    // Always compute Gregorian directly from JS
     var now = new Date();
     var gregText = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Try DOM first (may already be populated by getHijriCalendarForMonth())
-    var hijriEl = document.querySelector('#hijriMonth .date-hijri');
-    var hijriText = (hijriEl && hijriEl.textContent.trim()) ? hijriEl.textContent.trim() : '';
-
-    // If DOM is empty, try Intl Islamic calendar
+    // Use the built-in Hijri converter from features.js
+    var todayH = (typeof getTodayHijri === 'function') ? getTodayHijri() : null;
+    var hijriMonthNames = (typeof HIJRI_MONTHS !== 'undefined') ? HIJRI_MONTHS :
+        ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Awwal','Jumada al-Thani',
+         'Rajab','Shaban','Ramadan','Shawwal','Dhu al-Qadah','Dhu al-Hijjah'];
+    var hijriText = (todayH && typeof formatHijri === 'function') ? formatHijri(todayH) : '';
     if (!hijriText) {
         try {
             hijriText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
@@ -3639,10 +3640,42 @@ function openHijriCalendarScreen() {
         } catch(e) { hijriText = ''; }
     }
 
-    var specialHtml = '';
-    if (typeof getHijriSpecialDate === 'function') {
-        var special = getHijriSpecialDate();
-        if (special) specialHtml = '<div class="mob-hijri-special">✨ ' + special + '</div>';
+    // Today's special event — pass the Hijri object
+    var todaySpecial = (todayH && typeof getHijriSpecialDate === 'function') ? getHijriSpecialDate(todayH) : null;
+
+    // Upcoming Islamic events list
+    var KEY_EVENTS = [
+        { month: 1,  day: 1,  name: 'Islamic New Year',          icon: '🌙' },
+        { month: 1,  day: 10, name: 'Day of Ashura',             icon: '🕯' },
+        { month: 3,  day: 12, name: 'Mawlid an-Nabi',            icon: '✦'  },
+        { month: 7,  day: 27, name: "Laylat al-Mi'raj",          icon: '✦'  },
+        { month: 8,  day: 15, name: "Laylat al-Bara'ah",         icon: '✦'  },
+        { month: 9,  day: 1,  name: 'First day of Ramadan',      icon: '🌙' },
+        { month: 9,  day: 27, name: 'Laylat al-Qadr (27 Ramadan)', icon: '⭐' },
+        { month: 10, day: 1,  name: 'Eid al-Fitr',               icon: '🎉' },
+        { month: 12, day: 9,  name: 'Day of Arafah',             icon: '⛰' },
+        { month: 12, day: 10, name: 'Eid al-Adha',               icon: '🎉' }
+    ];
+
+    var eventsHtml = '';
+    if (todayH) {
+        // Show upcoming events this year, then wrap to start of year
+        var upcoming = KEY_EVENTS.filter(function(e) {
+            return e.month > todayH.month || (e.month === todayH.month && e.day >= todayH.day);
+        });
+        if (upcoming.length === 0) upcoming = KEY_EVENTS;
+        upcoming.slice(0, 7).forEach(function(e) {
+            var isToday = (e.month === todayH.month && e.day === todayH.day);
+            eventsHtml +=
+                '<div class="mob-hijri-event' + (isToday ? ' mob-hijri-event-today' : '') + '">' +
+                    '<span class="mob-hijri-event-ico">' + e.icon + '</span>' +
+                    '<div class="mob-hijri-event-info">' +
+                        '<div class="mob-hijri-event-name">' + e.name + '</div>' +
+                        '<div class="mob-hijri-event-date">' + e.day + ' ' + hijriMonthNames[e.month - 1] + ' ' + todayH.year + ' AH</div>' +
+                    '</div>' +
+                    (isToday ? '<span class="mob-hijri-today-badge">Today</span>' : '') +
+                '</div>';
+        });
     }
 
     var overlay = document.createElement('div');
@@ -3650,17 +3683,23 @@ function openHijriCalendarScreen() {
     overlay.innerHTML =
         '<div class="mob-info-box">' +
             '<div class="mob-info-header">' +
-                '<span class="mob-info-title">📆 Hijri Calendar</span>' +
+                '<span class="mob-info-title">📆 Islamic Calendar</span>' +
                 '<button class="mob-info-close">✕</button>' +
             '</div>' +
-            '<div class="mob-info-body mob-hijri-body">' +
-                '<div class="mob-hijri-date">' + (hijriText || '—') + '</div>' +
-                '<div class="mob-hijri-greg">' + (gregText || '') + '</div>' +
-                specialHtml +
+            '<div class="mob-hijri-scroll">' +
+                '<div class="mob-hijri-today-card">' +
+                    '<div class="mob-hijri-today-hijri">' + (hijriText || '—') + '</div>' +
+                    '<div class="mob-hijri-today-greg">' + gregText + '</div>' +
+                    (todaySpecial ? '<div class="mob-hijri-today-special">' + todaySpecial.icon + ' ' + todaySpecial.name + '</div>' : '') +
+                '</div>' +
+                '<div class="mob-hijri-events-label">Upcoming events</div>' +
+                '<div class="mob-hijri-events-list">' + eventsHtml + '</div>' +
             '</div>' +
         '</div>';
     document.body.appendChild(overlay);
-    requestAnimationFrame(function() { overlay.classList.add('show'); });
+    void overlay.offsetHeight; // force reflow so CSS opacity transition fires correctly
+    overlay.classList.add('show');
+    var closeBtn = overlay.querySelector('.mob-info-close');
     function closeScreen() {
         overlay.classList.remove('show');
         setTimeout(function() {
@@ -3668,7 +3707,7 @@ function openHijriCalendarScreen() {
             openMobileDrawer();
         }, 280);
     }
-    overlay.querySelector('.mob-info-close').addEventListener('click', closeScreen);
+    if (closeBtn) closeBtn.addEventListener('click', closeScreen);
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeScreen(); });
 }
 

@@ -3696,6 +3696,66 @@ const DAILY_VERSES = [
 ];
 const DAILY_VERSE_LAST_KEY = 'quranDailyVerseLast';
 
+function showDailyVerseNow() {
+    // Force-shows the daily verse regardless of feature-flag state (used from hamburger)
+    var todayKey;
+    try { todayKey = new Date().toISOString().slice(0, 10); } catch(e) { return; }
+    var dayNum = parseInt(todayKey.replace(/-/g, ''), 10);
+    var verseRef = DAILY_VERSES[dayNum % DAILY_VERSES.length];
+    var parts = verseRef.split(':');
+    var sNum = parseInt(parts[0]);
+    var vNum = parseInt(parts[1]);
+    var sura = (typeof quranData !== 'undefined') ? quranData.find(function(s){ return s.id === String(sNum - 1); }) : null;
+    if (!sura || !sura.verses[vNum - 1]) {
+        if (typeof showToast === 'function') showToast('🌅 Daily verse — load a surah first');
+        return;
+    }
+    var verse = sura.verses[vNum - 1];
+    var existing = document.getElementById('dailyVerseModal');
+    if (existing) existing.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = 'dailyVerseModal';
+    overlay.className = 'daily-verse-overlay';
+    overlay.innerHTML =
+        '<div class="daily-verse-box">' +
+            '<div class="daily-verse-header">' +
+                '<span class="dv-ornament">✦</span>' +
+                '<span class="dv-label">Today\'s verse</span>' +
+                '<span class="dv-ornament">✦</span>' +
+            '</div>' +
+            '<div class="daily-verse-text" dir="rtl">' + verse.text + '</div>' +
+            '<div class="daily-verse-ref">' + sura.name + ' · ' + sNum + ':' + vNum + '</div>' +
+            '<div class="daily-verse-actions">' +
+                '<button class="dv-btn-secondary" id="dvDismiss2">Close</button>' +
+                '<button class="dv-btn-primary" id="dvGoToVerse2">Read this verse →</button>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function(){ if (overlay.parentNode) overlay.remove(); }, 200);
+    }
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    document.getElementById('dvDismiss2').addEventListener('click', close);
+    document.getElementById('dvGoToVerse2').addEventListener('click', function() {
+        close();
+        if (typeof displaySingleSura === 'function') {
+            displaySingleSura(sura.id);
+            setTimeout(function() {
+                var verses = document.querySelectorAll('.sura .verse');
+                if (verses[vNum - 1]) {
+                    verses[vNum - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    verses[vNum - 1].classList.add('verse-flash');
+                    setTimeout(function(){ verses[vNum - 1].classList.remove('verse-flash'); }, 1500);
+                }
+            }, 300);
+        }
+    });
+}
+
 function maybeShowDailyVerse() {
     if (!isFeatureOn('dailyVerse')) return;
     var todayKey;
@@ -4135,12 +4195,18 @@ function stopReadingTimer() {
     if (!_readingTimeStart) return;
     var elapsed = Date.now() - _readingTimeStart;
     _readingTimeStart = null;
-    if (elapsed < 5000) return; // ignore <5s sessions (just opened then closed)
+    if (elapsed < 1000) return;
     var minutes = elapsed / 60000;
     var data = getReadingTime();
     var weekKey = getCurrentWeekKey();
     data[weekKey] = (data[weekKey] || 0) + minutes;
     saveReadingTime(data);
+}
+
+function flushReadingTimer() {
+    if (!_readingTimeStart) return;
+    stopReadingTimer();
+    startReadingTimer();
 }
 
 (function wireReadingTimer() {
@@ -4153,6 +4219,10 @@ function stopReadingTimer() {
         });
         window.addEventListener('beforeunload', stopReadingTimer);
         window.addEventListener('pagehide', stopReadingTimer);
+        // Periodic flush every 30s so data is saved even if page never hides
+        setInterval(function() {
+            if (!document.hidden) flushReadingTimer();
+        }, 30000);
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);

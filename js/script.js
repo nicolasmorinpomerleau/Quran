@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.3 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.3 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.3 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.3 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.4 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.4 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.4 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.4 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -2769,7 +2769,10 @@ function buildSheetBookmarks(body, title) {
 
 function renderBookmarksInBody(body, bms) {
     if (!bms.length) {
-        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the 🔖 button to save it.</div></div>';
+        var empty = document.createElement('div');
+        empty.className = 'mob-bookmarks-empty';
+        empty.innerHTML = '<div class="mob-bookmarks-empty-icon">🔖</div><div>No bookmarks yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the 🔖 button to save it.</div>';
+        body.appendChild(empty);
         return;
     }
     bms.forEach(function(b) {
@@ -2805,7 +2808,10 @@ function renderBookmarksInBody(body, bms) {
 
 function renderNotesInBody(body, notesArr) {
     if (!notesArr.length) {
-        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">📝</div><div>No notes yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the 📝 button to add a note.</div></div>';
+        var empty = document.createElement('div');
+        empty.className = 'mob-bookmarks-empty';
+        empty.innerHTML = '<div class="mob-bookmarks-empty-icon">📝</div><div>No notes yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the 📝 button to add a note.</div>';
+        body.appendChild(empty);
         return;
     }
     notesArr.forEach(function(n) {
@@ -2865,7 +2871,10 @@ function renderNotesInBody(body, notesArr) {
 
 function renderHighlightsInBody(body, hlArr) {
     if (!hlArr.length) {
-        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">✦</div><div>No highlights yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the ✦ Highlight button.</div></div>';
+        var empty = document.createElement('div');
+        empty.className = 'mob-bookmarks-empty';
+        empty.innerHTML = '<div class="mob-bookmarks-empty-icon">✦</div><div>No highlights yet</div><div class="mob-bookmarks-empty-hint">Tap a verse and the ✦ Highlight button.</div>';
+        body.appendChild(empty);
         return;
     }
     hlArr.forEach(function(h) {
@@ -2901,7 +2910,10 @@ function renderHighlightsInBody(body, hlArr) {
 // v10.10: Reflections in mobile sheet
 function renderReflectionsInBody(body, refsArr) {
     if (!refsArr.length) {
-        body.innerHTML = '<div class="mob-bookmarks-empty"><div class="mob-bookmarks-empty-icon">✍️</div><div>No reflections yet</div><div class="mob-bookmarks-empty-hint">Scroll to the end of a surah — you\'ll be prompted to reflect.</div></div>';
+        var empty = document.createElement('div');
+        empty.className = 'mob-bookmarks-empty';
+        empty.innerHTML = '<div class="mob-bookmarks-empty-icon">✍️</div><div>No reflections yet</div><div class="mob-bookmarks-empty-hint">Scroll to the end of a surah — you\'ll be prompted to reflect.</div>';
+        body.appendChild(empty);
         return;
     }
     refsArr.forEach(function(r) {
@@ -3069,9 +3081,6 @@ function buildSheetShare(body, title) {
 
     var verseText = selVerse ? selVerse.textContent.trim() : document.title;
     var actions = [
-        { icon: '🖼', label: 'Share as image', sub: 'Beautiful verse card', fn: function() {
-            if (typeof showToast === 'function') showToast('Image sharing coming soon');
-        }},
         { icon: '🔗', label: 'Copy link', sub: 'Direct link to this surah', fn: function() {
             var url = window.location.href;
             if (navigator.clipboard) {
@@ -3503,11 +3512,8 @@ function watchForModalClose(modalId) {
     var dailyVerseBtn = document.getElementById('mdDailyVerseBtn');
     if (dailyVerseBtn) dailyVerseBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        var existing = document.getElementById('dailyVerseModal');
-        if (existing) existing.remove();
-        try { localStorage.removeItem('quranDailyVerseLast'); } catch(e) {}
-        if (typeof maybeShowDailyVerse === 'function') {
-            maybeShowDailyVerse();
+        if (typeof showDailyVerseNow === 'function') {
+            showDailyVerseNow();
             watchForModalClose('dailyVerseModal');
         }
     });
@@ -3563,6 +3569,9 @@ function watchForModalClose(modalId) {
 
 // ── Reading Time screen ───────────────────────────────────────────
 function openReadingTimeScreen() {
+    // Flush running session to localStorage before reading summary
+    if (typeof flushReadingTimer === 'function') flushReadingTimer();
+
     var s = (typeof getReadingTimeSummary === 'function') ? getReadingTimeSummary() : { thisWeek: 0, avg4w: 0 };
     var history = {};
     try { history = JSON.parse(localStorage.getItem('quranReadHistory') || '{}'); } catch(e) {}
@@ -3581,9 +3590,25 @@ function openReadingTimeScreen() {
                 '<div class="mob-stat-row"><div class="mob-stat-val">' + s.avg4w + '<span class="mob-stat-unit"> min</span></div><div class="mob-stat-lbl">4-week average</div></div>' +
                 '<div class="mob-stat-row"><div class="mob-stat-val">' + surahsRead + '<span class="mob-stat-unit"> / 114</span></div><div class="mob-stat-lbl">Surahs read</div></div>' +
             '</div>' +
+            '<div style="padding:0 20px 16px;">' +
+                '<button id="rtResetBtn" style="width:100%;padding:10px;background:#d9707018;border:1px solid #d9707040;color:#e08585;border-radius:8px;font-size:13px;cursor:pointer;">🗑 Reset reading stats</button>' +
+            '</div>' +
         '</div>';
     document.body.appendChild(overlay);
     requestAnimationFrame(function() { overlay.classList.add('show'); });
+
+    overlay.querySelector('#rtResetBtn').addEventListener('click', function() {
+        if (!confirm('Reset all reading time and surah history?')) return;
+        try { localStorage.removeItem('quranReadingTime'); } catch(e) {}
+        try { localStorage.removeItem('quranReadHistory'); } catch(e) {}
+        if (typeof showToast === 'function') showToast('Reading stats reset');
+        overlay.classList.remove('show');
+        setTimeout(function() {
+            if (overlay.parentNode) overlay.remove();
+            openReadingTimeScreen();
+        }, 280);
+    });
+
     function closeScreen() {
         overlay.classList.remove('show');
         setTimeout(function() {
@@ -3597,10 +3622,23 @@ function openReadingTimeScreen() {
 
 // ── Hijri Calendar screen ─────────────────────────────────────────
 function openHijriCalendarScreen() {
-    var gregEl  = document.querySelector('#hijriMonth .date-gregorian');
+    // Always compute Gregorian directly from JS
+    var now = new Date();
+    var gregText = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // Try DOM first (may already be populated by getHijriCalendarForMonth())
     var hijriEl = document.querySelector('#hijriMonth .date-hijri');
-    var gregText  = gregEl  ? gregEl.textContent.trim()  : '';
-    var hijriText = hijriEl ? hijriEl.textContent.trim() : '';
+    var hijriText = (hijriEl && hijriEl.textContent.trim()) ? hijriEl.textContent.trim() : '';
+
+    // If DOM is empty, try Intl Islamic calendar
+    if (!hijriText) {
+        try {
+            hijriText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            }).format(now);
+        } catch(e) { hijriText = ''; }
+    }
+
     var specialHtml = '';
     if (typeof getHijriSpecialDate === 'function') {
         var special = getHijriSpecialDate();

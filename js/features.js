@@ -1652,40 +1652,21 @@ document.addEventListener('keydown', function(e) {
 // ═══════════════════════════════════════════════════════════════════
 // v10 — Sidebar collapsible groups
 // ═══════════════════════════════════════════════════════════════════
+// Always reset to data-default on page load (Search open, others closed)
 (function sidebarGroups() {
-    var SIDE_GROUPS_KEY = 'quranSideGroupsOpen';
-
-    function getOpenState() {
-        try { return JSON.parse(localStorage.getItem(SIDE_GROUPS_KEY) || '{}'); }
-        catch(e) { return {}; }
-    }
-    function saveOpenState(state) {
-        try { localStorage.setItem(SIDE_GROUPS_KEY, JSON.stringify(state)); } catch(e) {}
-    }
-
     function init() {
         var groups = document.querySelectorAll('.side-group');
         if (!groups.length) return;
-        var saved = getOpenState();
-        groups.forEach(function(g, i) {
+        groups.forEach(function(g) {
             var header = g.querySelector('.side-group-header');
             var body = g.querySelector('.side-group-body');
             if (!header || !body) return;
-            var label = g.querySelector('.side-group-label');
-            var key = label ? label.textContent.trim().toLowerCase() : 'group_' + i;
-            // Apply saved state, fall back to data-default
-            var open = (key in saved) ? saved[key] : (g.getAttribute('data-default') !== 'closed');
-            if (open) g.classList.add('side-group-open');
+            if (g.getAttribute('data-default') !== 'closed') g.classList.add('side-group-open');
             header.addEventListener('click', function() {
-                var nowOpen = !g.classList.contains('side-group-open');
-                g.classList.toggle('side-group-open', nowOpen);
-                var state = getOpenState();
-                state[key] = nowOpen;
-                saveOpenState(state);
+                g.classList.toggle('side-group-open');
             });
         });
     }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
@@ -5050,4 +5031,11 @@ document.addEventListener('change', function(e) {
             openFeaturesModal();
         }
     }, 80);
+});
+
+// ── 24h Hijri event alert — called once both scripts are loaded ───────────────
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (typeof checkHijriEventAlert === 'function') checkHijriEventAlert();
+    }, 1200);
 });

@@ -3977,14 +3977,43 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .mob-stat-unit { font-size: 16px; font-weight: 400; color: var(--text-muted); }
 .mob-stat-lbl { font-size: 14px; color: var(--text-secondary); }
 
-/* Hijri Calendar */
 /* Hijri Calendar — today card */
 .mob-hijri-today-card {
     text-align: center;
-    padding: 20px 20px 14px;
+    padding: 24px 20px 18px;
     background: var(--accent-trace);
     border-bottom: 1px solid var(--border);
 }
+/* Arabic script — large, elegant */
+.mob-hijri-date-arabic {
+    font-family: var(--font-arabic);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    direction: rtl;
+    line-height: 1.5;
+    margin-bottom: 4px;
+}
+/* Latin transliteration */
+.mob-hijri-date-latin {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    letter-spacing: 0.01em;
+}
+/* Gregorian dates */
+.mob-hijri-date-greg {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+}
+.mob-hijri-date-greg2 {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+/* Legacy class kept */
 .mob-hijri-today-hijri {
     font-size: 20px;
     font-weight: 700;
@@ -4016,13 +4045,12 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 }
 /* Events list */
 .mob-hijri-events-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.10em;
     text-transform: uppercase;
     color: var(--accent);
-    opacity: 0.8;
-    padding: 14px 16px 6px;
+    padding: 16px 16px 8px;
 }
 .mob-hijri-events-list {
     padding: 0 0 16px;
@@ -4031,29 +4059,30 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .mob-hijri-event {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 14px;
+    padding: 14px 16px;
     border-bottom: 1px solid var(--border-verse);
 }
 .mob-hijri-event-today {
     background: var(--accent-trace);
 }
 .mob-hijri-event-ico {
-    font-size: 22px;
+    font-size: 26px;
     flex-shrink: 0;
-    width: 30px;
+    width: 36px;
     text-align: center;
 }
 .mob-hijri-event-info { flex: 1; }
 .mob-hijri-event-name {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 16px;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 .mob-hijri-event-date {
-    font-size: 12px;
-    color: var(--text-muted);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 500;
 }
 .mob-hijri-today-badge {
     font-size: 11px;
@@ -4069,6 +4098,150 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .mob-hijri-date { font-size: 26px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
 .mob-hijri-greg { font-size: 15px; color: var(--text-muted); margin-bottom: 20px; }
 .mob-hijri-special { font-size: 15px; color: var(--text-secondary); background: var(--accent-trace); border: 1px solid var(--accent-faint); border-radius: 10px; padding: 12px 16px; margin-top: 8px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   Desktop Hijri Calendar modal
+   ════════════════════════════════════════════════════════════════════ */
+.hijri-desktop-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1300;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.25s;
+}
+.hijri-desktop-overlay.show { opacity: 1; }
+.hijri-desktop-box {
+    background: var(--bg-sidebar);
+    border-radius: 16px;
+    width: 440px;
+    max-width: 94vw;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.28s ease, opacity 0.25s;
+}
+.hijri-desktop-overlay.show .hijri-desktop-box {
+    transform: translateY(0) scale(1);
+}
+.hijri-desktop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 22px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.hijri-desktop-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+}
+.hijri-desktop-close {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--accent-trace);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.hijri-desktop-body {
+    overflow-y: auto;
+    flex: 1;
+}
+/* Make #hijriMonth look clickable on desktop */
+#hijriMonth {
+    cursor: default;
+}
+@media (min-width: 768px) {
+    #hijriMonth {
+        cursor: pointer;
+        border-radius: 6px;
+        padding: 2px 4px;
+        margin: -2px -4px;
+        transition: background 0.15s;
+    }
+    #hijriMonth:hover {
+        background: var(--accent-trace);
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   24-hour Islamic event alert popup
+   ════════════════════════════════════════════════════════════════════ */
+.hijri-alert-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 1400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.hijri-alert-overlay.show { opacity: 1; }
+.hijri-alert-box {
+    background: var(--bg-sidebar);
+    border-radius: 20px;
+    padding: 32px 28px 24px;
+    width: 320px;
+    max-width: 92vw;
+    text-align: center;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    border: 1px solid var(--accent-faint);
+    transform: scale(0.88);
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.hijri-alert-overlay.show .hijri-alert-box { transform: scale(1); }
+.hijri-alert-timing {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 16px;
+}
+.hijri-alert-icon {
+    font-size: 52px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+.hijri-alert-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-heading);
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+.hijri-alert-date {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+}
+.hijri-alert-close {
+    background: var(--accent);
+    color: var(--bg-page);
+    border: none;
+    border-radius: 10px;
+    padding: 11px 32px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    width: 100%;
+    transition: opacity 0.15s;
+}
+.hijri-alert-close:hover { opacity: 0.85; }
 
 /* Help screen */
 .mob-help-item {

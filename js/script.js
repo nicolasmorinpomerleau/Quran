@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.6 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.6 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.6 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.6 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.7 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.7 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.7 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.7 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3546,7 +3546,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.6%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.7%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });
@@ -3621,49 +3621,71 @@ function openReadingTimeScreen() {
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeScreen(); });
 }
 
-// ── Hijri Calendar screen ─────────────────────────────────────────
-function openHijriCalendarScreen() {
-    var now = new Date();
-    var gregText = now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+// ── Shared Islamic event list ─────────────────────────────────────
+var HIJRI_KEY_EVENTS = [
+    { month: 1,  day: 1,  name: 'Islamic New Year',        icon: '🌙' },
+    { month: 1,  day: 10, name: 'Day of Ashura',           icon: '🕯' },
+    { month: 3,  day: 12, name: 'Mawlid an-Nabi',          icon: '✦'  },
+    { month: 7,  day: 27, name: "Laylat al-Mi'raj",        icon: '✦'  },
+    { month: 8,  day: 15, name: "Laylat al-Bara'ah",       icon: '✦'  },
+    { month: 9,  day: 1,  name: 'First day of Ramadan',    icon: '🌙' },
+    { month: 9,  day: 27, name: 'Laylat al-Qadr',          icon: '⭐' },
+    { month: 10, day: 1,  name: 'Eid al-Fitr',             icon: '🎉' },
+    { month: 12, day: 9,  name: 'Day of Arafah',           icon: '⛰' },
+    { month: 12, day: 10, name: 'Eid al-Adha',             icon: '🎉' }
+];
 
-    // Use the built-in Hijri converter from features.js
+// ── Build Islamic Calendar content (shared by phone + desktop) ────
+function buildHijriCalendarHTML() {
+    var now = new Date();
     var todayH = (typeof getTodayHijri === 'function') ? getTodayHijri() : null;
     var hijriMonthNames = (typeof HIJRI_MONTHS !== 'undefined') ? HIJRI_MONTHS :
         ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Awwal','Jumada al-Thani',
          'Rajab','Shaban','Ramadan','Shawwal','Dhu al-Qadah','Dhu al-Hijjah'];
-    var hijriText = (todayH && typeof formatHijri === 'function') ? formatHijri(todayH) : '';
-    if (!hijriText) {
-        try {
-            hijriText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
-                year: 'numeric', month: 'long', day: 'numeric'
-            }).format(now);
-        } catch(e) { hijriText = ''; }
+
+    // Arabic-script Hijri date (displayed in Arabic font)
+    var arabicHijriText = '';
+    try {
+        arabicHijriText = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', {
+            year: 'numeric', month: 'long', day: 'numeric'
+        }).format(now);
+    } catch(e) {
+        if (todayH) {
+            var AR = ['مُحَرَّم','صَفَر','رَبِيعُ الْأَوَّل','رَبِيعُ الثَّانِي','جُمَادَى الْأُولَى',
+                      'جُمَادَى الثَّانِيَة','رَجَب','شَعْبَان','رَمَضَان','شَوَّال','ذُو الْقَعْدَة','ذُو الْحِجَّة'];
+            arabicHijriText = todayH.day + ' ' + AR[todayH.month - 1] + ' ' + todayH.year + ' هـ';
+        }
     }
 
-    // Today's special event — pass the Hijri object
+    // Latin transliteration
+    var latinHijriText = (todayH && typeof formatHijri === 'function') ? formatHijri(todayH) : '';
+
+    // Gregorian — primary language
+    var langLocaleMap = { arabic: 'ar-SA', french: 'fr-FR', english: 'en-GB', spanish: 'es-ES' };
+    var primaryLang   = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    var gregOpts      = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    var gregText = '';
+    try { gregText = now.toLocaleDateString(langLocaleMap[primaryLang] || 'en-GB', gregOpts); }
+    catch(e) { gregText = now.toLocaleDateString('en-GB', gregOpts); }
+
+    // Gregorian — second (additional) language, if different from primary
+    var gregText2 = '';
+    var addLangs = (typeof additionalLanguages !== 'undefined') ? additionalLanguages : [];
+    var secondLang = addLangs.find(function(l) { return l !== primaryLang; });
+    if (secondLang && langLocaleMap[secondLang]) {
+        try { gregText2 = now.toLocaleDateString(langLocaleMap[secondLang], gregOpts); } catch(e) {}
+    }
+
+    // Special event today
     var todaySpecial = (todayH && typeof getHijriSpecialDate === 'function') ? getHijriSpecialDate(todayH) : null;
 
-    // Upcoming Islamic events list
-    var KEY_EVENTS = [
-        { month: 1,  day: 1,  name: 'Islamic New Year',          icon: '🌙' },
-        { month: 1,  day: 10, name: 'Day of Ashura',             icon: '🕯' },
-        { month: 3,  day: 12, name: 'Mawlid an-Nabi',            icon: '✦'  },
-        { month: 7,  day: 27, name: "Laylat al-Mi'raj",          icon: '✦'  },
-        { month: 8,  day: 15, name: "Laylat al-Bara'ah",         icon: '✦'  },
-        { month: 9,  day: 1,  name: 'First day of Ramadan',      icon: '🌙' },
-        { month: 9,  day: 27, name: 'Laylat al-Qadr (27 Ramadan)', icon: '⭐' },
-        { month: 10, day: 1,  name: 'Eid al-Fitr',               icon: '🎉' },
-        { month: 12, day: 9,  name: 'Day of Arafah',             icon: '⛰' },
-        { month: 12, day: 10, name: 'Eid al-Adha',               icon: '🎉' }
-    ];
-
+    // Upcoming events list
     var eventsHtml = '';
     if (todayH) {
-        // Show upcoming events this year, then wrap to start of year
-        var upcoming = KEY_EVENTS.filter(function(e) {
+        var upcoming = HIJRI_KEY_EVENTS.filter(function(e) {
             return e.month > todayH.month || (e.month === todayH.month && e.day >= todayH.day);
         });
-        if (upcoming.length === 0) upcoming = KEY_EVENTS;
+        if (upcoming.length === 0) upcoming = HIJRI_KEY_EVENTS;
         upcoming.slice(0, 7).forEach(function(e) {
             var isToday = (e.month === todayH.month && e.day === todayH.day);
             eventsHtml +=
@@ -3671,13 +3693,29 @@ function openHijriCalendarScreen() {
                     '<span class="mob-hijri-event-ico">' + e.icon + '</span>' +
                     '<div class="mob-hijri-event-info">' +
                         '<div class="mob-hijri-event-name">' + e.name + '</div>' +
-                        '<div class="mob-hijri-event-date">' + e.day + ' ' + hijriMonthNames[e.month - 1] + ' ' + todayH.year + ' AH</div>' +
+                        '<div class="mob-hijri-event-date">' + e.day + ' ' + hijriMonthNames[e.month - 1] + ' ' + (todayH.year) + ' AH</div>' +
                     '</div>' +
                     (isToday ? '<span class="mob-hijri-today-badge">Today</span>' : '') +
                 '</div>';
         });
     }
 
+    return {
+        todayCard:
+            '<div class="mob-hijri-today-card">' +
+                (arabicHijriText ? '<div class="mob-hijri-date-arabic">' + arabicHijriText + '</div>' : '') +
+                (latinHijriText  ? '<div class="mob-hijri-date-latin">'  + latinHijriText  + '</div>' : '') +
+                '<div class="mob-hijri-date-greg">' + gregText + '</div>' +
+                (gregText2 ? '<div class="mob-hijri-date-greg2">' + gregText2 + '</div>' : '') +
+                (todaySpecial ? '<div class="mob-hijri-today-special">' + todaySpecial.icon + ' ' + todaySpecial.name + '</div>' : '') +
+            '</div>',
+        eventsHtml: eventsHtml
+    };
+}
+
+// ── Phone: Hijri Calendar bottom-sheet ───────────────────────────
+function openHijriCalendarScreen() {
+    var data = buildHijriCalendarHTML();
     var overlay = document.createElement('div');
     overlay.className = 'mob-info-overlay';
     overlay.innerHTML =
@@ -3687,17 +3725,13 @@ function openHijriCalendarScreen() {
                 '<button class="mob-info-close">✕</button>' +
             '</div>' +
             '<div class="mob-hijri-scroll">' +
-                '<div class="mob-hijri-today-card">' +
-                    '<div class="mob-hijri-today-hijri">' + (hijriText || '—') + '</div>' +
-                    '<div class="mob-hijri-today-greg">' + gregText + '</div>' +
-                    (todaySpecial ? '<div class="mob-hijri-today-special">' + todaySpecial.icon + ' ' + todaySpecial.name + '</div>' : '') +
-                '</div>' +
-                '<div class="mob-hijri-events-label">Upcoming events</div>' +
-                '<div class="mob-hijri-events-list">' + eventsHtml + '</div>' +
+                data.todayCard +
+                '<div class="mob-hijri-events-label">Upcoming Events</div>' +
+                '<div class="mob-hijri-events-list">' + data.eventsHtml + '</div>' +
             '</div>' +
         '</div>';
     document.body.appendChild(overlay);
-    void overlay.offsetHeight; // force reflow so CSS opacity transition fires correctly
+    void overlay.offsetHeight;
     overlay.classList.add('show');
     var closeBtn = overlay.querySelector('.mob-info-close');
     function closeScreen() {
@@ -3709,6 +3743,110 @@ function openHijriCalendarScreen() {
     }
     if (closeBtn) closeBtn.addEventListener('click', closeScreen);
     overlay.addEventListener('click', function(e) { if (e.target === overlay) closeScreen(); });
+}
+
+// ── Desktop: Hijri Calendar centered modal ────────────────────────
+function openHijriCalendarDesktop() {
+    var existing = document.getElementById('hijriDesktopModal');
+    if (existing) { existing.remove(); return; }
+    var data = buildHijriCalendarHTML();
+    var overlay = document.createElement('div');
+    overlay.id = 'hijriDesktopModal';
+    overlay.className = 'hijri-desktop-overlay';
+    overlay.innerHTML =
+        '<div class="hijri-desktop-box">' +
+            '<div class="hijri-desktop-header">' +
+                '<span class="hijri-desktop-title">📆 Islamic Calendar</span>' +
+                '<button class="hijri-desktop-close">✕</button>' +
+            '</div>' +
+            '<div class="hijri-desktop-body">' +
+                data.todayCard +
+                '<div class="mob-hijri-events-label">Upcoming Events</div>' +
+                '<div class="mob-hijri-events-list">' + data.eventsHtml + '</div>' +
+            '</div>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    void overlay.offsetHeight;
+    overlay.classList.add('show');
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+    }
+    overlay.querySelector('.hijri-desktop-close').addEventListener('click', close);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function onKey(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onKey); }
+    });
+}
+
+// ── #hijriMonth click → open desktop calendar ─────────────────────
+(function wireHijriMonthClick() {
+    function attach() {
+        var el = document.getElementById('hijriMonth');
+        if (!el || el._hijriWired) return;
+        el._hijriWired = true;
+        el.style.cursor = 'pointer';
+        el.title = 'Open Islamic Calendar';
+        el.addEventListener('click', function() {
+            if (window.innerWidth > 767) openHijriCalendarDesktop();
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+    else attach();
+}());
+
+// ── 24-hour Islamic event alert ───────────────────────────────────
+function checkHijriEventAlert() {
+    if (typeof getTodayHijri !== 'function' || typeof gregorianToHijri !== 'function') return;
+    var todayH    = getTodayHijri();
+    var tomorrow  = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    var tomorrowH = gregorianToHijri(tomorrow);
+
+    var todayEvent = null, tomorrowEvent = null;
+    HIJRI_KEY_EVENTS.forEach(function(e) {
+        if (e.month === todayH.month    && e.day === todayH.day)    todayEvent    = e;
+        if (e.month === tomorrowH.month && e.day === tomorrowH.day) tomorrowEvent = e;
+    });
+
+    var alertEvent = todayEvent || tomorrowEvent;
+    if (!alertEvent) return;
+
+    // Only show once per calendar day
+    var todayStr = new Date().toDateString();
+    var lastShown = '';
+    try { lastShown = localStorage.getItem('quranHijriAlertDate') || ''; } catch(e) {}
+    if (lastShown === todayStr) return;
+    try { localStorage.setItem('quranHijriAlertDate', todayStr); } catch(e) {}
+
+    showHijriEventPopup(alertEvent, todayEvent ? 'today' : 'tomorrow', todayH);
+}
+
+function showHijriEventPopup(event, timing, todayH) {
+    var hijriMonthNames = (typeof HIJRI_MONTHS !== 'undefined') ? HIJRI_MONTHS :
+        ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Awwal','Jumada al-Thani',
+         'Rajab','Shaban','Ramadan','Shawwal','Dhu al-Qadah','Dhu al-Hijjah'];
+    var dateStr = event.day + ' ' + hijriMonthNames[event.month - 1] + (todayH ? ' ' + todayH.year + ' AH' : '');
+    var timingLabel = timing === 'today' ? '🌟 Today' : '⏳ Tomorrow';
+
+    var overlay = document.createElement('div');
+    overlay.className = 'hijri-alert-overlay';
+    overlay.innerHTML =
+        '<div class="hijri-alert-box">' +
+            '<div class="hijri-alert-timing">' + timingLabel + '</div>' +
+            '<div class="hijri-alert-icon">' + event.icon + '</div>' +
+            '<div class="hijri-alert-name">' + event.name + '</div>' +
+            '<div class="hijri-alert-date">' + dateStr + '</div>' +
+            '<button class="hijri-alert-close">Close</button>' +
+        '</div>';
+    document.body.appendChild(overlay);
+    void overlay.offsetHeight;
+    overlay.classList.add('show');
+    function dismiss() {
+        overlay.classList.remove('show');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 300);
+    }
+    overlay.querySelector('.hijri-alert-close').addEventListener('click', dismiss);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) dismiss(); });
 }
 
 // ── Help screen ───────────────────────────────────────────────────

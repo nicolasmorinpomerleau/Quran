@@ -79,6 +79,8 @@ const DEFAULT_FEATURES = {
         delete saved.keyboardShortcuts;  // now always on
         delete saved.copyShareVerse;     // now always on
         delete saved.saveTools;          // now always on
+        delete saved.arabicFontChoice;   // now always on
+        delete saved.hijriAwareness;     // now always on
         localStorage.setItem(FEATURES_KEY, JSON.stringify(saved));
         localStorage.setItem('quranV1014Migrated', '1');
     } catch(e) {}
@@ -811,6 +813,8 @@ function buildVerseNav() {
     document.addEventListener('touchstart', function(e) {
         // v10.9: Always on (no toggle) — natural gesture, no reason to disable
         if (window.innerWidth > 900) return;
+        // Don't activate when any modal/settings overlay is open
+        if (document.querySelector('.mob-info-overlay.show')) return;
         var container = document.getElementById('quranContainer');
         if (!container) return;
         if (container.scrollTop > 0) return;
@@ -1177,14 +1181,12 @@ const ARABIC_FONTS = {
 };
 
 function applyArabicFont(key) {
-    if (!isFeatureOn('arabicFontChoice')) return;
     var font = ARABIC_FONTS[key] || ARABIC_FONTS.amiri;
     document.documentElement.style.setProperty('--font-arabic', font.css);
     try { localStorage.setItem('quranArabicFont', key); } catch(e) {}
 }
 
 function loadArabicFontChoice() {
-    if (!isFeatureOn('arabicFontChoice')) return;
     // Add Google Fonts <link> if not already present
     if (!document.getElementById('arabicFontsLink')) {
         var link = document.createElement('link');
@@ -1227,7 +1229,6 @@ function appendFeaturesUI(body) {
         voiceSearch:           ['🎤 Voice search',           'Tap the mic to speak a search query'],
         lastReadBanner:     ['📍 "Continue reading" banner','Shows previously-read surah at top so you can jump back'],
         khatmTracker:       ['🎯 Khatm tracker',          'Daily reading heatmap + completion count'],
-        arabicFontChoice:   ['🔤 Arabic font choice',      'Pick from Amiri / Scheherazade / Naskh / Lateef'],
         focusMode:          ['🧘 Focus mode',              'Hides everything except verses (key: F)'],
         autoDarkTheme:      ['🌗 Auto dark theme',         'Switches to Scholar after 7pm, Manuscript before'],
         browserLangDefault: ['🌐 Browser language default','Picks French/English/Spanish/Arabic from device'],
@@ -1238,7 +1239,6 @@ function appendFeaturesUI(body) {
         dailyVerse:            ['🌅 Daily verse',            'A contemplative verse shown once per day on open'],
         dailyVerseNotification:['🔔 Daily verse notification','Schedules a daily notification (best-effort: works only on installed PWA on Android Chrome)'],
         reflectionPrompts:     ['✍️ Reflection prompts',     'Optional reflection question after finishing a surah'],
-        hijriAwareness:        ['🌙 Hijri calendar',         'Marks special Islamic dates (Ramadan, Hajj, Laylat al-Qadr…)'],
         verseComparison:       ['🔀 Compare tafsirs',         'Adds "Compare all" button in the tafsir modal'],
         pdfExport:             ['🖨 Print / PDF export',     'Print the current surah with your notes'],
         readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in top bar']
@@ -1327,27 +1327,25 @@ function appendFeaturesUI(body) {
         sec.appendChild(row);
     });
 
-    // Arabic font picker (conditional)
-    if (isFeatureOn('arabicFontChoice')) {
-        var fontSec = document.createElement('div');
-        fontSec.className = 'feature-sub-row';
-        var fontLbl = document.createElement('div');
-        fontLbl.className = 'feature-sub-lbl';
-        fontLbl.textContent = 'Arabic font';
-        fontSec.appendChild(fontLbl);
-        var fontSel = document.createElement('select');
-        fontSel.className = 'mob-settings-select';
-        Object.keys(ARABIC_FONTS).forEach(function(k) {
-            var opt = document.createElement('option');
-            opt.value = k;
-            opt.textContent = ARABIC_FONTS[k].label;
-            fontSel.appendChild(opt);
-        });
-        fontSel.value = localStorage.getItem('quranArabicFont') || 'amiri';
-        fontSel.addEventListener('change', function() { applyArabicFont(this.value); });
-        fontSec.appendChild(fontSel);
-        sec.appendChild(fontSec);
-    }
+    // Arabic font picker — always shown
+    var fontSec = document.createElement('div');
+    fontSec.className = 'feature-sub-row';
+    var fontLbl = document.createElement('div');
+    fontLbl.className = 'feature-sub-lbl';
+    fontLbl.textContent = 'Arabic font';
+    fontSec.appendChild(fontLbl);
+    var fontSel = document.createElement('select');
+    fontSel.className = 'mob-settings-select';
+    Object.keys(ARABIC_FONTS).forEach(function(k) {
+        var opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = ARABIC_FONTS[k].label;
+        fontSel.appendChild(opt);
+    });
+    fontSel.value = localStorage.getItem('quranArabicFont') || 'amiri';
+    fontSel.addEventListener('change', function() { applyArabicFont(this.value); });
+    fontSec.appendChild(fontSel);
+    sec.appendChild(fontSec);
 
     body.appendChild(sec);
 }
@@ -4002,7 +4000,6 @@ function getHijriSpecialDate(h) {
 }
 
 function appendHijriBadge() {
-    if (!isFeatureOn('hijriAwareness')) return;
     var h = getTodayHijri();
     var label = formatHijri(h);
     var special = getHijriSpecialDate(h);

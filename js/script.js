@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.8 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.8 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.8 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.8 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.9 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.9 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.9 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.9 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3546,7 +3546,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.8%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.9%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });
@@ -3635,6 +3635,13 @@ var HIJRI_KEY_EVENTS = [
     { month: 12, day: 10, name: 'Eid al-Adha',             icon: '🎉' }
 ];
 
+// ── Sanitize Eastern Arabic numerals → Western (1,2,3) ───────────
+function westernDigits(str) {
+    return String(str).replace(/[٠-٩]/g, function(c) {
+        return String(c.charCodeAt(0) - 0x0660);
+    });
+}
+
 // ── Build Islamic Calendar content (shared by phone + desktop) ────
 function buildHijriCalendarHTML() {
     var now = new Date();
@@ -3643,38 +3650,29 @@ function buildHijriCalendarHTML() {
         ['Muharram','Safar','Rabi al-Awwal','Rabi al-Thani','Jumada al-Awwal','Jumada al-Thani',
          'Rajab','Shaban','Ramadan','Shawwal','Dhu al-Qadah','Dhu al-Hijjah'];
 
-    // Arabic-script Hijri date — always use Western (Latin) numerals (1, 2, 3…)
-    // Build manually so digits are never converted to Eastern Arabic (١, ٢, ٣)
+    var AR = ['مُحَرَّم','صَفَر','رَبِيعُ الْأَوَّل','رَبِيعُ الثَّانِي','جُمَادَى الْأُولَى',
+              'جُمَادَى الثَّانِيَة','رَجَب','شَعْبَان','رَمَضَان','شَوَّال','ذُو الْقَعْدَة','ذُو الْحِجَّة'];
+
+    // Line 1 — Arabic-script Hijri, Western numerals guaranteed
     var arabicHijriText = '';
     if (todayH) {
-        var AR = ['مُحَرَّم','صَفَر','رَبِيعُ الْأَوَّل','رَبِيعُ الثَّانِي','جُمَادَى الْأُولَى',
-                  'جُمَادَى الثَّانِيَة','رَجَب','شَعْبَان','رَمَضَان','شَوَّال','ذُو الْقَعْدَة','ذُو الْحِجَّة'];
-        arabicHijriText = todayH.day + ' ' + AR[todayH.month - 1] + ' ' + todayH.year + ' هـ';
+        arabicHijriText = westernDigits(todayH.day) + ' ' + AR[todayH.month - 1] + ' ' + westernDigits(todayH.year) + ' هـ';
     }
 
-    // Latin transliteration
-    var latinHijriText = (todayH && typeof formatHijri === 'function') ? formatHijri(todayH) : '';
-
-    // Gregorian — primary language
+    // Line 2 — Gregorian in second/additional language
     var langLocaleMap = { arabic: 'ar-SA', french: 'fr-FR', english: 'en-GB', spanish: 'es-ES' };
-    var primaryLang   = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
-    var gregOpts      = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    var gregText = '';
-    try { gregText = now.toLocaleDateString(langLocaleMap[primaryLang] || 'en-GB', gregOpts); }
-    catch(e) { gregText = now.toLocaleDateString('en-GB', gregOpts); }
-
-    // Gregorian — second (additional) language, if different from primary
-    var gregText2 = '';
+    var primaryLang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
     var addLangs = (typeof additionalLanguages !== 'undefined') ? additionalLanguages : [];
+    var gregOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+
     var secondLang = addLangs.find(function(l) { return l !== primaryLang; });
-    if (secondLang && langLocaleMap[secondLang]) {
-        try { gregText2 = now.toLocaleDateString(langLocaleMap[secondLang], gregOpts); } catch(e) {}
-    }
+    if (!secondLang) secondLang = (primaryLang !== 'english') ? 'english' : 'french';
+    var secondLocale = langLocaleMap[secondLang] || 'en-GB';
+    var gregText2 = '';
+    try { gregText2 = westernDigits(now.toLocaleDateString(secondLocale, gregOpts)); }
+    catch(e) { try { gregText2 = westernDigits(now.toLocaleDateString('en-GB', gregOpts)); } catch(e2) {} }
 
-    // Special event today
-    var todaySpecial = (todayH && typeof getHijriSpecialDate === 'function') ? getHijriSpecialDate(todayH) : null;
-
-    // Upcoming events list
+    // Upcoming events — each with Arabic date + Latin date
     var eventsHtml = '';
     if (todayH) {
         var upcoming = HIJRI_KEY_EVENTS.filter(function(e) {
@@ -3683,12 +3681,15 @@ function buildHijriCalendarHTML() {
         if (upcoming.length === 0) upcoming = HIJRI_KEY_EVENTS;
         upcoming.slice(0, 7).forEach(function(e) {
             var isToday = (e.month === todayH.month && e.day === todayH.day);
+            var arDate  = westernDigits(e.day) + ' ' + AR[e.month - 1] + ' ' + westernDigits(todayH.year) + ' هـ';
+            var latDate = westernDigits(e.day) + ' ' + hijriMonthNames[e.month - 1] + ' ' + westernDigits(todayH.year) + ' AH';
             eventsHtml +=
                 '<div class="mob-hijri-event' + (isToday ? ' mob-hijri-event-today' : '') + '">' +
                     '<span class="mob-hijri-event-ico">' + e.icon + '</span>' +
                     '<div class="mob-hijri-event-info">' +
                         '<div class="mob-hijri-event-name">' + e.name + '</div>' +
-                        '<div class="mob-hijri-event-date">' + e.day + ' ' + hijriMonthNames[e.month - 1] + ' ' + (todayH.year) + ' AH</div>' +
+                        '<div class="mob-hijri-event-date-ar">' + arDate + '</div>' +
+                        '<div class="mob-hijri-event-date">' + latDate + '</div>' +
                     '</div>' +
                     (isToday ? '<span class="mob-hijri-today-badge">Today</span>' : '') +
                 '</div>';
@@ -3699,10 +3700,7 @@ function buildHijriCalendarHTML() {
         todayCard:
             '<div class="mob-hijri-today-card">' +
                 (arabicHijriText ? '<div class="mob-hijri-date-arabic">' + arabicHijriText + '</div>' : '') +
-                (latinHijriText  ? '<div class="mob-hijri-date-latin">'  + latinHijriText  + '</div>' : '') +
-                '<div class="mob-hijri-date-greg">' + gregText + '</div>' +
-                (gregText2 ? '<div class="mob-hijri-date-greg2">' + gregText2 + '</div>' : '') +
-                (todaySpecial ? '<div class="mob-hijri-today-special">' + todaySpecial.icon + ' ' + todaySpecial.name + '</div>' : '') +
+                (gregText2       ? '<div class="mob-hijri-date-second">'  + gregText2       + '</div>' : '') +
             '</div>',
         eventsHtml: eventsHtml
     };

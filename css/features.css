@@ -3980,38 +3980,28 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 /* Hijri Calendar — today card */
 .mob-hijri-today-card {
     text-align: center;
-    padding: 24px 20px 18px;
+    padding: 28px 20px 22px;
     background: var(--accent-trace);
     border-bottom: 1px solid var(--border);
 }
-/* Arabic script — large, elegant, Western numerals */
+/* Line 1 — Arabic-script Hijri date, large and elegant */
 .mob-hijri-date-arabic {
     font-family: var(--font-arabic);
-    font-size: 36px;
+    font-size: 42px;
     font-weight: 700;
     color: var(--accent);
-    direction: rtl;
-    line-height: 1.4;
-    margin-bottom: 6px;
+    text-align: center;
+    line-height: 1.5;
+    margin-bottom: 10px;
+    unicode-bidi: isolate;
 }
-/* Latin transliteration */
-.mob-hijri-date-latin {
+/* Line 2 — Gregorian in second language */
+.mob-hijri-date-second {
     font-size: 17px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 12px;
-    letter-spacing: 0.01em;
-}
-/* Gregorian dates */
-.mob-hijri-date-greg {
-    font-size: 13px;
+    font-weight: 500;
     color: var(--text-secondary);
-    margin-bottom: 2px;
-}
-.mob-hijri-date-greg2 {
-    font-size: 13px;
-    color: var(--text-muted);
-    font-style: italic;
+    text-align: center;
+    line-height: 1.5;
 }
 /* Legacy class kept */
 .mob-hijri-today-hijri {
@@ -4079,9 +4069,17 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     color: var(--text-primary);
     margin-bottom: 3px;
 }
+.mob-hijri-event-date-ar {
+    font-family: var(--font-arabic);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--accent);
+    unicode-bidi: isolate;
+    margin-bottom: 2px;
+}
 .mob-hijri-event-date {
     font-size: 13px;
-    color: var(--accent);
+    color: var(--text-secondary);
     font-weight: 500;
 }
 .mob-hijri-today-badge {

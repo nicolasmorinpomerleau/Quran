@@ -2,7 +2,7 @@
 'use strict';
 
 // Bump this version string whenever you ship updates so the SW activates fresh.
-const CACHE_VERSION = 'v10.14.8';
+const CACHE_VERSION = 'v10.14.9';
 const SHELL_CACHE   = 'quran-shell-' + CACHE_VERSION;
 const DATA_CACHE    = 'quran-data-' + CACHE_VERSION;
 

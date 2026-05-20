@@ -12,7 +12,7 @@ const FEATURES_KEY = 'quranFeaturesV1';
 // Default feature flags (user can toggle in settings)
 const DEFAULT_FEATURES = {
     // v10.9: Off by default — user can opt in
-    keyboardShortcuts: false,        // #2
+    keyboardShortcuts: true,         // #2 — always on (desktop only, harmless on mobile)
     lastReadBanner:    false,        // #6 — Continue Reading banner
     khatmTracker:      false,        // #13
     // Always on (no toggle): pullToRefresh, deepLinks. Removed from this map.
@@ -51,9 +51,12 @@ const DEFAULT_FEATURES = {
         if (localStorage.getItem('quranV109Migrated') === '1') return;
         var saved = JSON.parse(localStorage.getItem(FEATURES_KEY) || '{}');
         // Force these to off (matches new defaults)
-        saved.keyboardShortcuts = false;
         saved.lastReadBanner    = false;
         saved.khatmTracker      = false;
+        // v10.14.10: always-on features — clear any saved override so defaults apply
+        delete saved.keyboardShortcuts;
+        delete saved.copyShareVerse;
+        delete saved.saveTools;
         // Remove dead flag entries so they don't leak into UI anymore
         delete saved.bookmarkTags;
         delete saved.landscapeLayout;
@@ -65,6 +68,19 @@ const DEFAULT_FEATURES = {
         delete saved.betterErrorStates;  // v10.10: removed (dead code)
         localStorage.setItem(FEATURES_KEY, JSON.stringify(saved));
         localStorage.setItem('quranV109Migrated', '1');
+    } catch(e) {}
+}());
+
+// v10.14.10: always-on features — clear any saved override so the new defaults apply
+(function v1014DefaultsMigration() {
+    try {
+        if (localStorage.getItem('quranV1014Migrated') === '1') return;
+        var saved = JSON.parse(localStorage.getItem(FEATURES_KEY) || '{}');
+        delete saved.keyboardShortcuts;  // now always on
+        delete saved.copyShareVerse;     // now always on
+        delete saved.saveTools;          // now always on
+        localStorage.setItem(FEATURES_KEY, JSON.stringify(saved));
+        localStorage.setItem('quranV1014Migrated', '1');
     } catch(e) {}
 }());
 
@@ -277,7 +293,6 @@ function showLastReadBanner() {
 // ═══════════════════════════════════════════════════════════════════
 (function keyboardShortcuts() {
     document.addEventListener('keydown', function(e) {
-        if (!isFeatureOn('keyboardShortcuts')) return;
         // Ignore if typing in an input/textarea
         var tag = (e.target.tagName || '').toLowerCase();
         if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) {
@@ -1208,12 +1223,9 @@ function appendFeaturesUI(body) {
 
     var f = getFeatures();
     var FEATURE_LABELS = {
-        keyboardShortcuts:  ['⌨️ Keyboard shortcuts',     'Use ←/→ ? F on desktop'],
-        copyShareVerse:     ['📋 Copy & share verse',     'Adds copy / share / link buttons under each verse'],
         searchAsYouType:    ['⚡ Search as you type',     'Auto-runs search 350ms after you stop typing'],
         voiceSearch:           ['🎤 Voice search',           'Tap the mic to speak a search query'],
         lastReadBanner:     ['📍 "Continue reading" banner','Shows previously-read surah at top so you can jump back'],
-        saveTools:          ['🔖 Save tools',              'Show Highlight, Bookmark, and Note buttons on each verse'],
         khatmTracker:       ['🎯 Khatm tracker',          'Daily reading heatmap + completion count'],
         arabicFontChoice:   ['🔤 Arabic font choice',      'Pick from Amiri / Scheherazade / Naskh / Lateef'],
         focusMode:          ['🧘 Focus mode',              'Hides everything except verses (key: F)'],

@@ -2749,9 +2749,22 @@ input[type="range"] {
     }
     .mob-drawer-close:hover { background: var(--accent-trace); color: var(--accent); }
     .mob-drawer-dates {
-        padding: 10px 16px 6px;
+        padding: 10px 16px 10px;
         border-bottom: 1px solid var(--border);
         flex-shrink: 0;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .mob-drawer-dates:active {
+        background: var(--accent-trace);
+    }
+    .mob-drawer-date-hint {
+        font-size: 11px;
+        color: var(--accent);
+        margin-top: 6px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        opacity: 0.85;
     }
     .mob-drawer-date-greg {
         font-size: 15px;

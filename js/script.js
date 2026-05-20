@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.10 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.10 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.10 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.10 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.11 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.11 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.11 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.11 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3142,7 +3142,7 @@ function openMobileDrawer() {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
     });
 
-    // Date display (gregorian + hijri) — JS fallback if API hasn't loaded yet
+    // Date display (gregorian + hijri) — tapping opens Hijri calendar
     var datesEl = document.getElementById('mobileDrawerDates');
     if (datesEl) {
         var gregEl  = document.querySelector('#hijriMonth .date-gregorian');
@@ -3151,7 +3151,8 @@ function openMobileDrawer() {
         var hijriText = (hijriEl && hijriEl.textContent.trim()) ? hijriEl.textContent.trim() : '';
         datesEl.innerHTML =
             '<div class="mob-drawer-date-greg">'  + gregText  + '</div>' +
-            (hijriText ? '<div class="mob-drawer-date-hijri-line">' + hijriText + '</div>' : '');
+            (hijriText ? '<div class="mob-drawer-date-hijri-line">' + hijriText + '</div>' : '') +
+            '<div class="mob-drawer-date-hint">📆 Islamic Calendar ›</div>';
     }
 
     // Khatm / reading progress
@@ -3529,12 +3530,15 @@ function watchForModalClose(modalId) {
         }
     });
 
-    var hijriBtn = document.getElementById('mdHijriBtn');
-    if (hijriBtn) hijriBtn.addEventListener('click', function() {
-        closeMobileDrawer();
-        // Delay so drawer slide-out animation doesn't compete with overlay entrance
-        setTimeout(openHijriCalendarScreen, 80);
-    });
+    // ── Date header → open Hijri calendar ──
+    var datesClickEl = document.getElementById('mobileDrawerDates');
+    if (datesClickEl && !datesClickEl._hijriWired) {
+        datesClickEl._hijriWired = true;
+        datesClickEl.addEventListener('click', function() {
+            closeMobileDrawer();
+            setTimeout(openHijriCalendarScreen, 80);
+        });
+    }
 
     // ── Support ──
     var helpBtn = document.getElementById('mdHelpBtn');
@@ -3546,7 +3550,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.10%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.11%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

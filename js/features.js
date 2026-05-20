@@ -81,6 +81,8 @@ const DEFAULT_FEATURES = {
         delete saved.saveTools;          // now always on
         delete saved.arabicFontChoice;   // now always on
         delete saved.hijriAwareness;     // now always on
+        delete saved.audioRecitation;    // now always on
+        delete saved.notesExportImport;  // now always on
         localStorage.setItem(FEATURES_KEY, JSON.stringify(saved));
         localStorage.setItem('quranV1014Migrated', '1');
     } catch(e) {}
@@ -1233,8 +1235,6 @@ function appendFeaturesUI(body) {
         autoDarkTheme:      ['🌗 Auto dark theme',         'Switches to Scholar after 7pm, Manuscript before'],
         browserLangDefault: ['🌐 Browser language default','Picks French/English/Spanish/Arabic from device'],
         verseNavigation:    ['⇆ Verse navigation buttons', 'Floating prev / next / jump-to-verse buttons'],
-        notesExportImport:  ['💾 Backup / restore data',   'Adds export / import buttons in settings'],
-        audioRecitation:    ['🔊 Audio recitation',         'Play verses with multiple reciters · needs internet'],
         tafsir:             ['📚 Tafsir (commentary)',      'Tap a verse to read classical commentary · needs internet'],
         dailyVerse:            ['🌅 Daily verse',            'A contemplative verse shown once per day on open'],
         dailyVerseNotification:['🔔 Daily verse notification','Schedules a daily notification (best-effort: works only on installed PWA on Android Chrome)'],
@@ -1278,15 +1278,6 @@ function appendFeaturesUI(body) {
                 else { var b = document.getElementById('lastReadBanner'); if (b) b.remove(); }
             }
             if (key === 'arabicFontChoice') loadArabicFontChoice();
-            // v10.2: Audio + tafsir reactive
-            if (key === 'audioRecitation') {
-                if (this.checked) {
-                    if (typeof attachAudioButtons === 'function') attachAudioButtons();
-                } else {
-                    // v10.11: CSS body class hides the buttons — don't remove them
-                    if (typeof stopAudio === 'function') stopAudio();
-                }
-            }
             if (key === 'tafsir' && !this.checked) {
                 if (typeof closeTafsirModal === 'function') closeTafsirModal();
             }
@@ -1351,7 +1342,6 @@ function appendFeaturesUI(body) {
 }
 
 function appendDataUI(body) {
-    if (!isFeatureOn('notesExportImport')) return;
     var sec = document.createElement('div');
     sec.className = 'mob-settings-section';
     var lbl = document.createElement('div');
@@ -2922,7 +2912,6 @@ function attachAudioButtons() {
 
 // ── Settings UI for audio ──
 function appendAudioUI(body) {
-    if (!isFeatureOn('audioRecitation')) return;
     var sec = document.createElement('div');
     sec.className = 'mob-settings-section';
     var lbl = document.createElement('div');

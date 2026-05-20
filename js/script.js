@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.9 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.9 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.9 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.9 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.10 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.10 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.10 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.10 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3546,7 +3546,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.9%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.10%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });
@@ -3642,6 +3642,20 @@ function westernDigits(str) {
     });
 }
 
+// ── Find Gregorian date matching a Hijri date (searches forward from today) ──
+function hijriEventGregorian(hYear, hMonth, hDay) {
+    if (typeof gregorianToHijri !== 'function') return null;
+    var base = new Date();
+    base.setDate(base.getDate() - 2);
+    for (var i = 0; i < 420; i++) {
+        var d = new Date(base);
+        d.setDate(d.getDate() + i);
+        var h = gregorianToHijri(d);
+        if (h.year === hYear && h.month === hMonth && h.day === hDay) return d;
+    }
+    return null;
+}
+
 // ── Build Islamic Calendar content (shared by phone + desktop) ────
 function buildHijriCalendarHTML() {
     var now = new Date();
@@ -3672,17 +3686,24 @@ function buildHijriCalendarHTML() {
     try { gregText2 = westernDigits(now.toLocaleDateString(secondLocale, gregOpts)); }
     catch(e) { try { gregText2 = westernDigits(now.toLocaleDateString('en-GB', gregOpts)); } catch(e2) {} }
 
-    // Upcoming events — each with Arabic date + Latin date
+    // Upcoming events — Arabic Hijri date + Gregorian in second language
     var eventsHtml = '';
     if (todayH) {
         var upcoming = HIJRI_KEY_EVENTS.filter(function(e) {
             return e.month > todayH.month || (e.month === todayH.month && e.day >= todayH.day);
         });
-        if (upcoming.length === 0) upcoming = HIJRI_KEY_EVENTS;
+        var eventYear = todayH.year;
+        if (upcoming.length === 0) { upcoming = HIJRI_KEY_EVENTS; eventYear = todayH.year + 1; }
         upcoming.slice(0, 7).forEach(function(e) {
             var isToday = (e.month === todayH.month && e.day === todayH.day);
-            var arDate  = westernDigits(e.day) + ' ' + AR[e.month - 1] + ' ' + westernDigits(todayH.year) + ' هـ';
-            var latDate = westernDigits(e.day) + ' ' + hijriMonthNames[e.month - 1] + ' ' + westernDigits(todayH.year) + ' AH';
+            var arDate = westernDigits(e.day) + ' ' + AR[e.month - 1] + ' ' + westernDigits(eventYear) + ' هـ';
+            var gDate = hijriEventGregorian(eventYear, e.month, e.day);
+            var latDate = '';
+            if (gDate) {
+                try { latDate = westernDigits(gDate.toLocaleDateString(secondLocale, gregOpts)); }
+                catch(ex) { try { latDate = westernDigits(gDate.toLocaleDateString('en-GB', gregOpts)); } catch(ex2) {} }
+            }
+            if (!latDate) latDate = westernDigits(e.day) + ' ' + hijriMonthNames[e.month - 1] + ' ' + westernDigits(eventYear) + ' AH';
             eventsHtml +=
                 '<div class="mob-hijri-event' + (isToday ? ' mob-hijri-event-today' : '') + '">' +
                     '<span class="mob-hijri-event-ico">' + e.icon + '</span>' +

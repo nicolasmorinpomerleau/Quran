@@ -253,7 +253,7 @@ article.main { flex: 1; overflow: hidden; display: flex; flex-direction: column;
 
 .date-gregorian {
     font-size: 28px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     margin-bottom: 4px;
     font-family: var(--font-ui);
     line-height: 1.3;

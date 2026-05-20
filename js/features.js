@@ -2397,15 +2397,9 @@ window.updateInstallPill = function() {
     try { dismissed    = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
     try { wasInstalled = localStorage.getItem('quranPWAInstalled')      === '1'; } catch(e) {}
     if (dismissed || wasInstalled) { btn.style.display = 'none'; return; }
-    // iOS: always show — 'beforeinstallprompt' never fires on iOS, but we still
-    //   want to guide users through the Share → Add to Home Screen flow.
-    // Android / Desktop: only show once the browser has confirmed the app is
-    //   installable (i.e. deferredPrompt is ready), so the button always triggers
-    //   the native prompt rather than just showing manual instructions.
-    var ua = navigator.userAgent.toLowerCase();
-    var isIOS = /iphone|ipad|ipod/.test(ua);
-    var shouldShow = isIOS || window._pwaInstallable === true;
-    btn.style.display = shouldShow ? '' : 'none';
+    // Show on all platforms — native prompt used when available (Android/Desktop),
+    // fallback instructions modal shown otherwise (iOS, or before prompt fires).
+    btn.style.display = '';
 };
 
 // Wire header install button + close button on DOM-ready

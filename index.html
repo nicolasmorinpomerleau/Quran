@@ -70,11 +70,20 @@
             </div>
             <div id="controlsElements">
 
-                <!-- v10.8: Reading-time display (Topics button moved to TOC tab) -->
+                <!-- v10.8: Reading-time widget -->
                 <div id="topAccessBar">
-                    <div id="topReadingTime" class="top-reading-time" title="Reading time this week">
-                        <span class="trt-icon">⏱</span>
-                        <span class="trt-val">0 min</span>
+                    <div id="topReadingTime" class="trt-widget">
+                        <div class="trt-widget-head">
+                            <span class="trt-widget-title">⏱ Reading Time</span>
+                            <button class="trt-widget-x" id="trtCloseBtn" title="Hide">✕</button>
+                        </div>
+                        <div class="trt-widget-body">
+                            <div class="trt-row"><span class="trt-key">This week</span><span class="trt-val">—</span></div>
+                            <div class="trt-row"><span class="trt-key">4-week average</span><span class="trt-avg">—</span></div>
+                        </div>
+                        <div class="trt-widget-foot">
+                            <button class="trt-widget-reset" id="trtResetBtn">🗑 Reset</button>
+                        </div>
                     </div>
                 </div>
 
@@ -399,7 +408,7 @@
     </div>
     <div id="mobileDrawerOverlay" class="mob-drawer-overlay"></div>
 
-    <footer id="appFooter">Quran Display v10.14.13 — May you read with a mindful heart</footer>
+    <footer id="appFooter">Quran Display v10.14.14 — May you read with a mindful heart</footer>
     <script src="js/script.js"></script>
     <script src="js/features.js"></script>
 </body>

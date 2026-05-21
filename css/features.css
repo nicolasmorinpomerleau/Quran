@@ -3064,7 +3064,66 @@ header {
 }
 .tafsir-compare-btn:hover { background: var(--accent-faint); }
 
-/* ── Reading time summary ── */
+/* ── Reading time sidebar widget (laptop) ── */
+.trt-widget {
+    margin: 0 14px 14px;
+    background: var(--accent-trace);
+    border: 0.5px solid var(--accent-faint);
+    border-radius: 8px;
+    padding: 10px 14px 8px;
+}
+.trt-widget-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.trt-widget-title {
+    font-size: 11px;
+    font-weight: 700;
+    font-style: italic;
+    letter-spacing: 0.10em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-family: var(--font-heading);
+}
+.trt-widget-x {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0 2px;
+    line-height: 1;
+}
+.trt-widget-x:hover { color: var(--accent); }
+.trt-widget .trt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+    font-family: var(--font-ui);
+    padding: 3px 0;
+}
+.trt-widget .trt-key { color: var(--text-secondary); }
+.trt-widget .trt-val,
+.trt-widget .trt-avg { color: var(--accent); font-weight: 600; }
+.trt-widget-foot {
+    margin-top: 8px;
+    text-align: right;
+}
+.trt-widget-reset {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    font-family: var(--font-ui);
+}
+.trt-widget-reset:hover { color: #e08585; }
+
+/* ── Reading time summary (settings box) ── */
 .reading-time-box {
     background: var(--accent-trace);
     border: 0.5px solid var(--accent-faint);

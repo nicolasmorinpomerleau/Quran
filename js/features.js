@@ -81,8 +81,9 @@ const DEFAULT_FEATURES = {
         delete saved.saveTools;          // now always on
         delete saved.arabicFontChoice;   // now always on
         delete saved.hijriAwareness;     // now always on
-        delete saved.audioRecitation;    // now always on
-        delete saved.notesExportImport;  // now always on
+        delete saved.audioRecitation;      // now always on
+        delete saved.notesExportImport;   // now always on
+        delete saved.readingTimeAnalytics;// now always on
         localStorage.setItem(FEATURES_KEY, JSON.stringify(saved));
         localStorage.setItem('quranV1014Migrated', '1');
     } catch(e) {}
@@ -1241,7 +1242,6 @@ function appendFeaturesUI(body) {
         reflectionPrompts:     ['✍️ Reflection prompts',     'Optional reflection question after finishing a surah'],
         verseComparison:       ['🔀 Compare tafsirs',         'Adds "Compare all" button in the tafsir modal'],
         pdfExport:             ['🖨 Print / PDF export',     'Print the current surah with your notes'],
-        readingTimeAnalytics:  ['⏱ Reading time',            'Tracks minutes read per week · shown in top bar']
     };
 
     Object.keys(FEATURE_LABELS).forEach(function(key) {
@@ -2080,48 +2080,75 @@ function appendReadingPlanUI(body) {
 
     body.appendChild(sec);
 
-    // v10.12: Reading-time summary — placed right under Reading Plan (same feature category)
-    if (isFeatureOn('readingTimeAnalytics')) {
-        var rtSec = document.createElement('div');
-        rtSec.className = 'mob-settings-section';
-        var rtLbl = document.createElement('div');
-        rtLbl.className = 'mob-settings-lbl';
-        rtLbl.textContent = 'Reading time';
-        rtSec.appendChild(rtLbl);
-        var s = getReadingTimeSummary();
-        var rtBox = document.createElement('div');
-        rtBox.className = 'reading-time-box';
-        rtBox.innerHTML =
-            '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + s.thisWeek + ' min</span></div>' +
-            '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + s.avg4w + ' min/week</span></div>' +
-            '<div class="rt-footer"><button class="rt-reset-link" type="button">🗑 Reset</button></div>';
-        rtSec.appendChild(rtBox);
-        var rtReset = rtBox.querySelector('.rt-reset-link');
-        rtReset.addEventListener('click', function() {
-            var data = getReadingTime();
-            var weeksCount = Object.keys(data).length;
-            var totalMin = 0;
-            Object.values(data).forEach(function(m){ totalMin += m; });
-            var msg = 'This will erase your reading-time history (' + weeksCount + ' week' + (weeksCount === 1 ? '' : 's') + ' · ' + Math.round(totalMin) + ' total minutes). This cannot be undone.';
-            if (typeof showConfirm === 'function') {
-                showConfirm('Reset reading time?', msg, function() {
-                    try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
-                    _readingTimeStart = Date.now();
-                    if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
-                    if (typeof showToast === 'function') showToast('Reading time reset');
-                    var feat = document.getElementById('featuresModal');
-                    if (feat && feat.classList.contains('show') && typeof openFeaturesModal === 'function') {
-                        openFeaturesModal();
-                    }
-                });
-            } else if (confirm(msg)) {
+    // Reading-time summary — always shown
+    var rtSec = document.createElement('div');
+    rtSec.className = 'mob-settings-section';
+    var rtLbl = document.createElement('div');
+    rtLbl.className = 'mob-settings-lbl';
+    rtLbl.textContent = 'Reading time';
+    rtSec.appendChild(rtLbl);
+    var s = getReadingTimeSummary();
+    var rtBox = document.createElement('div');
+    rtBox.className = 'reading-time-box';
+    rtBox.innerHTML =
+        '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + fmtTime(s.thisWeek) + '</span></div>' +
+        '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + fmtTime(s.avg4w) + '/week</span></div>' +
+        '<div class="rt-footer"><button class="rt-reset-link" type="button">🗑 Reset</button></div>';
+    rtSec.appendChild(rtBox);
+    var rtReset = rtBox.querySelector('.rt-reset-link');
+    rtReset.addEventListener('click', function() {
+        var data = getReadingTime();
+        var weeksCount = Object.keys(data).length;
+        var totalMin = 0;
+        Object.values(data).forEach(function(m){ totalMin += m; });
+        var msg = 'This will erase your reading-time history (' + weeksCount + ' week' + (weeksCount === 1 ? '' : 's') + ' · ' + fmtTime(totalMin) + ' total). This cannot be undone.';
+        if (typeof showConfirm === 'function') {
+            showConfirm('Reset reading time?', msg, function() {
                 try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
                 _readingTimeStart = Date.now();
                 if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
-            }
-        });
-        body.appendChild(rtSec);
+                if (typeof showToast === 'function') showToast('Reading time reset');
+                var feat = document.getElementById('featuresModal');
+                if (feat && feat.classList.contains('show') && typeof openFeaturesModal === 'function') {
+                    openFeaturesModal();
+                }
+            });
+        } else if (confirm(msg)) {
+            try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+            _readingTimeStart = Date.now();
+            if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
+        }
+    });
+    // Laptop: restore the sidebar widget if it was hidden
+    if (window.innerWidth > 767) {
+        var rtHidden = false;
+        try { rtHidden = localStorage.getItem('quranHideReadingWidget') === '1'; } catch(e) {}
+        if (rtHidden) {
+            var showWidgetBtn = document.createElement('button');
+            showWidgetBtn.className = 'mob-settings-btn';
+            showWidgetBtn.style.marginTop = '8px';
+            showWidgetBtn.textContent = '⏱ Show reading time in sidebar';
+            showWidgetBtn.addEventListener('click', function() {
+                try { localStorage.removeItem('quranHideReadingWidget'); } catch(e) {}
+                var w = document.getElementById('topReadingTime');
+                if (w) w.style.display = '';
+                showWidgetBtn.remove();
+            });
+            rtSec.appendChild(showWidgetBtn);
+        }
     }
+    // Phone: button to open full reading-time screen
+    if (window.innerWidth <= 767) {
+        var viewRtBtn = document.createElement('button');
+        viewRtBtn.className = 'mob-settings-btn';
+        viewRtBtn.style.marginTop = '8px';
+        viewRtBtn.textContent = '⏱ View reading time';
+        viewRtBtn.addEventListener('click', function() {
+            if (typeof openReadingTimeScreen === 'function') openReadingTimeScreen();
+        });
+        rtSec.appendChild(viewRtBtn);
+    }
+    body.appendChild(rtSec);
 }
 
 function startPlan(planType, customDays) {
@@ -4165,7 +4192,6 @@ function getCurrentWeekKey() {
 }
 
 function startReadingTimer() {
-    if (!isFeatureOn('readingTimeAnalytics')) return;
     if (_readingTimeStart) return;
     _readingTimeStart = Date.now();
 }
@@ -4189,7 +4215,6 @@ function flushReadingTimer() {
 
 (function wireReadingTimer() {
     function init() {
-        if (!isFeatureOn('readingTimeAnalytics')) return;
         startReadingTimer();
         document.addEventListener('visibilitychange', function() {
             if (document.hidden) stopReadingTimer();
@@ -4208,6 +4233,13 @@ function flushReadingTimer() {
         init();
     }
 }());
+
+function fmtTime(min) {
+    var m = Math.round(min);
+    var h = Math.floor(m / 60);
+    var mm = m % 60;
+    return h + ':' + (mm < 10 ? '0' + mm : mm);
+}
 
 function getReadingTimeSummary() {
     var data = getReadingTime();
@@ -4530,11 +4562,44 @@ function getReflectionLabels() {
 // ════════════════════════════════════════════════════════════════════
 (function wireTopAccessBar() {
     function attach() {
+        var widget = document.getElementById('topReadingTime');
+        // Restore hidden state from localStorage
+        var hidden = false;
+        try { hidden = localStorage.getItem('quranHideReadingWidget') === '1'; } catch(e) {}
+        if (widget && hidden) widget.style.display = 'none';
+
+        // X button \u2014 hide widget
+        var closeBtn = document.getElementById('trtCloseBtn');
+        if (closeBtn) closeBtn.addEventListener('click', function() {
+            try { localStorage.setItem('quranHideReadingWidget', '1'); } catch(e) {}
+            if (widget) widget.style.display = 'none';
+        });
+
+        // Sidebar Reset button
+        var resetBtn = document.getElementById('trtResetBtn');
+        if (resetBtn) resetBtn.addEventListener('click', function() {
+            var data = getReadingTime();
+            var weeksCount = Object.keys(data).length;
+            var msg = 'Erase reading-time history (' + weeksCount + ' week' + (weeksCount === 1 ? '' : 's') + ')? Cannot be undone.';
+            if (typeof showConfirm === 'function') {
+                showConfirm('Reset reading time?', msg, function() {
+                    try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+                    _readingTimeStart = Date.now();
+                    refreshTopReadingTime();
+                    if (typeof showToast === 'function') showToast('Reading time reset');
+                });
+            } else if (confirm(msg)) {
+                try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
+                _readingTimeStart = Date.now();
+                refreshTopReadingTime();
+            }
+        });
+
         refreshTopReadingTime();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
     else attach();
-    // Refresh reading-time every 60s while page is visible
+    // Refresh every 60s while page is visible
     setInterval(function() {
         if (!document.hidden) refreshTopReadingTime();
     }, 60000);
@@ -4543,14 +4608,12 @@ function getReflectionLabels() {
 function refreshTopReadingTime() {
     var el = document.getElementById('topReadingTime');
     if (!el) return;
-    var valEl = el.querySelector('.trt-val');
-    if (!valEl) return;
-    if (typeof getReadingTimeSummary !== 'function') {
-        valEl.textContent = '\u2014';
-        return;
-    }
+    if (typeof getReadingTimeSummary !== 'function') return;
     var s = getReadingTimeSummary();
-    valEl.textContent = s.thisWeek + ' min';
+    var valEl = el.querySelector('.trt-val');
+    var avgEl = el.querySelector('.trt-avg');
+    if (valEl) valEl.textContent = fmtTime(s.thisWeek);
+    if (avgEl) avgEl.textContent = fmtTime(s.avg4w) + '/week';
 }
 
 // Refresh after every navigation

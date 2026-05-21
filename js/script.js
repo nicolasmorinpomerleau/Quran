@@ -152,10 +152,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.13 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.13 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.13 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.13 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.14.14 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.14.14 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.14.14 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.14.14 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -3550,7 +3550,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.13%0A%0A', '_blank');
+        window.open('mailto:?subject=Quran%20App%20Feedback&body=Version%3A%20v10.14.14%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });
@@ -3574,10 +3574,10 @@ function watchForModalClose(modalId) {
 
 // ── Reading Time screen ───────────────────────────────────────────
 function openReadingTimeScreen() {
-    // Flush running session to localStorage before reading summary
     if (typeof flushReadingTimer === 'function') flushReadingTimer();
 
     var s = (typeof getReadingTimeSummary === 'function') ? getReadingTimeSummary() : { thisWeek: 0, avg4w: 0 };
+    var fmt = (typeof fmtTime === 'function') ? fmtTime : function(m){ return Math.round(m) + ''; };
     var history = {};
     try { history = JSON.parse(localStorage.getItem('quranReadHistory') || '{}'); } catch(e) {}
     var surahsRead = Object.keys(history).length;
@@ -3591,8 +3591,8 @@ function openReadingTimeScreen() {
                 '<button class="mob-info-close">✕</button>' +
             '</div>' +
             '<div class="mob-info-body">' +
-                '<div class="mob-stat-row"><div class="mob-stat-val">' + s.thisWeek + '<span class="mob-stat-unit"> min</span></div><div class="mob-stat-lbl">This week</div></div>' +
-                '<div class="mob-stat-row"><div class="mob-stat-val">' + s.avg4w + '<span class="mob-stat-unit"> min</span></div><div class="mob-stat-lbl">4-week average</div></div>' +
+                '<div class="mob-stat-row"><div class="mob-stat-val">' + fmt(s.thisWeek) + '</div><div class="mob-stat-lbl">This week (hh:mm)</div></div>' +
+                '<div class="mob-stat-row"><div class="mob-stat-val">' + fmt(s.avg4w) + '<span class="mob-stat-unit">/week</span></div><div class="mob-stat-lbl">4-week average</div></div>' +
                 '<div class="mob-stat-row"><div class="mob-stat-val">' + surahsRead + '<span class="mob-stat-unit"> / 114</span></div><div class="mob-stat-lbl">Surahs read</div></div>' +
             '</div>' +
             '<div style="padding:0 20px 16px;">' +

@@ -3098,16 +3098,27 @@ header {
 }
 .trt-widget-x:hover { color: var(--accent); }
 .trt-widget .trt-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
     align-items: baseline;
     font-size: 13px;
     font-family: var(--font-ui);
     padding: 3px 0;
 }
-.trt-widget .trt-key { color: var(--text-secondary); }
+.trt-widget .trt-key {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .trt-widget .trt-val,
-.trt-widget .trt-avg { color: var(--accent); font-weight: 600; }
+.trt-widget .trt-avg {
+    color: var(--accent);
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: right;
+}
 .trt-widget-foot {
     margin-top: 8px;
     text-align: right;
@@ -3231,7 +3242,7 @@ body.feature-off-voice .voice-search-btn { display: none !important; }
 body.feature-off-topics .top-access-btn,
 body.feature-off-topics #topTopicsBtn { display: none !important; }
 body.feature-off-print .sura-print-pill { display: none !important; }
-body.feature-off-readingtime .top-reading-time { display: none !important; }
+body.feature-off-readingtime #topReadingTime { display: none !important; }
 body.feature-off-hijri .hijri-badge { display: none !important; }
 
 /* When savetools is off but other actions remain, the verse-actions strip can become empty */
@@ -3281,22 +3292,6 @@ body.feature-off-savetools.feature-off-share.feature-off-tafsir .verse-actions {
 .top-access-btn:active { transform: scale(0.97); }
 .top-access-btn .tab-icon { font-size: 16px; line-height: 1; }
 
-.top-reading-time {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 12px;
-    background: var(--accent-trace);
-    border: 0.5px solid var(--accent-faint);
-    border-radius: 99px;
-    color: var(--text-secondary);
-    font-family: var(--font-ui);
-    font-size: 12px;
-    font-weight: 500;
-}
-.top-reading-time .trt-icon { font-size: 13px; }
-.top-reading-time .trt-val { color: var(--accent); font-weight: 600; }
 
 /* ── Print pill in sticky title ── v10.11: bigger + visible PDF label ── */
 .sura-print-pill {

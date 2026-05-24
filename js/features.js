@@ -2595,6 +2595,7 @@ function audioUrlFor(reciterId, suraNum, verseNum) {
 // ── Player state ────────────────────────────────────────────────────
 var _audio = null;            // HTMLAudioElement
 var _audioPreload = null;     // pre-fetched next verse
+var _audioStopping = false;   // true during intentional stop — suppresses spurious error event
 var _audioState = {
     playing: false,
     suraId: null,       // string sura ID ("0".."113")
@@ -2700,8 +2701,10 @@ function resumeAudio() {
 
 function stopAudio() {
     if (_audio) {
+        _audioStopping = true;
         _audio.pause();
         _audio.src = '';
+        setTimeout(function() { _audioStopping = false; }, 200);
     }
     clearAudioResume();
     _audioState.suraId = null;
@@ -2779,6 +2782,7 @@ function onAudioEnded() {
 }
 
 function onAudioError(e) {
+    if (_audioStopping) return;
     console.warn('[Audio] Error:', e);
     if (typeof showToast === 'function') {
         showToast('🔊 Couldn\'t load audio — try another reciter');
@@ -4901,61 +4905,6 @@ async function scheduleNextDailyNotification() {
     else setTimeout(init, 1500);
 }());
 
-// ════════════════════════════════════════════════════════════════════
-// v10.10 — appendDataUI as the FINAL injection layer
-// (Export & data section sits at the very bottom of Settings)
-// ════════════════════════════════════════════════════════════════════
-(function injectDataLast() {
-    function tryInject() {
-        if (typeof buildSheetSettings === 'undefined') return false;
-        if (window._dataLastInjected) return true;
-        window._dataLastInjected = true;
-        var origSheet = buildSheetSettings;
-        // Wrap whatever buildSheetSettings already is (including prior monkey-patches)
-        window.buildSheetSettings = buildSheetSettings = function(body, title) {
-            origSheet(body, title);
-            // Defer so all other appended sections finish first
-            setTimeout(function() {
-                // Avoid double-add if the chain ran twice
-                if (body.querySelector('.data-section-marker')) return;
-                if (typeof appendDataUI === 'function') {
-                    var before = body.children.length;
-                    appendDataUI(body);
-                    // Mark the last appended section so we don't re-add
-                    if (body.children.length > before) {
-                        var last = body.children[body.children.length - 1];
-                        if (last) last.classList.add('data-section-marker');
-                    }
-                }
-            }, 0);
-        };
-        if (typeof openFeaturesModal === 'function') {
-            var origModal = openFeaturesModal;
-            window.openFeaturesModal = function() {
-                origModal();
-                setTimeout(function() {
-                    var body = document.getElementById('featuresModalBody');
-                    if (!body) return;
-                    if (body.querySelector('.data-section-marker')) return;
-                    if (typeof appendDataUI === 'function') {
-                        var before = body.children.length;
-                        appendDataUI(body);
-                        if (body.children.length > before) {
-                            var last = body.children[body.children.length - 1];
-                            if (last) last.classList.add('data-section-marker');
-                        }
-                    }
-                }, 50);
-            };
-        }
-        return true;
-    }
-    if (!tryInject()) {
-        var iv = setInterval(function() {
-            if (tryInject()) clearInterval(iv);
-        }, 200);
-    }
-}());
 
 
 // ════════════════════════════════════════════════════════════════════

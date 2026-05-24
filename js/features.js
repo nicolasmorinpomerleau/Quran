@@ -1530,6 +1530,7 @@ function initFeatures() {
             }, 1000);
             // Patch displaySingleSura to record activity + extras
             patchDisplay();
+            checkAudioResume();
         } else if (tries > 50) {
             clearInterval(iv);
         }
@@ -2531,7 +2532,8 @@ function appendInstallUI(body) {
 // Streams from everyayah.com CDN (reliable, CORS-open, free)
 // ═══════════════════════════════════════════════════════════════════
 
-const AUDIO_KEY  = 'quranAudioPrefs';
+const AUDIO_KEY        = 'quranAudioPrefs';
+const AUDIO_RESUME_KEY = 'quranAudioResume';
 const AUDIO_HOST = 'https://everyayah.com/data/';
 
 // Reciter catalog — folder names from everyayah.com
@@ -2562,6 +2564,22 @@ function getAudioPrefs() {
 
 function saveAudioPrefs(p) {
     try { localStorage.setItem(AUDIO_KEY, JSON.stringify(p)); } catch(e) {}
+}
+
+function saveAudioResume() {
+    if (_audioState.suraId == null || _audioState.verseIdx == null) return;
+    try {
+        localStorage.setItem(AUDIO_RESUME_KEY, JSON.stringify({
+            suraId:   _audioState.suraId,
+            verseIdx: _audioState.verseIdx,
+            suraName: _audioState.suraName,
+            ts:       Date.now()
+        }));
+    } catch(e) {}
+}
+
+function clearAudioResume() {
+    try { localStorage.removeItem(AUDIO_RESUME_KEY); } catch(e) {}
 }
 
 function pad3(n) {
@@ -2624,6 +2642,7 @@ function playVerse(suraId, verseIdx) {
     _audioState.verseIdx = verseIdx;
     _audioState.suraName = sura.name;
     _audioState.totalVerses = sura.verses.length;
+    saveAudioResume();
 
     var a = getAudioEl();
     a.playbackRate = prefs.speed;
@@ -2684,6 +2703,7 @@ function stopAudio() {
         _audio.pause();
         _audio.src = '';
     }
+    clearAudioResume();
     _audioState.suraId = null;
     _audioState.verseIdx = null;
     _audioState.currentRepeat = 0;
@@ -2915,6 +2935,16 @@ function attachAudioButtons() {
     updateVersePlayButtons();
 }
 
+// Save resume position when app is hidden or closed
+(function wireAudioResumeSave() {
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) saveAudioResume();
+    });
+    window.addEventListener('beforeunload', function() {
+        saveAudioResume();
+    });
+}());
+
 // Hook into displaySingleSura to add audio buttons after render
 (function hookAudioButtons() {
     function tryHook() {
@@ -3028,6 +3058,50 @@ function appendAudioUI(body) {
     sec.appendChild(rptRow);
 
     body.appendChild(sec);
+}
+
+// ── Audio resume: check on load + banner UI ──────────────────────────
+function checkAudioResume() {
+    var saved;
+    try { saved = JSON.parse(localStorage.getItem(AUDIO_RESUME_KEY)); } catch(e) {}
+    if (!saved || saved.suraId == null || saved.verseIdx == null) return;
+    // Show after 2 s so it doesn't stack with the last-read banner (1 s)
+    setTimeout(function() { showResumeBanner(saved); }, 2000);
+}
+
+function showResumeBanner(saved) {
+    if (document.getElementById('audioResumeBanner')) return;
+    var suraName = saved.suraName || ('Surah ' + (parseInt(saved.suraId) + 1));
+    var verseNum = saved.verseIdx + 1;
+    var banner = document.createElement('div');
+    banner.id = 'audioResumeBanner';
+    banner.className = 'audio-resume-banner';
+    banner.innerHTML =
+        '<div class="arb-info">🎵 ' + suraName + ' · v.' + verseNum + '</div>' +
+        '<div class="arb-actions">' +
+            '<button class="arb-btn arb-play">▶ Reprendre</button>' +
+            '<button class="arb-btn arb-dismiss">✕</button>' +
+        '</div>';
+    document.body.appendChild(banner);
+    setTimeout(function() { banner.classList.add('show'); }, 50);
+    var autoTimer = setTimeout(dismissResumeBanner, 10000);
+    banner.querySelector('.arb-play').addEventListener('click', function() {
+        clearTimeout(autoTimer);
+        dismissResumeBanner();
+        playVerse(saved.suraId, saved.verseIdx);
+    });
+    banner.querySelector('.arb-dismiss').addEventListener('click', function() {
+        clearTimeout(autoTimer);
+        clearAudioResume();
+        dismissResumeBanner();
+    });
+}
+
+function dismissResumeBanner() {
+    var banner = document.getElementById('audioResumeBanner');
+    if (!banner) return;
+    banner.classList.remove('show');
+    setTimeout(function() { if (banner.parentNode) banner.remove(); }, 300);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -4883,6 +4957,117 @@ async function scheduleNextDailyNotification() {
     }
 }());
 
+
+// ════════════════════════════════════════════════════════════════════
+// v10.15 — YOUTUBE CHANNEL (French recitation videos)
+// Per-surah full-video link shown only in French view.
+// Also surfaces a "Notre chaîne YouTube" entry in Settings (all languages).
+//
+// SETUP: open data/youtube_fr.json and paste your YouTube URL for each
+// surah (key = 0-indexed surah ID as a string, "0" = Al-Fatiha, etc.)
+// Surahs with no entry simply show no video section.
+// ════════════════════════════════════════════════════════════════════
+const YT_CHANNEL_URL = 'https://www.youtube.com/@VotreChaine'; // ← replace with your channel URL
+var _ytFrData = null;
+
+function loadYtFrData(cb) {
+    if (_ytFrData !== null) { if (cb) cb(_ytFrData); return; }
+    fetch('./data/youtube_fr.json')
+        .then(function(r) { return r.json(); })
+        .then(function(d) { _ytFrData = d; if (cb) cb(d); })
+        .catch(function() { _ytFrData = {}; });
+}
+
+function injectYtSection(suraId) {
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : '';
+    if (lang !== 'french') return;
+    loadYtFrData(function(data) {
+        var url = data[String(parseInt(suraId) + 1)];
+        var old = document.getElementById('ytFrSection');
+        if (old) old.remove();
+        if (!url || !url.trim()) return;
+        var suraEl = document.getElementById(String(suraId));
+        if (!suraEl) return;
+        var sec = document.createElement('div');
+        sec.id = 'ytFrSection';
+        sec.className = 'yt-fr-section';
+        var a = document.createElement('a');
+        a.href = url.trim();
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.className = 'yt-fr-link';
+        a.innerHTML = '<span class="yt-fr-icon">&#9654;</span> Regarder la sourate sur YouTube';
+        sec.appendChild(a);
+        var firstVerse = suraEl.querySelector('.verse');
+        if (firstVerse) suraEl.insertBefore(sec, firstVerse);
+        else suraEl.appendChild(sec);
+    });
+}
+
+// Hook into displaySingleSura to inject the per-surah YouTube link
+(function hookYtSection() {
+    function tryHook() {
+        if (typeof displaySingleSura === 'undefined') return false;
+        if (window._ytHooked) return true;
+        window._ytHooked = true;
+        var orig = displaySingleSura;
+        window.displaySingleSura = displaySingleSura = function(suraId) {
+            orig(suraId);
+            setTimeout(function() { injectYtSection(suraId); }, 120);
+        };
+        var firstSura = document.querySelector('.sura');
+        if (firstSura) setTimeout(function() { injectYtSection(firstSura.id); }, 400);
+        return true;
+    }
+    if (!tryHook()) {
+        var iv = setInterval(function() { if (tryHook()) clearInterval(iv); }, 200);
+    }
+}());
+
+// Inject "Notre chaîne YouTube" into mobile sheet + desktop modal
+function appendYtChannelUI(body) {
+    if (body.querySelector('.yt-channel-link')) return;
+    var sec = document.createElement('div');
+    sec.className = 'mob-settings-section';
+    var a = document.createElement('a');
+    a.href = YT_CHANNEL_URL;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'yt-channel-link';
+    a.innerHTML =
+        '<span class="yt-channel-logo">&#9654;</span>' +
+        '<span class="yt-channel-text">Notre chaîne YouTube</span>' +
+        '<span class="yt-channel-arr">&#x2197;</span>';
+    sec.appendChild(a);
+    body.appendChild(sec);
+}
+
+(function injectYtChannelUI() {
+    function tryInject() {
+        if (typeof buildSheetSettings === 'undefined') return false;
+        if (window._ytChannelInjected) return true;
+        window._ytChannelInjected = true;
+        var origSheet = buildSheetSettings;
+        window.buildSheetSettings = buildSheetSettings = function(body, title) {
+            origSheet(body, title);
+            setTimeout(function() { appendYtChannelUI(body); }, 10);
+        };
+        if (typeof openFeaturesModal === 'function') {
+            var origModal = openFeaturesModal;
+            window.openFeaturesModal = function() {
+                origModal();
+                setTimeout(function() {
+                    var b = document.getElementById('featuresModalBody');
+                    if (b) appendYtChannelUI(b);
+                }, 60);
+            };
+        }
+        return true;
+    }
+    if (!tryInject()) {
+        var iv = setInterval(function() { if (tryInject()) clearInterval(iv); }, 200);
+    }
+}());
 
 // ════════════════════════════════════════════════════════════════════
 // v10.11 — Global Escape handler: closes all open modals/sheets/overlays

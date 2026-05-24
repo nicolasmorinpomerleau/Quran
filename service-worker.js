@@ -2,7 +2,7 @@
 'use strict';
 
 // Bump this version string whenever you ship updates so the SW activates fresh.
-const CACHE_VERSION = 'v10.14.14';
+const CACHE_VERSION = 'v10.15.0';
 const SHELL_CACHE   = 'quran-shell-' + CACHE_VERSION;
 const DATA_CACHE    = 'quran-data-' + CACHE_VERSION;
 
@@ -34,7 +34,8 @@ const DATA_FILES = [
     './data/context/context-french1.xml',
     './data/context/context-french2.xml',
     './data/context/context-english1.xml',
-    './data/context/context-english2.xml'
+    './data/context/context-english2.xml',
+    './data/youtube_fr.json'
 ];
 
 // ── INSTALL: pre-cache shell + data ──────────────────────────────────

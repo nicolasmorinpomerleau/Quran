@@ -4908,6 +4908,476 @@ async function scheduleNextDailyNotification() {
 
 
 // ════════════════════════════════════════════════════════════════════
+// v10.15.2 — HELP & TUTORIAL modal (multilingual, desktop + mobile)
+// ════════════════════════════════════════════════════════════════════
+var HELP_STRINGS = {
+    english: {
+        title:  'Help & Tutorial',
+        intro:  'Welcome to Quran Display — your complete Quran companion. Here is a quick guide to every feature.',
+        sections: {
+            reading:   'Reading',
+            tools:     'Tools & Saved',
+            settings:  'Settings',
+            desktop:   'Desktop Shortcuts'
+        },
+        cards: [
+            {
+                icon: '📖',
+                title: 'Navigation',
+                desc: 'Use the right-hand panel to browse all 114 Surahs, 30 Juz, Revelation order, or curated Topics. Tap any entry to jump directly to that chapter.',
+                mock: 'tabs',
+                tabs: ['Surahs','Juz','Revelation','Topics']
+            },
+            {
+                icon: '🌓',
+                title: 'Themes & Font',
+                desc: 'Choose between Manuscript (sepia), Minimal (light), and Scholar (dark) themes using the top switcher. Adjust Arabic and translation font sizes from the Display panel.',
+                mock: 'themes'
+            },
+            {
+                icon: '🔍',
+                title: 'Search',
+                desc: 'Search across the full Quran or within a single Surah. Your last 10 searches are saved as quick-access chips.',
+                mock: 'search'
+            },
+            {
+                icon: '🔊',
+                title: 'Audio Recitation',
+                desc: 'Tap the 🔊 icon next to any verse to listen. A mini-player appears at the bottom with controls for Play, Previous, Next, Speed and auto-advance. Choose your reciter in Settings.',
+                mock: 'player'
+            },
+            {
+                icon: '🎵',
+                title: 'Resume Audio',
+                desc: 'When you return to the app after listening, a banner at the bottom offers to resume from exactly where you left off. Tap ▶ Reprendre to continue.',
+                mock: 'resume'
+            },
+            {
+                icon: '🔖',
+                title: 'Bookmarks & Notes',
+                desc: 'Tap the bookmark icon on any verse to save it. Add personal notes, highlight verses, and record reflections. Access everything from the Saved panel (📁).',
+                mock: 'saved'
+            },
+            {
+                icon: '🌐',
+                title: 'Languages',
+                desc: 'Change the primary Quran language (Arabic, French, English, Spanish) or add multiple translations side-by-side from the Languages panel in the sidebar.',
+                mock: 'lang'
+            },
+            {
+                icon: '📤',
+                title: 'Share a Verse',
+                desc: 'Tap a verse to select it, then tap the share icon to copy or share via your device\'s share sheet. Deep links let you share a direct link to any verse.',
+                mock: 'share'
+            },
+            {
+                icon: '▶',
+                title: 'YouTube Videos',
+                desc: 'When reading in French, a link to watch the full Surah on our YouTube channel appears above the verses.',
+                mock: 'yt'
+            },
+            {
+                icon: '⌨️',
+                title: 'Keyboard Shortcuts',
+                desc: 'On desktop: ← → to move between Surahs, F for Focus mode, ? to show shortcuts, Escape to close any panel.',
+                mock: 'kbd'
+            }
+        ]
+    },
+    french: {
+        title:  'Aide & Tutoriel',
+        intro:  'Bienvenue dans Coran Display — votre compagnon complet du Coran. Voici un guide rapide de chaque fonctionnalité.',
+        sections: {
+            reading:   'Lecture',
+            tools:     'Outils & Favoris',
+            settings:  'Paramètres',
+            desktop:   'Raccourcis clavier'
+        },
+        cards: [
+            {
+                icon: '📖',
+                title: 'Navigation',
+                desc: 'Utilisez le panneau de droite pour parcourir les 114 Sourates, les 30 Juz, l\'ordre de révélation ou des thèmes. Appuyez sur une entrée pour y accéder directement.',
+                mock: 'tabs',
+                tabs: ['Sourates','Juz','Révélation','Thèmes']
+            },
+            {
+                icon: '🌓',
+                title: 'Thèmes & Polices',
+                desc: 'Choisissez entre Manuscrit (sépia), Minimal (clair) et Érudit (sombre) via le sélecteur en haut. Ajustez la taille des polices arabe et traduction dans le panneau Affichage.',
+                mock: 'themes'
+            },
+            {
+                icon: '🔍',
+                title: 'Recherche',
+                desc: 'Recherchez dans tout le Coran ou dans une seule Sourate. Vos 10 dernières recherches sont sauvegardées en accès rapide.',
+                mock: 'search'
+            },
+            {
+                icon: '🔊',
+                title: 'Récitation audio',
+                desc: 'Appuyez sur 🔊 à côté d\'un verset pour écouter. Un mini-lecteur apparaît en bas avec les contrôles. Choisissez votre récitateur dans les paramètres.',
+                mock: 'player'
+            },
+            {
+                icon: '🎵',
+                title: 'Reprendre la récitation',
+                desc: 'Quand vous revenez dans l\'application après avoir écouté, une bannière propose de reprendre là où vous en étiez. Appuyez sur ▶ Reprendre.',
+                mock: 'resume'
+            },
+            {
+                icon: '🔖',
+                title: 'Favoris & Notes',
+                desc: 'Appuyez sur l\'icône marque-page d\'un verset pour le sauvegarder. Ajoutez des notes, surlignez des versets et enregistrez des réflexions. Tout est accessible depuis Enregistrés (📁).',
+                mock: 'saved'
+            },
+            {
+                icon: '🌐',
+                title: 'Langues',
+                desc: 'Changez la langue principale (arabe, français, anglais, espagnol) ou ajoutez plusieurs traductions côte à côte depuis le panneau Langues.',
+                mock: 'lang'
+            },
+            {
+                icon: '📤',
+                title: 'Partager un verset',
+                desc: 'Appuyez sur un verset pour le sélectionner, puis sur l\'icône de partage pour copier ou partager. Les liens profonds permettent de partager un accès direct à n\'importe quel verset.',
+                mock: 'share'
+            },
+            {
+                icon: '▶',
+                title: 'Vidéos YouTube',
+                desc: 'En français, un lien pour regarder la Sourate complète sur notre chaîne YouTube apparaît au-dessus des versets.',
+                mock: 'yt'
+            },
+            {
+                icon: '⌨️',
+                title: 'Raccourcis clavier',
+                desc: 'Sur ordinateur : ← → pour changer de Sourate, F pour le mode Focus, ? pour voir les raccourcis, Échap pour fermer tout panneau.',
+                mock: 'kbd'
+            }
+        ]
+    },
+    arabic: {
+        title:  'المساعدة والدليل',
+        intro:  'مرحباً بك في عرض القرآن — رفيقك الكامل للقرآن الكريم. إليك دليلاً سريعاً لكل ميزة.',
+        sections: {
+            reading:   'القراءة',
+            tools:     'الأدوات والمحفوظات',
+            settings:  'الإعدادات',
+            desktop:   'اختصارات لوحة المفاتيح'
+        },
+        cards: [
+            {
+                icon: '📖',
+                title: 'التنقل',
+                desc: 'استخدم اللوحة اليمنى للتصفح بين السور الـ114 والأجزاء الـ30 وترتيب النزول والمواضيع. انقر على أي عنصر للانتقال إليه مباشرة.',
+                mock: 'tabs',
+                tabs: ['السور','الأجزاء','الوحي','المواضيع']
+            },
+            {
+                icon: '🌓',
+                title: 'المظاهر والخط',
+                desc: 'اختر بين مظهر المخطوطة (بني) والبسيط (فاتح) والعالم (داكن) عبر أزرار التبديل في الأعلى. اضبط حجم الخط من لوحة العرض.',
+                mock: 'themes'
+            },
+            {
+                icon: '🔍',
+                title: 'البحث',
+                desc: 'ابحث في القرآن كله أو داخل سورة واحدة. تُحفظ آخر 10 عمليات بحث كاختصارات سريعة.',
+                mock: 'search'
+            },
+            {
+                icon: '🔊',
+                title: 'التلاوة الصوتية',
+                desc: 'انقر على 🔊 بجانب أي آية للاستماع. يظهر مشغل صغير في الأسفل مع أزرار التحكم. اختر القارئ من الإعدادات.',
+                mock: 'player'
+            },
+            {
+                icon: '🎵',
+                title: 'استئناف التلاوة',
+                desc: 'عند العودة للتطبيق بعد الاستماع، تظهر لافتة في الأسفل تتيح الاستئناف من حيث توقفت.',
+                mock: 'resume'
+            },
+            {
+                icon: '🔖',
+                title: 'الإشارات والملاحظات',
+                desc: 'انقر على أيقونة الإشارة بجانب أي آية لحفظها. أضف ملاحظات وسلّط الضوء على الآيات وسجّل تأملاتك. كل شيء متاح من المحفوظات (📁).',
+                mock: 'saved'
+            },
+            {
+                icon: '🌐',
+                title: 'اللغات',
+                desc: 'غيّر لغة القرآن الرئيسية أو أضف ترجمات متعددة جنباً إلى جنب من لوحة اللغات في الشريط الجانبي.',
+                mock: 'lang'
+            },
+            {
+                icon: '📤',
+                title: 'مشاركة آية',
+                desc: 'انقر على آية لتحديدها ثم على أيقونة المشاركة للنسخ أو المشاركة. تتيح الروابط العميقة مشاركة رابط مباشر لأي آية.',
+                mock: 'share'
+            },
+            {
+                icon: '▶',
+                title: 'فيديوهات يوتيوب',
+                desc: 'عند القراءة باللغة الفرنسية يظهر رابط لمشاهدة السورة كاملة على قناتنا في يوتيوب.',
+                mock: 'yt'
+            },
+            {
+                icon: '⌨️',
+                title: 'اختصارات لوحة المفاتيح',
+                desc: 'على الحاسوب: ← → للتنقل بين السور، F لوضع التركيز، ? لعرض الاختصارات، Escape لإغلاق أي لوحة.',
+                mock: 'kbd'
+            }
+        ]
+    },
+    spanish: {
+        title:  'Ayuda y Tutorial',
+        intro:  'Bienvenido a Corán Display — tu compañero completo del Corán. Aquí tienes una guía rápida de cada función.',
+        sections: {
+            reading:   'Lectura',
+            tools:     'Herramientas y Guardados',
+            settings:  'Ajustes',
+            desktop:   'Atajos de teclado'
+        },
+        cards: [
+            {
+                icon: '📖',
+                title: 'Navegación',
+                desc: 'Usa el panel derecho para explorar las 114 Suras, los 30 Juz, el orden de revelación o Temas. Toca cualquier entrada para ir directamente al capítulo.',
+                mock: 'tabs',
+                tabs: ['Suras','Juz','Revelación','Temas']
+            },
+            {
+                icon: '🌓',
+                title: 'Temas y Fuente',
+                desc: 'Elige entre Manuscrito (sepia), Minimal (claro) y Erudito (oscuro) con el selector superior. Ajusta el tamaño de fuente desde el panel Visualización.',
+                mock: 'themes'
+            },
+            {
+                icon: '🔍',
+                title: 'Búsqueda',
+                desc: 'Busca en todo el Corán o dentro de una sola Sura. Tus últimas 10 búsquedas se guardan como acceso rápido.',
+                mock: 'search'
+            },
+            {
+                icon: '🔊',
+                title: 'Recitación de audio',
+                desc: 'Toca 🔊 junto a cualquier versículo para escuchar. Aparece un mini reproductor con controles. Elige tu recitador en Ajustes.',
+                mock: 'player'
+            },
+            {
+                icon: '🎵',
+                title: 'Reanudar audio',
+                desc: 'Al volver a la app tras escuchar, aparece un banner para reanudar desde donde lo dejaste.',
+                mock: 'resume'
+            },
+            {
+                icon: '🔖',
+                title: 'Marcadores y Notas',
+                desc: 'Toca el icono de marcador en cualquier versículo para guardarlo. Añade notas, resalta versículos y registra reflexiones. Todo accesible desde Guardados (📁).',
+                mock: 'saved'
+            },
+            {
+                icon: '🌐',
+                title: 'Idiomas',
+                desc: 'Cambia el idioma principal del Corán o añade varias traducciones en paralelo desde el panel de Idiomas.',
+                mock: 'lang'
+            },
+            {
+                icon: '📤',
+                title: 'Compartir versículo',
+                desc: 'Toca un versículo para seleccionarlo y luego el icono de compartir. Los enlaces profundos te permiten compartir acceso directo a cualquier versículo.',
+                mock: 'share'
+            },
+            {
+                icon: '▶',
+                title: 'Vídeos YouTube',
+                desc: 'Al leer en francés, aparece un enlace para ver la Sura completa en nuestro canal de YouTube.',
+                mock: 'yt'
+            },
+            {
+                icon: '⌨️',
+                title: 'Atajos de teclado',
+                desc: 'En escritorio: ← → para cambiar de Sura, F para Modo Enfoque, ? para ver atajos, Escape para cerrar cualquier panel.',
+                mock: 'kbd'
+            }
+        ]
+    }
+};
+
+function buildHelpMock(type, tabs) {
+    var m = document.createElement('div');
+    m.className = 'help-mock';
+    if (type === 'tabs') {
+        var row = document.createElement('div');
+        row.className = 'help-mock-tabs';
+        (tabs || ['Tab 1','Tab 2','Tab 3','Tab 4']).forEach(function(t, i) {
+            var tab = document.createElement('div');
+            tab.className = 'help-mock-tab' + (i === 0 ? ' active' : '');
+            tab.textContent = t;
+            row.appendChild(tab);
+        });
+        m.appendChild(row);
+    } else if (type === 'themes') {
+        var row = document.createElement('div');
+        row.className = 'help-mock-theme-row';
+        [['#3a2a1a','#c9a444'],['#f5f0e8','#8a6a2a'],['#1a1a2e','#c9a444']].forEach(function(c, i) {
+            var sw = document.createElement('div');
+            sw.className = 'help-mock-swatch' + (i === 0 ? ' active' : '');
+            sw.style.background = c[0];
+            sw.style.borderColor = i === 0 ? c[1] : 'var(--accent-faint)';
+            row.appendChild(sw);
+        });
+        m.appendChild(row);
+    } else if (type === 'search') {
+        var srch = document.createElement('div');
+        srch.className = 'help-mock-search';
+        srch.innerHTML = '🔍 <span>Search the Quran…</span>';
+        var r1 = document.createElement('div');
+        r1.className = 'help-mock-list-item';
+        r1.innerHTML = '<span class="help-mock-badge">2:255</span> Ayat al-Kursi…';
+        m.appendChild(srch); m.appendChild(r1);
+    } else if (type === 'player') {
+        var pl = document.createElement('div');
+        pl.className = 'help-mock-player';
+        pl.innerHTML = '<span class="help-mock-play-btn">⏸</span><span class="help-mock-verse-info">Al-Baqarah · v.255</span><span style="color:var(--accent);font-size:10px;font-weight:700;">1×</span>';
+        m.appendChild(pl);
+    } else if (type === 'resume') {
+        var rb = document.createElement('div');
+        rb.className = 'help-mock-player';
+        rb.innerHTML = '<span style="font-size:11px;flex:1;color:var(--text-secondary);">🎵 Al-Baqarah · v.42</span><span style="background:var(--accent);color:var(--bg-content);border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700;">▶ Resume</span>';
+        m.appendChild(rb);
+    } else if (type === 'saved') {
+        var items = [['🔖','Al-Ikhlas · v.1'],['📝','My note here…'],['✦','Al-Fatiha · v.7']];
+        items.forEach(function(it) {
+            var li = document.createElement('div');
+            li.className = 'help-mock-list-item';
+            li.innerHTML = '<span>' + it[0] + '</span><span>' + it[1] + '</span>';
+            m.appendChild(li);
+        });
+    } else if (type === 'lang') {
+        var opts = [['🇸🇦','العربية'],['🇫🇷','Français'],['🇬🇧','English']];
+        opts.forEach(function(o) {
+            var li = document.createElement('div');
+            li.className = 'help-mock-list-item';
+            li.innerHTML = '<span>' + o[0] + '</span><span>' + o[1] + '</span>';
+            m.appendChild(li);
+        });
+    } else if (type === 'share') {
+        var v = document.createElement('div');
+        v.className = 'help-mock-verse';
+        v.textContent = 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ';
+        var acts = document.createElement('div');
+        acts.className = 'help-mock-actions';
+        acts.innerHTML = '<span class="help-mock-action-btn">📋 Copy</span><span class="help-mock-action-btn">📤 Share</span><span class="help-mock-action-btn">🔗 Link</span>';
+        m.appendChild(v); m.appendChild(acts);
+    } else if (type === 'yt') {
+        var yt = document.createElement('div');
+        yt.className = 'help-mock-player';
+        yt.innerHTML = '<span style="background:#f00;color:#fff;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;">▶</span><span style="flex:1;color:var(--text-secondary);margin-left:6px;">Regarder la sourate sur YouTube</span>';
+        m.appendChild(yt);
+    } else if (type === 'kbd') {
+        var krow = document.createElement('div');
+        krow.className = 'help-mock-player';
+        krow.style.flexWrap = 'wrap';
+        krow.style.gap = '4px';
+        [['←','Prev'],['→','Next'],['F','Focus'],['?','Help'],['Esc','Close']].forEach(function(k) {
+            krow.innerHTML += '<span class="help-mock-kbd">' + k[0] + '</span><span style="color:var(--text-muted);font-size:10px;margin-right:6px;">' + k[1] + '</span>';
+        });
+        m.appendChild(krow);
+    }
+    return m;
+}
+
+function openHelpModal() {
+    if (document.getElementById('helpOverlay')) return;
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    var strings = HELP_STRINGS[lang] || HELP_STRINGS.english;
+    var isRTL = (lang === 'arabic');
+
+    var overlay = document.createElement('div');
+    overlay.id = 'helpOverlay';
+    overlay.className = 'help-overlay';
+
+    var box = document.createElement('div');
+    box.className = 'help-box';
+    if (isRTL) box.setAttribute('dir', 'rtl');
+
+    // Header
+    var hdr = document.createElement('div');
+    hdr.className = 'help-header';
+    hdr.innerHTML =
+        '<span class="help-title">❓ ' + strings.title + '</span>' +
+        '<button class="help-close" title="Close">✕</button>';
+    box.appendChild(hdr);
+
+    // Body
+    var body = document.createElement('div');
+    body.className = 'help-body';
+
+    // Intro
+    var intro = document.createElement('div');
+    intro.className = 'help-intro';
+    intro.textContent = strings.intro;
+    body.appendChild(intro);
+
+    // Cards
+    var grid = document.createElement('div');
+    grid.className = 'help-grid';
+    strings.cards.forEach(function(c) {
+        var card = document.createElement('div');
+        card.className = 'help-card';
+        var top = document.createElement('div');
+        top.className = 'help-card-top';
+        top.innerHTML = '<span class="help-card-icon">' + c.icon + '</span><span class="help-card-title">' + c.title + '</span>';
+        var desc = document.createElement('div');
+        desc.className = 'help-card-desc';
+        desc.textContent = c.desc;
+        card.appendChild(top);
+        card.appendChild(desc);
+        if (c.mock) card.appendChild(buildHelpMock(c.mock, c.tabs));
+        grid.appendChild(card);
+    });
+    body.appendChild(grid);
+    box.appendChild(body);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+
+    function close() {
+        overlay.classList.remove('show');
+        setTimeout(function() { if (overlay.parentNode) overlay.remove(); }, 280);
+    }
+    hdr.querySelector('.help-close').addEventListener('click', close);
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); }
+    });
+
+    requestAnimationFrame(function() { overlay.classList.add('show'); });
+}
+
+// Wire desktop Help & Feedback buttons
+(function wireDesktopSupport() {
+    function attach() {
+        var helpBtn = document.getElementById('desktopHelpBtn');
+        if (helpBtn && !helpBtn._wired) {
+            helpBtn._wired = true;
+            helpBtn.addEventListener('click', openHelpModal);
+        }
+        var fbBtn = document.getElementById('desktopFeedbackBtn');
+        if (fbBtn && !fbBtn._wired) {
+            fbBtn._wired = true;
+            fbBtn.addEventListener('click', function() {
+                var v = 'v10.15.2';
+                window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20' + v + '%0A%0A', '_blank');
+            });
+        }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+    else attach();
+}());
+
+// ════════════════════════════════════════════════════════════════════
 // v10.15 — YOUTUBE CHANNEL (French recitation videos)
 // Per-surah full-video link shown only in French view.
 // Also surfaces a "Notre chaîne YouTube" entry in Settings (all languages).

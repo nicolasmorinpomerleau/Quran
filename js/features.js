@@ -4910,6 +4910,107 @@ async function scheduleNextDailyNotification() {
 // ════════════════════════════════════════════════════════════════════
 // v10.15.2 — HELP & TUTORIAL modal (multilingual, desktop + mobile)
 // ════════════════════════════════════════════════════════════════════
+// Action key for each card (same order across all languages)
+var CARD_ACTIONS = [
+    'navigation', 'themes', 'search', 'audio', 'resume',
+    'saved', 'lang', 'share', 'yt', 'kbd'
+];
+
+// "Show me" label per language
+var SHOW_ME_LABEL = {
+    english: '→ Show me',
+    french:  '→ Voir',
+    arabic:  '← أرني',
+    spanish: '→ Mostrar'
+};
+
+function featureSpotlight(el) {
+    if (!el) return;
+    // Dim backdrop
+    var bd = document.createElement('div');
+    bd.className = 'feature-spotlight-backdrop';
+    document.body.appendChild(bd);
+    requestAnimationFrame(function() { bd.classList.add('show'); });
+    // Scroll + pulse the target
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(function() {
+        el.classList.add('feature-highlighted');
+        // Remove backdrop after first pulse cycle
+        setTimeout(function() {
+            bd.classList.remove('show');
+            setTimeout(function() { if (bd.parentNode) bd.remove(); }, 350);
+        }, 900);
+        // Remove highlight class after animation finishes (3 cycles × 0.9s)
+        setTimeout(function() { el.classList.remove('feature-highlighted'); }, 2800);
+    }, 350);
+}
+
+function ensureSidebarOpen() {
+    var sidebar = document.getElementById('sidebar');
+    if (sidebar && !sidebar.classList.contains('open')) {
+        if (typeof openSidebar === 'function') openSidebar();
+    }
+}
+
+function expandSideGroupOf(el) {
+    if (!el) return;
+    var group = el.closest('.side-group');
+    if (group && !group.classList.contains('side-group-open')) {
+        group.classList.add('side-group-open');
+    }
+}
+
+function executeFeatureAction(key) {
+    switch (key) {
+        case 'navigation':
+            var toc = document.getElementById('tocContainer');
+            if (toc) featureSpotlight(document.getElementById('tocTabRow') || toc);
+            break;
+        case 'themes':
+            featureSpotlight(document.getElementById('themeSwitcher'));
+            break;
+        case 'search':
+            ensureSidebarOpen();
+            var si = document.getElementById('search-input');
+            if (si) {
+                expandSideGroupOf(si);
+                featureSpotlight(si.closest('.side-group-body') || si);
+                setTimeout(function() { si.focus(); }, 700);
+            }
+            break;
+        case 'audio':
+            var ab = document.querySelector('.verse-audio-btn');
+            if (ab) featureSpotlight(ab);
+            else if (typeof showToast === 'function') showToast('🔊 Tap the speaker icon on any verse');
+            break;
+        case 'resume':
+            if (typeof showToast === 'function') showToast('🎵 Play a verse — the position saves automatically');
+            break;
+        case 'saved':
+            var bBtn = document.getElementById('bookmarksBtn');
+            if (bBtn) { bBtn.click(); setTimeout(function() { featureSpotlight(document.getElementById('bookmarksPanel')); }, 400); }
+            break;
+        case 'lang':
+            ensureSidebarOpen();
+            var ls = document.getElementById('languageSelector');
+            if (ls) { expandSideGroupOf(ls); featureSpotlight(ls.closest('.side-group-body') || ls); }
+            break;
+        case 'share':
+            var va = document.querySelector('.verse-actions');
+            if (va) featureSpotlight(va);
+            else if (typeof showToast === 'function') showToast('📤 Tap any verse to reveal share actions');
+            break;
+        case 'yt':
+            var yts = document.getElementById('ytFrSection');
+            if (yts) featureSpotlight(yts);
+            else if (typeof showToast === 'function') showToast('▶ Switch to French to see YouTube links');
+            break;
+        case 'kbd':
+            if (typeof toggleShortcutsHelp === 'function') toggleShortcutsHelp();
+            break;
+    }
+}
+
 var HELP_STRINGS = {
     english: {
         title:  'Help & Tutorial',
@@ -5322,20 +5423,31 @@ function openHelpModal() {
     body.appendChild(intro);
 
     // Cards
+    var showMeLabel = SHOW_ME_LABEL[lang] || SHOW_ME_LABEL.english;
     var grid = document.createElement('div');
     grid.className = 'help-grid';
-    strings.cards.forEach(function(c) {
+    strings.cards.forEach(function(c, idx) {
+        var actionKey = CARD_ACTIONS[idx];
         var card = document.createElement('div');
         card.className = 'help-card';
+        card.style.cursor = 'pointer';
         var top = document.createElement('div');
         top.className = 'help-card-top';
         top.innerHTML = '<span class="help-card-icon">' + c.icon + '</span><span class="help-card-title">' + c.title + '</span>';
         var desc = document.createElement('div');
         desc.className = 'help-card-desc';
         desc.textContent = c.desc;
+        var pill = document.createElement('div');
+        pill.className = 'help-card-showme';
+        pill.textContent = showMeLabel;
         card.appendChild(top);
         card.appendChild(desc);
         if (c.mock) card.appendChild(buildHelpMock(c.mock, c.tabs));
+        card.appendChild(pill);
+        card.addEventListener('click', function() {
+            close();
+            setTimeout(function() { executeFeatureAction(actionKey); }, 320);
+        });
         grid.appendChild(card);
     });
     body.appendChild(grid);

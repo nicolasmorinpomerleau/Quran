@@ -4314,6 +4314,35 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .yt-channel-arr { opacity: 0.5; font-size: 14px; }
 
 /* ════════════════════════════════════════════════════════════════════
+   v10.15.3 — Feature spotlight animation
+   Pulsing golden glow that frames the target element after "Show me"
+   ════════════════════════════════════════════════════════════════════ */
+@keyframes feature-spotlight-pulse {
+    0%   { outline: 0px solid var(--accent); outline-offset: 0px;  box-shadow: none; }
+    15%  { outline: 3px solid var(--accent); outline-offset: 6px;  box-shadow: 0 0 0 10px var(--accent-trace); }
+    50%  { outline: 3px solid var(--accent); outline-offset: 4px;  box-shadow: 0 0 0 6px var(--accent-trace); }
+    85%  { outline: 3px solid var(--accent); outline-offset: 6px;  box-shadow: 0 0 0 10px var(--accent-trace); }
+    100% { outline: 0px solid var(--accent); outline-offset: 0px;  box-shadow: none; }
+}
+.feature-highlighted {
+    animation: feature-spotlight-pulse 0.9s ease-in-out 3;
+    border-radius: 8px;
+    position: relative;
+    z-index: 5;
+}
+/* Dim backdrop that briefly appears behind the spotlight */
+.feature-spotlight-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+.feature-spotlight-backdrop.show { opacity: 1; }
+
+/* ════════════════════════════════════════════════════════════════════
    v10.15.2 — Desktop Support buttons
    ════════════════════════════════════════════════════════════════════ */
 #desktopSupportBtns {
@@ -4384,7 +4413,7 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 }
 .help-title {
     font-family: var(--font-heading);
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--accent);
     letter-spacing: 0.02em;
@@ -4412,12 +4441,21 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     background: var(--accent-trace);
     border: 1px solid var(--accent-faint);
     border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 20px;
+    padding: 16px 18px;
+    margin-bottom: 22px;
     font-family: var(--font-ui);
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: 1.75;
+}
+[dir="rtl"] .help-intro {
+    font-family: var(--font-arabic);
+    font-size: 16px;
+    line-height: 1.9;
+}
+[dir="rtl"] .help-title {
+    font-family: var(--font-arabic);
+    font-size: 22px;
 }
 /* Feature cards grid */
 .help-grid {
@@ -4446,24 +4484,59 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .help-card-top {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
 }
 .help-card-icon {
-    font-size: 26px;
+    font-size: 30px;
     line-height: 1;
     flex-shrink: 0;
 }
 .help-card-title {
     font-family: var(--font-heading);
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 700;
     color: var(--accent);
+    letter-spacing: 0.01em;
 }
 .help-card-desc {
     font-family: var(--font-ui);
-    font-size: 12px;
+    font-size: 13.5px;
     color: var(--text-secondary);
-    line-height: 1.6;
+    line-height: 1.75;
+}
+[dir="rtl"] .help-card-desc {
+    font-family: var(--font-arabic);
+    font-size: 15px;
+    line-height: 1.9;
+}
+[dir="rtl"] .help-card-title {
+    font-family: var(--font-arabic);
+    font-size: 17px;
+}
+/* "Show me" pill — visible on hover */
+.help-card-showme {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+    font-family: var(--font-ui);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-trace);
+    border: 1px solid var(--accent-faint);
+    border-radius: 99px;
+    padding: 3px 10px;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition: opacity 0.18s, transform 0.18s;
+    width: fit-content;
+    cursor: pointer;
+}
+[dir="rtl"] .help-card-showme { transform: translateX(4px); }
+.help-card:hover .help-card-showme {
+    opacity: 1;
+    transform: translateX(0);
 }
 /* Mini UI mockups inside cards */
 .help-mock {

@@ -4314,8 +4314,9 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .yt-channel-arr { opacity: 0.5; font-size: 14px; }
 
 /* ════════════════════════════════════════════════════════════════════
-   v10.15.3 — Feature spotlight animation
-   Pulsing golden glow that frames the target element after "Show me"
+   v10.15.4 — Feature spotlight animation
+   Lens: transparent window with huge box-shadow that dims the rest.
+   Pulse: golden glow on the target, visible through the lens.
    ════════════════════════════════════════════════════════════════════ */
 @keyframes feature-spotlight-pulse {
     0%   { outline: 0px solid var(--accent); outline-offset: 0px;  box-shadow: none; }
@@ -4330,17 +4331,24 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     position: relative;
     z-index: 5;
 }
-/* Dim backdrop that briefly appears behind the spotlight */
-.feature-spotlight-backdrop {
+/* Spotlight lens: transparent rectangle, everything outside dimmed + blurred */
+.feature-spotlight-lens {
     position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.35);
-    z-index: 4;
+    border-radius: 10px;
     pointer-events: none;
+    z-index: 9001;
+    background: transparent;
+    /* huge shadow dims all outside the window; accent ring + glow frame the feature */
+    box-shadow:
+        0 0 0 9999px rgba(0,0,0,0.70),
+        0 0 0 2px var(--accent),
+        0 0 28px 10px var(--accent-dim);
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.3s ease;
 }
-.feature-spotlight-backdrop.show { opacity: 1; }
+.feature-spotlight-lens.show { opacity: 1; }
+/* Keep old backdrop class intact in case any call still references it */
+.feature-spotlight-backdrop { display: none; }
 
 /* ════════════════════════════════════════════════════════════════════
    v10.15.2 — Desktop Support buttons

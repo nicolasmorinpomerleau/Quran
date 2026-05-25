@@ -4926,22 +4926,27 @@ var SHOW_ME_LABEL = {
 
 function featureSpotlight(el) {
     if (!el) return;
-    // Dim backdrop
-    var bd = document.createElement('div');
-    bd.className = 'feature-spotlight-backdrop';
-    document.body.appendChild(bd);
-    requestAnimationFrame(function() { bd.classList.add('show'); });
-    // Scroll + pulse the target
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     setTimeout(function() {
+        var rect = el.getBoundingClientRect();
+        var pad  = 14;
+        // Spotlight lens: transparent window — huge box-shadow dims everything outside
+        var lens = document.createElement('div');
+        lens.className = 'feature-spotlight-lens';
+        lens.style.top    = (rect.top    - pad) + 'px';
+        lens.style.left   = (rect.left   - pad) + 'px';
+        lens.style.width  = (rect.width  + pad * 2) + 'px';
+        lens.style.height = (rect.height + pad * 2) + 'px';
+        document.body.appendChild(lens);
+        requestAnimationFrame(function() { lens.classList.add('show'); });
+        // Pulse the target (visible through the transparent lens)
         el.classList.add('feature-highlighted');
-        // Remove backdrop after first pulse cycle
+        // Remove everything after 3 pulse cycles × 0.9 s
         setTimeout(function() {
-            bd.classList.remove('show');
-            setTimeout(function() { if (bd.parentNode) bd.remove(); }, 350);
-        }, 900);
-        // Remove highlight class after animation finishes (3 cycles × 0.9s)
-        setTimeout(function() { el.classList.remove('feature-highlighted'); }, 2800);
+            lens.classList.remove('show');
+            el.classList.remove('feature-highlighted');
+            setTimeout(function() { if (lens.parentNode) lens.remove(); }, 350);
+        }, 2800);
     }, 350);
 }
 

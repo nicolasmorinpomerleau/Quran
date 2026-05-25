@@ -27,18 +27,18 @@ html { font-size: 16px; }
     --accent-dim:      #c9a44480;
     --accent-faint:    #c9a44428;
     --accent-trace:    #c9a44412;
-    --text-primary:    #f0e6c0;
-    --text-secondary:  #d4b86a;
-    --text-muted:      #c9a44470;
+    --text-primary:    #f5ecce;
+    --text-secondary:  #dcc070;
+    --text-muted:      #c9a444cc;
     --text-btn:        #c9a444;
-    --text-toc:        #c9a44475;
-    --text-toc-active: #c9a444;
-    --text-verse:      #f0e0b0;
-    --text-hijri:      #c9a444;
-    --text-result:     #c9a44488;
-    --text-result-h:   #e8d5a0;
-    --border:          #c9a44428;
-    --border-mid:      #c9a44445;
+    --text-toc:        #c9a444bb;
+    --text-toc-active: #e8c85a;
+    --text-verse:      #f2e4b8;
+    --text-hijri:      #dcc070;
+    --text-result:     #c9a444cc;
+    --text-result-h:   #f0dfa8;
+    --border:          #c9a44435;
+    --border-mid:      #c9a44455;
     --border-verse:    #c9a44420;
     --border-btn:      #c9a44440;
     --border-input:    #c9a44435;
@@ -812,6 +812,13 @@ footer {
 /* ════════════════════════════════════════════════════════════════════
    THEME OVERRIDES
    ════════════════════════════════════════════════════════════════════ */
+
+/* Manuscript: sharper font rendering on dark background */
+[data-theme="manuscript"] {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 [data-theme="manuscript"] .verse { padding: 26px 4px; }
 [data-theme="manuscript"] .secondary-verse { color: #c9a444cc; }
 [data-theme="manuscript"] #suraTitle::before,

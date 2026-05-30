@@ -4094,7 +4094,9 @@ function getHijriSpecialDate(h) {
 }
 
 function appendHijriBadge() {
-    var h = getTodayHijri();
+    // Prefer the API-fetched date (window._hijriToday) so badge matches the displayed date.
+    // Fall back to the local approximation only when the API hasn't responded yet.
+    var h = window._hijriToday || getTodayHijri();
     var label = formatHijri(h);
     var special = getHijriSpecialDate(h);
     var bannerHost = document.querySelector('.settings-meditation');
@@ -5427,32 +5429,21 @@ function openHelpModal() {
     intro.textContent = strings.intro;
     body.appendChild(intro);
 
-    // Cards
-    var showMeLabel = SHOW_ME_LABEL[lang] || SHOW_ME_LABEL.english;
+    // Cards (click-to-navigate disabled — will be re-enabled in a later version)
     var grid = document.createElement('div');
     grid.className = 'help-grid';
-    strings.cards.forEach(function(c, idx) {
-        var actionKey = CARD_ACTIONS[idx];
+    strings.cards.forEach(function(c) {
         var card = document.createElement('div');
         card.className = 'help-card';
-        card.style.cursor = 'pointer';
         var top = document.createElement('div');
         top.className = 'help-card-top';
         top.innerHTML = '<span class="help-card-icon">' + c.icon + '</span><span class="help-card-title">' + c.title + '</span>';
         var desc = document.createElement('div');
         desc.className = 'help-card-desc';
         desc.textContent = c.desc;
-        var pill = document.createElement('div');
-        pill.className = 'help-card-showme';
-        pill.textContent = showMeLabel;
         card.appendChild(top);
         card.appendChild(desc);
         if (c.mock) card.appendChild(buildHelpMock(c.mock, c.tabs));
-        card.appendChild(pill);
-        card.addEventListener('click', function() {
-            close();
-            setTimeout(function() { executeFeatureAction(actionKey); }, 320);
-        });
         grid.appendChild(card);
     });
     body.appendChild(grid);
@@ -5809,9 +5800,86 @@ document.addEventListener('change', function(e) {
     }, 80);
 });
 
+// ════════════════════════════════════════════════════════════════════
+// v10.15.7 — SURAH COMPLETION BURST
+// Called from script.js via IntersectionObserver on the last verse.
+// ════════════════════════════════════════════════════════════════════
+function triggerSurahCompleteFX(el) {
+    if (!el) return;
+    var rect = el.getBoundingClientRect();
+    var cx = Math.round(rect.left + rect.width  / 2);
+    var cy = Math.round(rect.top  + rect.height / 2);
+    [0, 190, 380].forEach(function(delay) {
+        setTimeout(function() {
+            var ring = document.createElement('div');
+            ring.className = 'surah-complete-ring';
+            ring.style.left = cx + 'px';
+            ring.style.top  = cy + 'px';
+            document.body.appendChild(ring);
+            setTimeout(function() { if (ring.parentNode) ring.remove(); }, 1200);
+        }, delay);
+    });
+}
+
+// ════════════════════════════════════════════════════════════════════
+// v10.15.7 — DAILY READING STREAK BADGE
+// Tracks consecutive days the app is opened; shows 🔥 N in sidebar.
+// ════════════════════════════════════════════════════════════════════
+var STREAK_STORE_KEY = 'quranStreak';
+
+var _STREAK_LABEL = {
+    english: 'day streak',
+    french:  'jours consécutifs',
+    arabic:  'يوم متواصل',
+    spanish: 'días seguidos'
+};
+
+function updateDailyStreak() {
+    var data = lsGet(STREAK_STORE_KEY, { current: 0, lastSeen: '' });
+    var today = new Date().toISOString().slice(0, 10);
+    if (data.lastSeen === today) return data.current;
+    var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    data.current = (data.lastSeen === yesterday) ? data.current + 1 : 1;
+    data.lastSeen = today;
+    lsSet(STREAK_STORE_KEY, data);
+    return data.current;
+}
+
+function renderStreakBadge() {
+    var old = document.getElementById('sidebarStreakBadge');
+    if (old) old.remove();
+    var streak = updateDailyStreak();
+    var hijriEl = document.getElementById('hijriMonth');
+    if (!hijriEl) return;
+    var lang = (typeof currentLanguage !== 'undefined') ? currentLanguage : 'english';
+    var label = _STREAK_LABEL[lang] || _STREAK_LABEL.english;
+    var badge = document.createElement('div');
+    badge.id = 'sidebarStreakBadge';
+    badge.className = 'sidebar-streak-badge';
+    badge.title = streak + ' consecutive days of reading';
+    badge.innerHTML =
+        '<span class="ssb-flame">🔥</span>' +
+        '<span class="ssb-num">' + streak + '</span>' +
+        '<span class="ssb-label">' + label + '</span>';
+    hijriEl.appendChild(badge);
+}
+
+// Also refresh the streak label when language changes
+(function() {
+    var _origApplyUI = window.applyUILanguage;
+    if (typeof _origApplyUI === 'function') {
+        window.applyUILanguage = function(language) {
+            _origApplyUI.call(this, language);
+            renderStreakBadge();
+        };
+    }
+})();
+
 // ── 24h Hijri event alert — called once both scripts are loaded ───────────────
 window.addEventListener('load', function() {
     setTimeout(function() {
         if (typeof checkHijriEventAlert === 'function') checkHijriEventAlert();
     }, 1200);
+    // Streak badge — give the app 700 ms to finish rendering
+    setTimeout(renderStreakBadge, 700);
 });

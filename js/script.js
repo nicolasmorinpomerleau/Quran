@@ -146,16 +146,23 @@ async function getHijriCalendarForMonth() {
             const monthName = (h.month && h.month.ar) ? h.month.ar : HijriMonthsAr[h.month.number-1];
             el.querySelector('.date-hijri').textContent =
                 h.day + ' ' + monthName + ' ' + h.year + ' هـ';
+            // Store for badge/popup so both use the same authoritative value
+            window._hijriToday = {
+                day:       parseInt(h.day, 10),
+                month:     parseInt(h.month.number, 10),
+                year:      parseInt(h.year, 10),
+                monthName: monthName
+            };
         }
     } catch(e) {}
 }
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', footer:'القرآن الكريم · v10.15.4 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', footer:'Coran v10.15.4 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', footer:'Quran Display v10.15.4 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', footer:'Corán v10.15.4 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', settingsTitle:'⚙️ الإعدادات', settingsFontSize:'حجم الخط', settingsVerseLabel:'آية', settingsTranslLabel:'ترجمة', settingsAddTransl:'إضافة ترجمة', settingsAddLangPh:'+ أضف لغة…', footer:'القرآن الكريم · v10.15.7 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', settingsTitle:'⚙️ Paramètres', settingsFontSize:'Taille de police', settingsVerseLabel:'Verset', settingsTranslLabel:'Traduction', settingsAddTransl:'Ajouter une traduction', settingsAddLangPh:'+ Ajouter une langue…', footer:'Coran v10.15.7 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', settingsTitle:'⚙️ Settings', settingsFontSize:'Font size', settingsVerseLabel:'Verse', settingsTranslLabel:'Translation', settingsAddTransl:'Add a translation', settingsAddLangPh:'+ Add a language…', footer:'Quran Display v10.15.7 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', settingsTitle:'⚙️ Configuración', settingsFontSize:'Tamaño de fuente', settingsVerseLabel:'Verso', settingsTranslLabel:'Traducción', settingsAddTransl:'Añadir traducción', settingsAddLangPh:'+ Añadir un idioma…', footer:'Corán v10.15.7 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -1592,6 +1599,22 @@ function displaySingleSura(suraId) {
     container.scrollTop = 0;
     clearSuraContext();
     markSuraAsRead(suraId);
+    // Surah completion burst — arm after 800 ms so short surahs don't fire on load
+    (function() {
+        var verses = container.querySelectorAll('.verse');
+        var lastV  = verses[verses.length - 1];
+        if (!lastV) return;
+        var armed  = false;
+        var armTimer = setTimeout(function() { armed = true; }, 800);
+        var obs = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting && armed) {
+                obs.disconnect();
+                clearTimeout(armTimer);
+                if (typeof triggerSurahCompleteFX === 'function') triggerSurahCompleteFX(lastV);
+            }
+        }, { threshold: 0.6, root: container });
+        obs.observe(lastV);
+    })();
     // v10.12: SYNCHRONOUS audio button attach — eliminates race condition
     if (typeof attachAudioButtons === 'function') attachAudioButtons();
     // v10.7 BUG FIX: re-apply additional languages on every sura change
@@ -1623,6 +1646,22 @@ function displaySingleRevelationSura(suraNum) {
     const ctx = document.getElementById('suraContent');
     ctx.classList.replace('sura-contexte','eraseDiv'); ctx.innerHTML = '';
     markSuraAsRead(suraNum - 1);
+    // Surah completion burst (same logic as displaySingleSura)
+    (function() {
+        var verses = container.querySelectorAll('.verse');
+        var lastV  = verses[verses.length - 1];
+        if (!lastV) return;
+        var armed  = false;
+        var armTimer = setTimeout(function() { armed = true; }, 800);
+        var obs = new IntersectionObserver(function(entries) {
+            if (entries[0].isIntersecting && armed) {
+                obs.disconnect();
+                clearTimeout(armTimer);
+                if (typeof triggerSurahCompleteFX === 'function') triggerSurahCompleteFX(lastV);
+            }
+        }, { threshold: 0.6, root: container });
+        obs.observe(lastV);
+    })();
     // v10.7 BUG FIX: same re-apply logic as displaySingleSura
     if (additionalLanguages && additionalLanguages.length > 0) {
         additionalLanguages.forEach(function(code) {
@@ -3187,7 +3226,8 @@ function closeMobileDrawer() {
 
 // ── Settings sheet ────────────────────────────────────────────────
 function buildSheetSettings(body, title) {
-    title.textContent = '⚙️ Settings';
+    var t = uiTranslations[currentLanguage] || uiTranslations.english;
+    title.textContent = t.settingsTitle;
 
     // v10.3: Meditation banner — frontispiece quote from Surah Muhammad (47:24)
     var med = document.createElement('div');
@@ -3254,7 +3294,7 @@ function buildSheetSettings(body, title) {
     // Language section
     var langSection = document.createElement('div');
     langSection.className = 'mob-settings-section';
-    var langLbl = document.createElement('div'); langLbl.className = 'mob-settings-lbl'; langLbl.textContent = 'Quran language';
+    var langLbl = document.createElement('div'); langLbl.className = 'mob-settings-lbl'; langLbl.textContent = t.langQuranLabel;
     var langSel = document.createElement('select'); langSel.className = 'mob-settings-select';
     [['arabic','Arabic'],['french','Français'],['english','English'],['spanish','Español']].forEach(function(pair){
         var opt = document.createElement('option'); opt.value = pair[0]; opt.textContent = pair[1];
@@ -3271,11 +3311,11 @@ function buildSheetSettings(body, title) {
     // Font size section
     var fontSection = document.createElement('div');
     fontSection.className = 'mob-settings-section';
-    var fontLbl = document.createElement('div'); fontLbl.className = 'mob-settings-lbl'; fontLbl.textContent = 'Font size';
+    var fontLbl = document.createElement('div'); fontLbl.className = 'mob-settings-lbl'; fontLbl.textContent = t.settingsFontSize;
     fontSection.appendChild(fontLbl);
     [
-        { label:'Verse',       id:'arabicFontSlider', valId:'arabicFontVal', min:1.2, max:5, step:0.1 },
-        { label:'Translation', id:'transFontSlider',  valId:'transFontVal',  min:0.7, max:3, step:0.05 }
+        { label: t.settingsVerseLabel, id:'arabicFontSlider', valId:'arabicFontVal', min:1.2, max:5, step:0.1 },
+        { label: t.settingsTranslLabel, id:'transFontSlider',  valId:'transFontVal',  min:0.7, max:3, step:0.05 }
     ].forEach(function(cfg) {
         var row = document.createElement('div'); row.className = 'mob-slider-row';
         var lbl = document.createElement('span'); lbl.className = 'mob-slider-label'; lbl.textContent = cfg.label;
@@ -3308,7 +3348,7 @@ function buildSheetSettings(body, title) {
     // Add translation language section
     var transSection = document.createElement('div');
     transSection.className = 'mob-settings-section';
-    var transLbl = document.createElement('div'); transLbl.className = 'mob-settings-lbl'; transLbl.textContent = 'Add a translation';
+    var transLbl = document.createElement('div'); transLbl.className = 'mob-settings-lbl'; transLbl.textContent = t.settingsAddTransl;
     transSection.appendChild(transLbl);
 
     // Show active language tags with remove button
@@ -3337,7 +3377,7 @@ function buildSheetSettings(body, title) {
     var addSel = document.createElement('select'); addSel.className = 'mob-settings-select';
     function rebuildAddSel() {
         addSel.innerHTML = '';
-        var placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = '+ Add a language…'; addSel.appendChild(placeholder);
+        var placeholder = document.createElement('option'); placeholder.value = ''; placeholder.textContent = t.settingsAddLangPh; addSel.appendChild(placeholder);
         [['arabic','Arabic'],['french','Français'],['english','English'],['spanish','Español']].forEach(function(pair) {
             if (pair[0] === currentLanguage) return;
             if (additionalLanguages.indexOf(pair[0]) !== -1) return;
@@ -3457,19 +3497,6 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     });
 });
 
-// ── Helper: reopen drawer when a feature modal is dismissed ──────
-// Polls until the element with `modalId` is gone from DOM, then calls openMobileDrawer.
-function watchForModalClose(modalId) {
-    var timer = setInterval(function() {
-        if (!document.getElementById(modalId)) {
-            clearInterval(timer);
-            openMobileDrawer();
-        }
-    }, 150);
-    // Safety: stop polling after 5 minutes even if modal never closes
-    setTimeout(function() { clearInterval(timer); }, 300000);
-}
-
 // ── Phone drawer event wiring ────────────────────────────────────
 (function() {
     var closeBtn = document.getElementById('mobileDrawerClose');
@@ -3539,7 +3566,7 @@ function watchForModalClose(modalId) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.15.4%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.15.7%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

@@ -4314,23 +4314,20 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 .yt-channel-arr { opacity: 0.5; font-size: 14px; }
 
 /* ════════════════════════════════════════════════════════════════════
-   v10.15.7 — Surah completion burst rings
-   Three staggered rings expand from the last verse center and fade out.
+   v10.15.8 — Surah completion confetti celebration
+   Pieces fall from the top with rotation + horizontal drift.
    ════════════════════════════════════════════════════════════════════ */
-@keyframes surah-complete-ring {
-    0%   { transform: translate(-50%, -50%) scale(0);  opacity: 0.85; }
-    100% { transform: translate(-50%, -50%) scale(7);  opacity: 0; }
+@keyframes confetti-drop {
+    0%   { transform: translateX(0)               translateY(-20px) rotate(0deg)            scaleX(1);   opacity: 1; }
+    15%  { opacity: 1; }
+    85%  { opacity: 0.9; }
+    100% { transform: translateX(var(--cdrift,0)) translateY(110vh) rotate(var(--crot,360deg)) scaleX(var(--cflip,1)); opacity: 0; }
 }
-.surah-complete-ring {
+.confetti-piece {
     position: fixed;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
     pointer-events: none;
     z-index: 8000;
-    border: 2px solid var(--accent);
-    box-shadow: 0 0 14px var(--accent-dim), inset 0 0 6px var(--accent-faint);
-    animation: surah-complete-ring 1.1s cubic-bezier(0.2, 0.8, 0.35, 1) forwards;
+    animation: confetti-drop var(--cdur, 2s) ease-in forwards;
 }
 
 /* ════════════════════════════════════════════════════════════════════

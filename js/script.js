@@ -159,10 +159,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', settingsTitle:'⚙️ الإعدادات', settingsFontSize:'حجم الخط', settingsVerseLabel:'آية', settingsTranslLabel:'ترجمة', settingsAddTransl:'إضافة ترجمة', settingsAddLangPh:'+ أضف لغة…', footer:'القرآن الكريم · v10.15.7 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', settingsTitle:'⚙️ Paramètres', settingsFontSize:'Taille de police', settingsVerseLabel:'Verset', settingsTranslLabel:'Traduction', settingsAddTransl:'Ajouter une traduction', settingsAddLangPh:'+ Ajouter une langue…', footer:'Coran v10.15.7 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', settingsTitle:'⚙️ Settings', settingsFontSize:'Font size', settingsVerseLabel:'Verse', settingsTranslLabel:'Translation', settingsAddTransl:'Add a translation', settingsAddLangPh:'+ Add a language…', footer:'Quran Display v10.15.7 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', settingsTitle:'⚙️ Configuración', settingsFontSize:'Tamaño de fuente', settingsVerseLabel:'Verso', settingsTranslLabel:'Traducción', settingsAddTransl:'Añadir traducción', settingsAddLangPh:'+ Añadir un idioma…', footer:'Corán v10.15.7 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', settingsTitle:'⚙️ الإعدادات', settingsFontSize:'حجم الخط', settingsVerseLabel:'آية', settingsTranslLabel:'ترجمة', settingsAddTransl:'إضافة ترجمة', settingsAddLangPh:'+ أضف لغة…', sectionSearch:'بحث', sectionDisplay:'العرض', sectionLanguages:'اللغات', sectionTools:'الأدوات', sectionSupport:'الدعم', footer:'القرآن الكريم · v10.15.8 · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', settingsTitle:'⚙️ Paramètres', settingsFontSize:'Taille de police', settingsVerseLabel:'Verset', settingsTranslLabel:'Traduction', settingsAddTransl:'Ajouter une traduction', settingsAddLangPh:'+ Ajouter une langue…', sectionSearch:'Recherche', sectionDisplay:'Affichage', sectionLanguages:'Langues', sectionTools:'Outils', sectionSupport:'Assistance', footer:'Coran v10.15.8 — Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', settingsTitle:'⚙️ Settings', settingsFontSize:'Font size', settingsVerseLabel:'Verse', settingsTranslLabel:'Translation', settingsAddTransl:'Add a translation', settingsAddLangPh:'+ Add a language…', sectionSearch:'Search', sectionDisplay:'Display', sectionLanguages:'Languages', sectionTools:'Tools', sectionSupport:'Support', footer:'Quran Display v10.15.8 — May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', settingsTitle:'⚙️ Configuración', settingsFontSize:'Tamaño de fuente', settingsVerseLabel:'Verso', settingsTranslLabel:'Traducción', settingsAddTransl:'Añadir traducción', settingsAddLangPh:'+ Añadir un idioma…', sectionSearch:'Búsqueda', sectionDisplay:'Pantalla', sectionLanguages:'Idiomas', sectionTools:'Herramientas', sectionSupport:'Asistencia', footer:'Corán v10.15.8 — Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -202,6 +202,16 @@ function applyUILanguage(language) {
         mobInp.placeholder = placeholderMap2[language] || placeholderMap2.english;
         mobInp.style.direction = dir;
     }
+    // Translate all data-i18n elements (section headers, font labels, etc.)
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+        var key = el.getAttribute('data-i18n');
+        if (t[key] !== undefined) {
+            el.textContent  = t[key];
+            el.style.direction  = dir;
+            el.style.textAlign  = aln;
+            el.style.fontFamily = t.rtl ? 'var(--font-arabic)' : '';
+        }
+    });
     // Translate & align sidebar section labels
     document.querySelectorAll('.SelectLanguage').forEach(function(el) {
         el.style.direction  = dir;
@@ -3566,7 +3576,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.15.7%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.15.8%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

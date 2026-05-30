@@ -5801,24 +5801,58 @@ document.addEventListener('change', function(e) {
 });
 
 // ════════════════════════════════════════════════════════════════════
-// v10.15.7 — SURAH COMPLETION BURST
+// v10.15.8 — SURAH COMPLETION CONFETTI CELEBRATION
+// YouTube-style milestone: pieces rain from the top with tumble + drift.
 // Called from script.js via IntersectionObserver on the last verse.
 // ════════════════════════════════════════════════════════════════════
-function triggerSurahCompleteFX(el) {
-    if (!el) return;
-    var rect = el.getBoundingClientRect();
-    var cx = Math.round(rect.left + rect.width  / 2);
-    var cy = Math.round(rect.top  + rect.height / 2);
-    [0, 190, 380].forEach(function(delay) {
-        setTimeout(function() {
-            var ring = document.createElement('div');
-            ring.className = 'surah-complete-ring';
-            ring.style.left = cx + 'px';
-            ring.style.top  = cy + 'px';
-            document.body.appendChild(ring);
-            setTimeout(function() { if (ring.parentNode) ring.remove(); }, 1200);
-        }, delay);
-    });
+function triggerSurahCompleteFX() {
+    // Colours: gold-themed + celebration palette
+    var palette = [
+        '#c9a444','#e8c85a','#f5ecce',  // app gold tones
+        '#f43f5e','#fb923c','#facc15',  // warm
+        '#4ade80','#38bdf8','#a78bfa',  // cool
+        '#fb7185','#ffffff'             // pink + white
+    ];
+    var TOTAL = 45;
+
+    for (var i = 0; i < TOTAL; i++) {
+        (function(idx) {
+            // Stagger launches: most in first 600 ms, a few late stragglers
+            var delay = idx * 35 + Math.random() * 180;
+            setTimeout(function() {
+                var piece   = document.createElement('div');
+                piece.className = 'confetti-piece';
+
+                var color   = palette[Math.floor(Math.random() * palette.length)];
+                var isCirc  = Math.random() < 0.22;
+                var isStrm  = !isCirc && Math.random() < 0.35;  // thin streamer
+                var w       = isCirc ? 8  : (isStrm ? 4 : 6 + Math.floor(Math.random() * 6));
+                var h       = isCirc ? 8  : (isStrm ? 14 + Math.floor(Math.random() * 10) : w);
+                var left    = 2  + Math.random() * 96;           // 2–98 vw
+                var dur     = 1.5 + Math.random() * 1.5;         // 1.5–3 s
+                var rot     = (Math.random() > 0.5 ? 1 : -1) * (180 + Math.random() * 540);
+                var drift   = (Math.random() - 0.5) * 160;       // ±80 px horizontal
+                var flip    = 0.5 + Math.random() * 0.8;         // scaleX wobble end-state
+
+                piece.style.cssText = [
+                    'left:'    + left + 'vw',
+                    'top:-20px',
+                    'width:'   + w + 'px',
+                    'height:'  + h + 'px',
+                    'background:' + color,
+                    'border-radius:' + (isCirc ? '50%' : isStrm ? '1px' : '2px'),
+                    '--cdur:'   + dur   + 's',
+                    '--cdrift:' + drift + 'px',
+                    '--crot:'   + rot   + 'deg',
+                    '--cflip:'  + flip,
+                    'animation-duration:' + dur + 's'
+                ].join(';');
+
+                document.body.appendChild(piece);
+                setTimeout(function() { if (piece.parentNode) piece.remove(); }, (dur + 0.4) * 1000);
+            }, delay);
+        })(i);
+    }
 }
 
 // ════════════════════════════════════════════════════════════════════

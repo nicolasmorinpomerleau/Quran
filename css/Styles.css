@@ -809,6 +809,49 @@ footer {
     letter-spacing: 0.02em;
 }
 
+/* Phone: hide footer — version lives in settings sheet */
+@media (max-width: 767px) {
+    #appFooter { display: none; }
+}
+
+/* Desktop sidebar version tag */
+.sidebar-version {
+    flex-shrink: 0;
+    padding: 10px 18px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    opacity: 0.65;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.04em;
+}
+
+/* Phone: hide sidebar version (it's in the settings sheet instead) */
+@media (max-width: 767px) {
+    .sidebar-version { display: none; }
+}
+
+/* Secondary surah name inside sticky title (when translation language added) */
+.sura-secondary-name {
+    display: block;
+    font-size: 0.68em;
+    font-weight: 400;
+    font-style: italic;
+    opacity: 0.82;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+/* Sepia theme: fix native dropdown option text colour */
+[data-theme="manuscript"] select option {
+    background-color: #1a1208;
+    color: #f5ecce;
+}
+
 /* ════════════════════════════════════════════════════════════════════
    THEME OVERRIDES
    ════════════════════════════════════════════════════════════════════ */
@@ -1854,6 +1897,17 @@ input[type="range"] {
 
 /* ── Settings inside sheet ── */
 .mob-settings-section { padding: 12px 20px; border-bottom: 1px solid var(--border); }
+
+/* Version line at the bottom of the phone settings sheet */
+.mob-settings-version {
+    text-align: center;
+    padding: 14px 20px 18px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: var(--font-ui);
+    opacity: 0.6;
+    letter-spacing: 0.04em;
+}
 .mob-settings-lbl { font-size: 16px; font-style: italic; color: var(--text-muted); margin-bottom: 8px; font-family: var(--font-heading); }
 .mob-settings-select {
     width: 100%; background: var(--bg-input); border: 1px solid var(--border-input);

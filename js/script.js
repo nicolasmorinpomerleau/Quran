@@ -159,10 +159,10 @@ async function getHijriCalendarForMonth() {
 
 // ─── UI label translations ─────────────────────────────────────────
 const uiTranslations = {
-    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', settingsTitle:'⚙️ الإعدادات', settingsFontSize:'حجم الخط', settingsVerseLabel:'آية', settingsTranslLabel:'ترجمة', settingsAddTransl:'إضافة ترجمة', settingsAddLangPh:'+ أضف لغة…', sectionSearch:'بحث', sectionDisplay:'العرض', sectionLanguages:'اللغات', sectionTools:'الأدوات', sectionSupport:'الدعم', footer:'القرآن الكريم · v10.15.8 · اقرأ بقلب واعٍ', rtl:true },
-    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', settingsTitle:'⚙️ Paramètres', settingsFontSize:'Taille de police', settingsVerseLabel:'Verset', settingsTranslLabel:'Traduction', settingsAddTransl:'Ajouter une traduction', settingsAddLangPh:'+ Ajouter une langue…', sectionSearch:'Recherche', sectionDisplay:'Affichage', sectionLanguages:'Langues', sectionTools:'Outils', sectionSupport:'Assistance', footer:'Coran v10.15.8 — Lisez avec un cœur attentif', rtl:false },
-    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', settingsTitle:'⚙️ Settings', settingsFontSize:'Font size', settingsVerseLabel:'Verse', settingsTranslLabel:'Translation', settingsAddTransl:'Add a translation', settingsAddLangPh:'+ Add a language…', sectionSearch:'Search', sectionDisplay:'Display', sectionLanguages:'Languages', sectionTools:'Tools', sectionSupport:'Support', footer:'Quran Display v10.15.8 — May you read with a mindful heart', rtl:false },
-    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', settingsTitle:'⚙️ Configuración', settingsFontSize:'Tamaño de fuente', settingsVerseLabel:'Verso', settingsTranslLabel:'Traducción', settingsAddTransl:'Añadir traducción', settingsAddLangPh:'+ Añadir un idioma…', sectionSearch:'Búsqueda', sectionDisplay:'Pantalla', sectionLanguages:'Idiomas', sectionTools:'Herramientas', sectionSupport:'Asistencia', footer:'Corán v10.15.8 — Que leas con un corazón atento', rtl:false }
+    arabic:  { toggleOrder:'ترتيب الوحي', context:'سياق السورة', searchbutton:'بحث في القرآن', surahSearch:'بحث في السورة', bookmarks:'📁 المحفوظات', tocSurah:'السور', tocJuz:'الأجزاء', tocRevelation:'الوحي', tocTopics:'المواضيع', langQuranLabel:'لغة القرآن', langAddLabel:'إضافة ترجمات', settingsTitle:'⚙️ الإعدادات', settingsFontSize:'حجم الخط', settingsVerseLabel:'آية', settingsTranslLabel:'ترجمة', settingsAddTransl:'إضافة ترجمة', settingsAddLangPh:'+ أضف لغة…', sectionSearch:'بحث', sectionDisplay:'العرض', sectionLanguages:'اللغات', sectionTools:'الأدوات', sectionSupport:'الدعم', footer:'القرآن الكريم · اقرأ بقلب واعٍ', rtl:true },
+    french:  { toggleOrder:'Ordre de révélation', context:'Contexte de la sourate', searchbutton:'Recherche dans le Coran', surahSearch:'Recherche dans la Sourate', bookmarks:'📁 Enregistrés', tocSurah:'Sourates', tocJuz:'Juz', tocRevelation:'Révélation', tocTopics:'Thèmes', langQuranLabel:'Langue du Coran', langAddLabel:'Ajouter des traductions', settingsTitle:'⚙️ Paramètres', settingsFontSize:'Taille de police', settingsVerseLabel:'Verset', settingsTranslLabel:'Traduction', settingsAddTransl:'Ajouter une traduction', settingsAddLangPh:'+ Ajouter une langue…', sectionSearch:'Recherche', sectionDisplay:'Affichage', sectionLanguages:'Langues', sectionTools:'Outils', sectionSupport:'Assistance', footer:'Lisez avec un cœur attentif', rtl:false },
+    english: { toggleOrder:'Revelation Order', context:'Surah Context', searchbutton:'Quran Search', surahSearch:'Surah Search', bookmarks:'📁 Saved', tocSurah:'Surahs', tocJuz:'Juz', tocRevelation:'Revelation', tocTopics:'Topics', langQuranLabel:'Quran language', langAddLabel:'Add translations', settingsTitle:'⚙️ Settings', settingsFontSize:'Font size', settingsVerseLabel:'Verse', settingsTranslLabel:'Translation', settingsAddTransl:'Add a translation', settingsAddLangPh:'+ Add a language…', sectionSearch:'Search', sectionDisplay:'Display', sectionLanguages:'Languages', sectionTools:'Tools', sectionSupport:'Support', footer:'May you read with a mindful heart', rtl:false },
+    spanish: { toggleOrder:'Orden de revelación', context:'Contexto de la sura', searchbutton:'Búsqueda en el Corán', surahSearch:'Búsqueda en la Sura', bookmarks:'📁 Guardados', tocSurah:'Suras', tocJuz:'Juz', tocRevelation:'Revelación', tocTopics:'Temas', langQuranLabel:'Idioma del Corán', langAddLabel:'Añadir traducciones', settingsTitle:'⚙️ Configuración', settingsFontSize:'Tamaño de fuente', settingsVerseLabel:'Verso', settingsTranslLabel:'Traducción', settingsAddTransl:'Añadir traducción', settingsAddLangPh:'+ Añadir un idioma…', sectionSearch:'Búsqueda', sectionDisplay:'Pantalla', sectionLanguages:'Idiomas', sectionTools:'Herramientas', sectionSupport:'Asistencia', footer:'Que leas con un corazón atento', rtl:false }
 };
 
 function applyUILanguage(language) {
@@ -243,6 +243,19 @@ function applyUILanguage(language) {
         footerEl.style.direction = dir;
         footerEl.style.textAlign = t.rtl ? 'right' : 'center';
     }
+
+    // Fix Arabic font size + spacing in desktop sidebar section headers
+    document.querySelectorAll('.side-group-header').forEach(function(el) {
+        if (t.rtl) {
+            el.style.fontSize = '20px';
+            el.style.letterSpacing = '0';
+            el.style.textTransform = 'none';
+        } else {
+            el.style.fontSize = '';
+            el.style.letterSpacing = '';
+            el.style.textTransform = '';
+        }
+    });
 
     // v10.11: Translate TOC tab labels
     var tocTabMap = { surah: t.tocSurah, juz: t.tocJuz, revelation: t.tocRevelation, topics: t.tocTopics };
@@ -937,6 +950,16 @@ function applyLanguageToVerses(langCode) {
             else verseEl.appendChild(p);
         }
     });
+    // Add secondary surah name to the sticky title bar
+    var titleTextEl = document.querySelector('.sura-sticky-title-text');
+    if (titleTextEl && sura.name) {
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'sura-secondary-name';
+        nameSpan.setAttribute('data-lang', langCode);
+        nameSpan.textContent = sura.name;
+        nameSpan.style.color = color;
+        titleTextEl.appendChild(nameSpan);
+    }
 }
 
 function removeLanguageFromVerses(langCode) {
@@ -3408,7 +3431,11 @@ function buildSheetSettings(body, title) {
     // v10.11: Font sliders now sit BELOW the language sections for consistency
     body.appendChild(fontSection);
 
-
+    // Version footer
+    var verEl = document.createElement('div');
+    verEl.className = 'mob-settings-version';
+    verEl.textContent = 'Quran Display v10.14.15';
+    body.appendChild(verEl);
 }
 
 // ── Sidebar open/close (desktop burger) ──────────────────────────

@@ -1080,7 +1080,7 @@ body.focus-mode::after {
     cursor: pointer;
     font-family: var(--font-heading);
     font-style: italic;
-    font-size: 13px;
+    font-size: 18px;
     color: var(--accent);
     text-align: left;
     border-radius: 5px;

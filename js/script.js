@@ -3377,7 +3377,6 @@ function buildSheetSettings(body, title) {
         var chip = document.createElement('button');
         chip.className = 'mob-theme-chip' + (currentTheme === t.id ? ' active' : '');
         chip.innerHTML =
-            '<span class="mob-theme-swatch mob-theme-swatch-' + t.id + '"></span>' +
             '<span class="mob-theme-primary">' + t.primary + '</span>' +
             '<span class="mob-theme-aesthetic">' + t.aesthetic + '</span>';
         chip.addEventListener('click', function() {
@@ -3669,7 +3668,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.15.8%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.16.0%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

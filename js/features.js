@@ -467,6 +467,7 @@ document.addEventListener('click', function(e) {
         var isDesktop = t.id === 'search-input';
         var isMobile  = t.tagName === 'INPUT' && t.closest && t.closest('.mob-search-row');
         if (!isDesktop && !isMobile) return;
+        if (isMobile) return; // mobile uses the ↵ button — live search causes focus loss
 
         var term = t.value.trim();
         clearTimeout(timer);
@@ -1320,11 +1321,87 @@ function appendFeaturesUI(body) {
 
     // 📖 Reading
     var readSec = makeSection('📖 Reading');
-    readSec.appendChild(makeToggleRow('lastReadBanner',      '📍 "Continue reading" banner', 'Shows previously-read surah at top so you can jump back'));
-    readSec.appendChild(makeToggleRow('verseNavigation',     '⇆ Verse navigation buttons',   'Floating prev / next / jump-to-verse buttons'));
-    readSec.appendChild(makeToggleRow('dailyVerse',          '🌅 Daily verse',                'A contemplative verse shown once per day on open'));
-    readSec.appendChild(makeToggleRow('dailyVerseNotification', '🔔 Daily verse notification', 'Sends a real push notification every day · works on Android Chrome & iOS 16.4+ (installed PWA)'));
-    readSec.appendChild(makeToggleRow('focusMode',           '🧘 Focus mode',                 'Hides everything except verses (key: F)'));
+
+    // Notification card — prominent, first in Reading
+    var notifLabel = document.createElement('div');
+    notifLabel.className = 'notif-settings-section-label';
+    notifLabel.textContent = 'Notifications';
+    readSec.appendChild(notifLabel);
+
+    var isNotifOn = !!f['dailyVerseNotification'];
+    var savedHour = 8;
+    try { var _sh = localStorage.getItem(PUSH_NOTIF_HOUR_KEY); if (_sh !== null) savedHour = parseInt(_sh); } catch(e) {}
+    function _fmtHour(h) { var p = h >= 12 ? 'PM' : 'AM'; return (h % 12 || 12) + ':00 ' + p; }
+
+    var notifCard = document.createElement('div');
+    notifCard.className = 'notif-settings-card' + (isNotifOn ? '' : ' notif-off');
+
+    var notifTop = document.createElement('div');
+    notifTop.className = 'notif-settings-card-top';
+    var notifTitle = document.createElement('div');
+    notifTitle.className = 'notif-settings-card-title';
+    notifTitle.textContent = '🔔 Daily verse notification';
+    var notifSwWrap = document.createElement('span');
+    notifSwWrap.className = 'feature-toggle-sw';
+    var notifInp = document.createElement('input');
+    notifInp.type = 'checkbox';
+    notifInp.checked = isNotifOn;
+    var notifSlider = document.createElement('span');
+    notifSlider.className = 'feature-toggle-slider';
+    notifSwWrap.appendChild(notifInp);
+    notifSwWrap.appendChild(notifSlider);
+    notifTop.appendChild(notifTitle);
+    notifTop.appendChild(notifSwWrap);
+    notifCard.appendChild(notifTop);
+
+    var notifTimeRow = document.createElement('div');
+    notifTimeRow.className = 'notif-settings-time-row';
+    notifTimeRow.style.display = isNotifOn ? '' : 'none';
+    var notifTimeLbl = document.createElement('div');
+    notifTimeLbl.className = 'notif-settings-time-lbl';
+    notifTimeLbl.textContent = '⏰ Time of notification';
+    var notifTimeChip = document.createElement('div');
+    notifTimeChip.className = 'notif-settings-time-chip';
+    var notifTimeVal = document.createElement('span');
+    notifTimeVal.textContent = _fmtHour(savedHour);
+    notifTimeChip.appendChild(notifTimeVal);
+    notifTimeChip.insertAdjacentHTML('beforeend', ' <span style="font-size:10px;opacity:0.6">✏️</span>');
+    notifTimeChip.addEventListener('click', function() {
+        showNotifTimePicker(function(newHour) {
+            notifTimeVal.textContent = _fmtHour(newHour);
+            if (typeof doSubscribe === 'function') doSubscribe(newHour);
+            showToast('✓ Notification time updated');
+        });
+    });
+    notifTimeRow.appendChild(notifTimeLbl);
+    notifTimeRow.appendChild(notifTimeChip);
+    notifCard.appendChild(notifTimeRow);
+
+    notifInp.addEventListener('change', function() {
+        var current = getFeatures();
+        current['dailyVerseNotification'] = this.checked;
+        saveFeatures(current);
+        notifCard.classList.toggle('notif-off', !this.checked);
+        notifTimeRow.style.display = this.checked ? '' : 'none';
+        if (this.checked) {
+            setupDailyVerseNotification(false);
+        } else {
+            teardownDailyVerseNotification();
+        }
+        track('feature_toggled', { feature: 'dailyVerseNotification', state: this.checked ? 'on' : 'off' });
+        hapticTap(10);
+    });
+
+    readSec.appendChild(notifCard);
+
+    var notifDivider = document.createElement('div');
+    notifDivider.className = 'notif-settings-divider';
+    readSec.appendChild(notifDivider);
+
+    readSec.appendChild(makeToggleRow('lastReadBanner',  '📍 "Continue reading" banner', 'Shows previously-read surah at top so you can jump back'));
+    readSec.appendChild(makeToggleRow('verseNavigation', '⇆ Verse navigation buttons',   'Floating prev / next / jump-to-verse buttons'));
+    readSec.appendChild(makeToggleRow('dailyVerse',      '🌅 Daily verse',                'A contemplative verse shown once per day on open'));
+    readSec.appendChild(makeToggleRow('focusMode',       '🧘 Focus mode',                 'Hides everything except verses (key: F)'));
     body.appendChild(readSec);
 
     // 🔍 Search
@@ -3848,13 +3925,22 @@ function openTopicVerses(topicIdx) {
             if (typeof displaySingleSura === 'function') {
                 displaySingleSura(sura.id);
                 setTimeout(function() {
-                    var verses = document.querySelectorAll('.sura .verse');
-                    if (verses[vNum - 1]) {
-                        verses[vNum - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        verses[vNum - 1].classList.add('verse-flash');
-                        setTimeout(function(){ verses[vNum - 1].classList.remove('verse-flash'); }, 1500);
-                    }
-                }, 300);
+                    var container = document.getElementById('quranContainer');
+                    var verses = container ? container.querySelectorAll('.verse') : [];
+                    var target = verses[vNum - 1];
+                    if (!target || !container) return;
+                    // Scroll so the verse appears just below the sticky surah header,
+                    // matching the normal reading experience.
+                    var stickyEl = container.querySelector('.sura-sticky-title');
+                    var stickyH = stickyEl ? stickyEl.offsetHeight : 52;
+                    // Sum offsetTop values up to the container
+                    var top = 0;
+                    var el = target;
+                    while (el && el !== container) { top += el.offsetTop; el = el.offsetParent; }
+                    container.scrollTop = top - stickyH - 16;
+                    target.classList.add('verse-flash');
+                    setTimeout(function(){ target.classList.remove('verse-flash'); }, 1500);
+                }, 350);
             }
         });
         list.appendChild(card);
@@ -5825,7 +5911,7 @@ function appendYtChannelUI(body) {
         if (!vEl) {
             vEl = document.createElement('div');
             vEl.className = 'app-version-footer';
-            vEl.textContent = 'v10.14 · Quran App';
+            vEl.textContent = 'v10.16 · Quran App';
         }
         body.appendChild(vEl);
     }

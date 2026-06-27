@@ -2,6 +2,77 @@
    v9.9 — Phase 1 Feature Styles
    ════════════════════════════════════════════════════════════════════ */
 
+/* ── Notification card in settings ── */
+.notif-settings-section-label {
+    font-size: 10px;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+}
+.notif-settings-card {
+    background: rgba(201,168,76,0.08);
+    border: 1.5px solid rgba(201,168,76,0.3);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.notif-settings-card.notif-off {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.1);
+}
+.notif-settings-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.notif-settings-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    transition: opacity 0.2s;
+}
+.notif-settings-card.notif-off .notif-settings-card-title {
+    opacity: 0.5;
+}
+.notif-settings-time-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-top: 1px solid rgba(201,168,76,0.15);
+    padding-top: 10px;
+    margin-top: 10px;
+}
+.notif-settings-time-lbl {
+    font-size: 11px;
+    color: var(--text-secondary);
+    flex: 1;
+}
+.notif-settings-time-chip {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 5px 12px;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+}
+.notif-settings-time-chip:hover {
+    background: rgba(201,168,76,0.12);
+}
+.notif-settings-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+    margin: 4px 0 10px;
+}
+
 /* ── Collapsible settings sections (Advanced / Data & Privacy) ── */
 .settings-collapsible-header {
     cursor: pointer;
@@ -11,6 +82,10 @@
 }
 .settings-collapsible-header .mob-settings-lbl {
     margin-bottom: 0;
+    flex: 1;
+}
+.settings-collapsible-header .mob-settings-lbl::after {
+    display: none;
 }
 .settings-collapsible-arrow {
     font-size: 12px;
@@ -27,10 +102,12 @@
 /* ── App version footer (bottom of Features panel) ── */
 .app-version-footer {
     text-align: center;
-    font-size: 11px;
-    color: var(--text-secondary);
-    opacity: 0.5;
-    padding: 18px 0 8px;
+    font-size: 12px;
+    color: var(--accent);
+    opacity: 0.85;
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
     font-family: var(--font-ui);
     letter-spacing: 0.04em;
 }
@@ -266,10 +343,9 @@
 }
 .shortcuts-header h3 {
     font-size: 17px;
-    font-family: var(--font-heading);
-    font-style: italic;
+    font-family: var(--font-ui);
     color: var(--accent);
-    font-weight: 600;
+    font-weight: 700;
 }
 .shortcuts-close {
     background: transparent;
@@ -725,10 +801,9 @@ body.focus-mode::after {
 
 .features-modal-title {
     font-size: 22px;
-    font-family: var(--font-heading);
-    font-style: italic;
+    font-family: var(--font-ui);
     color: var(--accent);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .features-modal-close {
@@ -761,14 +836,12 @@ body.focus-mode::after {
 }
 /* Section label as a clear header */
 .features-modal-body .mob-settings-section .mob-settings-lbl {
-    font-size: 15px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--accent-faint);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
 /* Desktop: hide the modal on mobile screens (we use the sheet instead) */
@@ -1181,9 +1254,9 @@ body.focus-mode::after {
     background: transparent;
     border: none;
     cursor: pointer;
-    font-family: var(--font-heading);
-    font-style: italic;
-    font-size: 18px;
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
     color: var(--accent);
     text-align: left;
     border-radius: 5px;
@@ -1721,8 +1794,7 @@ body.focus-mode::after {
     font-size: 15px;
     font-weight: 600;
     color: var(--accent);
-    font-family: var(--font-heading);
-    font-style: italic;
+    font-family: var(--font-ui);
     line-height: 1.3;
 }
 
@@ -1815,8 +1887,8 @@ body.focus-mode::after {
 .tafsir-modal-body h1, .tafsir-modal-body h2, .tafsir-modal-body h3, .tafsir-modal-body h4 {
     margin: 16px 0 8px;
     color: var(--accent);
-    font-family: var(--font-heading);
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: 700;
 }
 .tafsir-modal-body em, .tafsir-modal-body i { font-style: italic; opacity: 0.92; }
 .tafsir-modal-body strong, .tafsir-modal-body b { font-weight: 700; color: var(--accent); }
@@ -2621,9 +2693,8 @@ header {
 }
 .install-modal-title {
     flex: 1;
-    font-family: var(--font-heading);
-    font-style: italic;
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: 700;
     color: var(--accent);
     font-size: 17px;
 }
@@ -2737,9 +2808,8 @@ header {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-family: var(--font-heading);
-    font-style: italic;
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: 700;
     color: var(--accent);
     font-size: 17px;
 }
@@ -2808,9 +2878,9 @@ header {
 }
 .topic-back:hover { text-decoration: underline; }
 .topic-detail-title {
-    font-family: var(--font-heading);
-    font-style: italic;
-    font-size: 18px;
+    font-family: var(--font-ui);
+    font-weight: 700;
+    font-size: 17px;
     color: var(--accent);
     padding: 6px 14px 12px;
     border-bottom: 1px solid var(--border);
@@ -2956,9 +3026,8 @@ header {
 .reflection-icon { font-size: 18px; }
 .reflection-label {
     flex: 1;
-    font-family: var(--font-heading);
-    font-style: italic;
-    font-weight: 600;
+    font-family: var(--font-ui);
+    font-weight: 700;
     color: var(--accent);
     font-size: 15px;
 }
@@ -2976,8 +3045,8 @@ header {
     padding: 16px 18px 12px;
     font-size: 16px;
     color: var(--text-primary);
-    font-family: var(--font-heading);
-    font-style: italic;
+    font-family: var(--font-ui);
+    font-weight: 500;
     line-height: 1.5;
 }
 .reflection-textarea {

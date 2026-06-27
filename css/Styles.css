@@ -1898,13 +1898,34 @@ input[type="range"] {
 /* ── Settings inside sheet ── */
 .mob-settings-section { padding: 18px 20px 12px; border-bottom: 1px solid var(--border); }
 
+/* ── Language & Display group: three sections wrapped in one visual block ── */
+.settings-display-group {
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid var(--border);
+}
+.settings-display-group-inner {
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+.settings-display-group-inner .mob-settings-section {
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 10px;
+    margin: 0;
+}
+.settings-display-group-inner .mob-settings-section:last-child {
+    border-bottom: none;
+}
+
 /* Version line at the bottom of the phone settings sheet */
 .mob-settings-version {
     text-align: center;
     padding: 16px 20px 20px;
-    font-size: 12px;
+    font-size: 24px;
     color: var(--accent);
     font-family: var(--font-ui);
+    font-weight: 600;
     opacity: 0.85;
     letter-spacing: 0.06em;
     border-top: 1px solid var(--border);

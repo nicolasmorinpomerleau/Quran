@@ -3404,7 +3404,6 @@ function buildSheetSettings(body, title) {
         document.getElementById('languageSelector').dispatchEvent(new Event('change'));
     });
     langSection.appendChild(langLbl); langSection.appendChild(langSel);
-    body.appendChild(langSection);
 
     // Font size section
     var fontSection = document.createElement('div');
@@ -3491,15 +3490,25 @@ function buildSheetSettings(body, title) {
         });
     });
     transSection.appendChild(addSel);
-    body.appendChild(transSection);
-
-    // v10.11: Font sliders now sit BELOW the language sections for consistency
-    body.appendChild(fontSection);
+    // Group Language + Translation + Font size into one visual block
+    var displayGroup = document.createElement('div');
+    displayGroup.className = 'settings-display-group';
+    var displayGroupLbl = document.createElement('div');
+    displayGroupLbl.className = 'mob-settings-lbl';
+    displayGroupLbl.textContent = '🖋 Language & Display';
+    displayGroup.appendChild(displayGroupLbl);
+    var displayGroupInner = document.createElement('div');
+    displayGroupInner.className = 'settings-display-group-inner';
+    displayGroupInner.appendChild(langSection);
+    displayGroupInner.appendChild(transSection);
+    displayGroupInner.appendChild(fontSection);
+    displayGroup.appendChild(displayGroupInner);
+    body.appendChild(displayGroup);
 
     // Version footer
     var verEl = document.createElement('div');
     verEl.className = 'mob-settings-version';
-    verEl.textContent = 'Quran Display v10.14.16';
+    verEl.textContent = 'Quran Display v10.17';
     body.appendChild(verEl);
 }
 
@@ -3668,7 +3677,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.16.0%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.17.0%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

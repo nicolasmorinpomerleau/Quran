@@ -1406,7 +1406,9 @@ function appendFeaturesUI(body) {
 
     // 🔍 Search
     var searchSec = makeSection('🔍 Search');
-    searchSec.appendChild(makeToggleRow('searchAsYouType', '⚡ Search as you type', 'Auto-runs search 350ms after you stop typing'));
+    if (window.innerWidth > 900) {
+        searchSec.appendChild(makeToggleRow('searchAsYouType', '⚡ Search as you type', 'Auto-runs search 350ms after you stop typing'));
+    }
     searchSec.appendChild(makeToggleRow('voiceSearch',     '🎤 Voice search',       'Tap the mic to speak a search query'));
     body.appendChild(searchSec);
 
@@ -1425,7 +1427,7 @@ function appendFeaturesUI(body) {
     advHeader.className = 'settings-collapsible-header';
     var advTitle = document.createElement('div');
     advTitle.className = 'mob-settings-lbl';
-    advTitle.textContent = '▸ Advanced';
+    advTitle.textContent = '⚙ Advanced';
     var advArrow = document.createElement('span');
     advArrow.className = 'settings-collapsible-arrow';
     advArrow.textContent = '▾';
@@ -1509,10 +1511,16 @@ function appendFeaturesUI(body) {
 
     advSec.appendChild(advHeader);
     advSec.appendChild(advContent);
+    advSec.setAttribute('data-adv-section', '1');
     body.appendChild(advSec);
+    // Note: finalSettingsCleanup moves this to just before Data & Privacy
 }
 
 function appendDataUI(body) {
+    // Move Advanced section to sit immediately before Data & Privacy
+    var advEl = body.querySelector('[data-adv-section]');
+    if (advEl) body.appendChild(advEl);
+
     var outerSec = document.createElement('div');
     outerSec.className = 'mob-settings-section';
 
@@ -1520,7 +1528,7 @@ function appendDataUI(body) {
     header.className = 'settings-collapsible-header';
     var headerTitle = document.createElement('div');
     headerTitle.className = 'mob-settings-lbl';
-    headerTitle.textContent = '▸ Data & Privacy';
+    headerTitle.textContent = '🔒 Data & Privacy';
     var headerArrow = document.createElement('span');
     headerArrow.className = 'settings-collapsible-arrow';
     headerArrow.textContent = '▾';
@@ -2665,6 +2673,7 @@ function appendInstallUI(body) {
                        window.navigator.standalone === true;
 
     if (isStandalone) {
+        hint.style.cssText = 'font-size:24px;font-weight:700;color:#4caf50;text-align:center;padding:14px 0 4px;line-height:1.3;';
         hint.textContent = '✅ Installed — works offline';
         sec.appendChild(hint);
     } else if (window._pwaInstallable) {
@@ -5170,20 +5179,8 @@ async function teardownDailyVerseNotification() {
     }
 }
 
-// When the feature toggle flips, subscribe or unsubscribe
-(function reactiveNotifToggle() {
-    document.addEventListener('change', function(e) {
-        if (!e.target || e.target.type !== 'checkbox') return;
-        if (!e.target.closest('.feature-toggle-row')) return;
-        setTimeout(function() {
-            if (isFeatureOn('dailyVerseNotification')) {
-                setupDailyVerseNotification(false);
-            } else {
-                teardownDailyVerseNotification();
-            }
-        }, 100);
-    });
-}());
+// Note: subscribe/unsubscribe on toggle is handled directly by the
+// notifInp change listener in the notification card (appendFeaturesUI).
 
 // On app load, if the feature is on and permission granted, ensure subscribed (skip picker)
 (function notifInitOnLoad() {
@@ -5784,7 +5781,7 @@ function openHelpModal() {
 // surah (key = 0-indexed surah ID as a string, "0" = Al-Fatiha, etc.)
 // Surahs with no entry simply show no video section.
 // ════════════════════════════════════════════════════════════════════
-const YT_CHANNEL_URL = 'https://www.youtube.com/@VotreChaine'; // ← replace with your channel URL
+const YT_CHANNEL_URL = 'https://www.youtube.com/@islampaixducoeur';
 var _ytFrData = null;
 
 function loadYtFrData(cb) {
@@ -5906,13 +5903,13 @@ function appendYtChannelUI(body) {
             body.insertBefore(installSec, medBanner.nextSibling);
         }
 
-        // Ensure version footer is the last child
+        // Ensure version footer is the last child and always shows the current version
         var vEl = body.querySelector('.app-version-footer') || body.querySelector('.mob-settings-version');
         if (!vEl) {
             vEl = document.createElement('div');
             vEl.className = 'app-version-footer';
-            vEl.textContent = 'v10.16 · Quran App';
         }
+        vEl.textContent = 'Quran Display v10.17';
         body.appendChild(vEl);
     }
 

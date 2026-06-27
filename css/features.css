@@ -2,6 +2,109 @@
    v9.9 — Phase 1 Feature Styles
    ════════════════════════════════════════════════════════════════════ */
 
+/* ── Collapsible settings sections (Advanced / Data & Privacy) ── */
+.settings-collapsible-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.settings-collapsible-header .mob-settings-lbl {
+    margin-bottom: 0;
+}
+.settings-collapsible-arrow {
+    font-size: 12px;
+    color: var(--text-secondary);
+    opacity: 0.55;
+    flex-shrink: 0;
+    margin-left: 8px;
+    transition: transform 0.2s ease;
+}
+.settings-collapsible-content {
+    padding-top: 4px;
+}
+
+/* ── App version footer (bottom of Features panel) ── */
+.app-version-footer {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0.5;
+    padding: 18px 0 8px;
+    font-family: var(--font-ui);
+    letter-spacing: 0.04em;
+}
+
+/* ── Notification time picker overlay ── */
+.notif-time-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.notif-time-card {
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 28px 22px;
+    width: min(340px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.notif-time-card h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-ui);
+}
+.notif-time-card p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-family: var(--font-ui);
+}
+.notif-time-input {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-main);
+    color: var(--text-primary);
+    font-size: 20px;
+    font-family: var(--font-ui);
+    text-align: center;
+    box-sizing: border-box;
+}
+.notif-time-card .notif-time-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+.notif-time-card button {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    font-family: var(--font-ui);
+    cursor: pointer;
+    font-weight: 500;
+}
+.notif-time-card .btn-cancel {
+    background: var(--bg-main);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+.notif-time-card .btn-confirm {
+    background: var(--accent);
+    color: #fff;
+}
+
 /* ── Toast (used by copy/share/error feedback) ── */
 .app-toast {
     position: fixed;

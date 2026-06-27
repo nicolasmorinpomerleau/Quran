@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #1a1a2e; display: flex; justify-content: center; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .panel {
+    background: #16213e;
+    border-radius: 20px;
+    width: 360px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    color: #e0d8c8;
+  }
+  .panel-header {
+    background: #0f3460;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .panel-header .close { opacity: 0.5; font-size: 18px; cursor: pointer; }
+  .meditation {
+    padding: 16px 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+  }
+  .meditation .arabic { font-size: 16px; direction: rtl; color: #c9a84c; margin-bottom: 6px; }
+  .meditation .translation { font-size: 11px; color: #888; font-style: italic; }
+  .meditation .citation { font-size: 10px; color: #666; margin-top: 4px; }
+
+  .section {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 14px 20px;
+  }
+  .section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #c9a84c;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .theme-chips { display: flex; gap: 8px; }
+  .chip {
+    flex: 1;
+    padding: 8px 4px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    text-align: center;
+    font-size: 11px;
+    color: #aaa;
+    cursor: pointer;
+  }
+  .chip.active { border-color: #c9a84c; color: #c9a84c; background: rgba(201,168,76,0.08); }
+  .chip .icon { font-size: 14px; display: block; margin-bottom: 2px; }
+
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+  .row-label { font-size: 13px; color: #d0c8b8; display: flex; align-items: center; gap: 7px; }
+  .row-label .icon { font-size: 14px; }
+  .row-sub { font-size: 10px; color: #888; margin-top: 1px; }
+
+  select {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    color: #d0c8b8;
+    font-size: 12px;
+    padding: 5px 8px;
+    max-width: 140px;
+  }
+
+  .slider-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .slider-lbl { font-size: 12px; color: #aaa; width: 80px; flex-shrink: 0; }
+  .slider { flex: 1; height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; position: relative; }
+  .slider-thumb { position: absolute; top: -5px; left: 45%; width: 13px; height: 13px; background: #c9a84c; border-radius: 50%; }
+  .slider-val { font-size: 11px; color: #888; width: 28px; text-align: right; flex-shrink: 0; }
+
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; }
+  .toggle-lbl { font-size: 13px; color: #d0c8b8; display: flex; align-items: center; gap: 7px; }
+  .toggle-sub { font-size: 10px; color: #777; }
+  .toggle { width: 36px; height: 20px; background: #c9a84c; border-radius: 10px; position: relative; flex-shrink: 0; }
+  .toggle.off { background: rgba(255,255,255,0.12); }
+  .toggle::after { content:''; position:absolute; top:3px; right:3px; width:14px; height:14px; background:#fff; border-radius:50%; }
+  .toggle.off::after { right:auto; left:3px; }
+
+  .collapsed-section {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .collapsed-header {
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .collapsed-title { font-size: 10px; font-weight: 700; letter-spacing: 0.12em; color: #c9a84c; text-transform: uppercase; }
+  .collapsed-arrow { font-size: 12px; color: #888; }
+  .collapsed-preview { font-size: 11px; color: #666; padding: 0 20px 12px; }
+
+  .install-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #7ac77a;
+  }
+  .version { text-align: center; padding: 14px; font-size: 11px; color: rgba(255,255,255,0.2); letter-spacing: 0.04em; }
+
+  .plan-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .plan-btn { padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); font-size: 11px; color: #aaa; }
+
+  .reading-time-row { font-size: 11px; color: #888; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="panel">
+
+  <!-- Header -->
+  <div class="panel-header">
+    ⚙ Settings <span class="close">✕</span>
+  </div>
+
+  <!-- Meditation banner -->
+  <div class="meditation">
+    <div class="arabic">أَفَلَا يَتَدَبَّرُونَ الْقُرْآنَ</div>
+    <div class="translation">Then do they not reflect upon the Quran?</div>
+    <div class="citation">— Quran 47:24</div>
+  </div>
+
+  <!-- Theme -->
+  <div class="section">
+    <div class="section-title">Theme</div>
+    <div class="theme-chips">
+      <div class="chip active"><span class="icon">🌙</span>Sepia</div>
+      <div class="chip"><span class="icon">☀️</span>Light</div>
+      <div class="chip"><span class="icon">🌑</span>Dark</div>
+    </div>
+  </div>
+
+  <!-- Language & Display -->
+  <div class="section">
+    <div class="section-title">Language & Display</div>
+    <div class="row">
+      <div class="row-label">Quran language</div>
+      <select><option>Français</option></select>
+    </div>
+    <div class="row">
+      <div class="row-label">+ Add translation</div>
+      <select><option>Arabic</option></select>
+    </div>
+    <div class="slider-row"><span class="slider-lbl">Verse size</span><div class="slider"><div class="slider-thumb"></div></div><span class="slider-val">2.0</span></div>
+    <div class="slider-row"><span class="slider-lbl">Translation</span><div class="slider"><div class="slider-thumb" style="left:30%"></div></div><span class="slider-val">1.0</span></div>
+  </div>
+
+  <!-- Reading -->
+  <div class="section">
+    <div class="section-title">📖 Reading</div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">📍 Continue reading banner</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">⇆ Verse navigation</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">🌅 Daily verse</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">🔔 Daily notification</div><div class="toggle-sub">Push notification at chosen time</div></div>
+      <div class="toggle off"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">🧘 Focus mode</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.06); padding-top:10px;">
+      <div class="section-title" style="margin-bottom:6px; font-size:10px; color:#888;">READING PLAN</div>
+      <div class="plan-btns">
+        <div class="plan-btn">🌙 30 days</div>
+        <div class="plan-btn">📅 60 days</div>
+        <div class="plan-btn">📚 90 days</div>
+        <div class="plan-btn">⚙ Custom</div>
+      </div>
+      <div class="reading-time-row">This week: 0:05 · 4-week avg: 0:09/week</div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="section">
+    <div class="section-title">🔍 Search</div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">⚡ Search as you type</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">🎤 Voice search</div></div>
+      <div class="toggle"></div>
+    </div>
+  </div>
+
+  <!-- Study -->
+  <div class="section">
+    <div class="section-title">📚 Study</div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">📚 Tafsir (commentary)</div><div class="toggle-sub">Ibn Kathir (selected)</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">🔀 Compare tafsirs</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">✍️ Reflection prompts</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">🎯 Khatm tracker</div></div>
+      <div class="toggle off"></div>
+    </div>
+  </div>
+
+  <!-- Audio -->
+  <div class="section">
+    <div class="section-title">🎵 Audio</div>
+    <div class="row">
+      <div class="row-label">Reciter</div>
+      <select><option>Mishary Al-Afasy</option></select>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">Auto-advance to next verse</div></div>
+      <div class="toggle"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-lbl">Continue across surahs</div></div>
+      <div class="toggle off"></div>
+    </div>
+    <div class="row">
+      <div class="row-label">Repeat</div>
+      <select><option>No repeat</option></select>
+    </div>
+  </div>
+
+  <!-- Advanced (collapsed) -->
+  <div class="collapsed-section">
+    <div class="collapsed-header">
+      <div class="collapsed-title">▸ Advanced</div>
+      <span class="collapsed-arrow">▾ tap to expand</span>
+    </div>
+    <div class="collapsed-preview">🌗 Auto dark theme · 🌐 Browser language · 🖨 Print/PDF · 🔤 Arabic font · 📊 Usage stats · 📺 YouTube</div>
+  </div>
+
+  <!-- Data & Privacy (collapsed) -->
+  <div class="collapsed-section">
+    <div class="collapsed-header">
+      <div class="collapsed-title">▸ Data & Privacy</div>
+      <span class="collapsed-arrow">▾ tap to expand</span>
+    </div>
+    <div class="collapsed-preview">💾 Export notes · 📥 Import · 🗑 Reset data</div>
+  </div>
+
+  <!-- Install -->
+  <div class="section">
+    <div class="section-title">📲 Install as App</div>
+    <div class="install-row">✅ Installed — works offline</div>
+  </div>
+
+  <!-- Version -->
+  <div class="version">v10.13 · Quran App</div>
+
+</div>
+</body>
+</html>

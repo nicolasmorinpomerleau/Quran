@@ -2712,9 +2712,34 @@ input[type="range"] {
 .mob-share-item:last-child { border-bottom: none; }
 .mob-share-item:hover { background: var(--accent-trace); }
 .mob-share-ico { font-size: 24px; width: 36px; text-align: center; flex-shrink: 0; }
+.mob-share-ico-svg { display: flex; align-items: center; justify-content: center; }
 .mob-share-info { flex: 1; }
 .mob-share-label { font-size: 16px; color: var(--text-primary); font-weight: 500; }
 .mob-share-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.mob-share-arr { font-size: 14px; color: var(--text-muted); flex-shrink: 0; opacity: 0.6; }
+/* Social media <a> links styled like buttons */
+a.mob-share-item {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    cursor: pointer;
+}
+a.mob-share-item:hover { background: var(--accent-trace); }
+/* Section divider labels inside share sheet */
+.mob-share-section-lbl {
+    padding: 10px 14px 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    opacity: 0.75;
+    font-family: var(--font-ui);
+}
 
 /* ════════════════════════════════════════════════════════════════════
    PHONE REDESIGN — max-width: 767px  (Groups A–F)

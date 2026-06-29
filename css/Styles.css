@@ -548,6 +548,7 @@ button {
     padding: 0 48px 36px;
     overflow-y: auto;
     overflow-x: hidden;
+    touch-action: pan-y;
     background: var(--bg-content);
     border-right: 1px solid var(--border);
     transition: background-color 0.3s;

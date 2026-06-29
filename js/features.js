@@ -9,6 +9,17 @@
 
 const FEATURES_KEY = 'quranFeaturesV1';
 
+// Per-section tutorial video links — replace placeholder URLs with specific videos when ready
+const HELP_VIDEOS = {
+    display:  'https://www.youtube.com/@islampaixducoeur',
+    reading:  'https://www.youtube.com/@islampaixducoeur',
+    search:   'https://www.youtube.com/@islampaixducoeur',
+    study:    'https://www.youtube.com/@islampaixducoeur',
+    audio:    'https://www.youtube.com/@islampaixducoeur',
+    advanced: 'https://www.youtube.com/@islampaixducoeur',
+    privacy:  'https://www.youtube.com/@islampaixducoeur',
+};
+
 // Default feature flags (user can toggle in settings)
 const DEFAULT_FEATURES = {
     // v10.9: Off by default — user can opt in
@@ -1309,18 +1320,32 @@ function appendFeaturesUI(body) {
         return row;
     }
 
-    function makeSection(title) {
+    function makeSection(title, helpKey) {
         var sec = document.createElement('div');
         sec.className = 'mob-settings-section';
         var lbl = document.createElement('div');
         lbl.className = 'mob-settings-lbl';
-        lbl.textContent = title;
+        var titleSpan = document.createElement('span');
+        titleSpan.textContent = title;
+        lbl.appendChild(titleSpan);
+        var helpUrl = helpKey && HELP_VIDEOS[helpKey];
+        if (helpUrl) {
+            var helpBtn = document.createElement('button');
+            helpBtn.className = 'section-help-btn';
+            helpBtn.title = 'Watch tutorial on YouTube';
+            helpBtn.textContent = 'ℹ️';
+            helpBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.open(helpUrl, '_blank');
+            });
+            lbl.appendChild(helpBtn);
+        }
         sec.appendChild(lbl);
         return sec;
     }
 
     // 📖 Reading
-    var readSec = makeSection('📖 Reading');
+    var readSec = makeSection('📖 Reading', 'reading');
 
     // Notification card — prominent, first in Reading
     var notifLabel = document.createElement('div');
@@ -1405,7 +1430,7 @@ function appendFeaturesUI(body) {
     body.appendChild(readSec);
 
     // 🔍 Search
-    var searchSec = makeSection('🔍 Search');
+    var searchSec = makeSection('🔍 Search', 'search');
     if (window.innerWidth > 900) {
         searchSec.appendChild(makeToggleRow('searchAsYouType', '⚡ Search as you type', 'Auto-runs search 350ms after you stop typing'));
     }
@@ -1413,7 +1438,7 @@ function appendFeaturesUI(body) {
     body.appendChild(searchSec);
 
     // 📚 Study
-    var studySec = makeSection('📚 Study');
+    var studySec = makeSection('📚 Study', 'study');
     studySec.appendChild(makeToggleRow('tafsir',            '📚 Tafsir (commentary)',  'Tap a verse to read classical commentary · needs internet'));
     studySec.appendChild(makeToggleRow('verseComparison',   '🔀 Compare tafsirs',      'Adds "Compare all" button in the tafsir modal'));
     studySec.appendChild(makeToggleRow('reflectionPrompts', '✍️ Reflection prompts',   'Optional reflection question after finishing a surah'));
@@ -1427,7 +1452,17 @@ function appendFeaturesUI(body) {
     advHeader.className = 'settings-collapsible-header';
     var advTitle = document.createElement('div');
     advTitle.className = 'mob-settings-lbl';
-    advTitle.textContent = '⚙ Advanced';
+    var advTitleSpan = document.createElement('span');
+    advTitleSpan.textContent = '⚙ Advanced';
+    advTitle.appendChild(advTitleSpan);
+    if (HELP_VIDEOS.advanced) {
+        var advHelpBtn = document.createElement('button');
+        advHelpBtn.className = 'section-help-btn';
+        advHelpBtn.title = 'Watch tutorial on YouTube';
+        advHelpBtn.textContent = 'ℹ️';
+        advHelpBtn.addEventListener('click', function(e) { e.stopPropagation(); window.open(HELP_VIDEOS.advanced, '_blank'); });
+        advTitle.appendChild(advHelpBtn);
+    }
     var advArrow = document.createElement('span');
     advArrow.className = 'settings-collapsible-arrow';
     advArrow.textContent = '▾';
@@ -1528,7 +1563,17 @@ function appendDataUI(body) {
     header.className = 'settings-collapsible-header';
     var headerTitle = document.createElement('div');
     headerTitle.className = 'mob-settings-lbl';
-    headerTitle.textContent = '🔒 Data & Privacy';
+    var headerTitleSpan = document.createElement('span');
+    headerTitleSpan.textContent = '🔒 Data & Privacy';
+    headerTitle.appendChild(headerTitleSpan);
+    if (HELP_VIDEOS.privacy) {
+        var privHelpBtn = document.createElement('button');
+        privHelpBtn.className = 'section-help-btn';
+        privHelpBtn.title = 'Watch tutorial on YouTube';
+        privHelpBtn.textContent = 'ℹ️';
+        privHelpBtn.addEventListener('click', function(e) { e.stopPropagation(); window.open(HELP_VIDEOS.privacy, '_blank'); });
+        headerTitle.appendChild(privHelpBtn);
+    }
     var headerArrow = document.createElement('span');
     headerArrow.className = 'settings-collapsible-arrow';
     headerArrow.textContent = '▾';
@@ -3181,7 +3226,17 @@ function appendAudioUI(body) {
     sec.className = 'mob-settings-section';
     var lbl = document.createElement('div');
     lbl.className = 'mob-settings-lbl';
-    lbl.textContent = 'Audio recitation';
+    var audioLblSpan = document.createElement('span');
+    audioLblSpan.textContent = '🎵 Audio recitation';
+    lbl.appendChild(audioLblSpan);
+    if (HELP_VIDEOS.audio) {
+        var audioHelpBtn = document.createElement('button');
+        audioHelpBtn.className = 'section-help-btn';
+        audioHelpBtn.title = 'Watch tutorial on YouTube';
+        audioHelpBtn.textContent = 'ℹ️';
+        audioHelpBtn.addEventListener('click', function(e) { e.stopPropagation(); window.open(HELP_VIDEOS.audio, '_blank'); });
+        lbl.appendChild(audioHelpBtn);
+    }
     sec.appendChild(lbl);
 
     var prefs = getAudioPrefs();
@@ -4256,8 +4311,24 @@ function openReflectionModal(suraId) {
 // ──────────────────────────────────────────────────────────────────
 // FEATURE 7: HIJRI CALENDAR AWARENESS
 // ──────────────────────────────────────────────────────────────────
-// Simple Umm al-Qura-style conversion (approximation, ±1 day)
+// Uses the browser's Intl API with the Umm al-Qura calendar (the
+// official Islamic calendar reference). Falls back to the arithmetic
+// approximation on very old browsers.
 function gregorianToHijri(g) {
+    try {
+        var fmt = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+            day: 'numeric', month: 'numeric', year: 'numeric'
+        });
+        var parts = fmt.formatToParts(g);
+        var d = {};
+        parts.forEach(function(p) {
+            if (p.type === 'day')   d.day   = parseInt(p.value, 10);
+            if (p.type === 'month') d.month = parseInt(p.value, 10);
+            if (p.type === 'year')  d.year  = parseInt(p.value, 10);
+        });
+        if (d.day && d.month && d.year) return d;
+    } catch(e) {}
+    // Arithmetic fallback (±1-2 day approximation)
     var jd = Math.floor((g.getTime() / 86400000) + 2440587.5);
     var l = jd - 1948440 + 10632;
     var n = Math.floor((l - 1) / 10631);
@@ -5909,7 +5980,7 @@ function appendYtChannelUI(body) {
             vEl = document.createElement('div');
             vEl.className = 'app-version-footer';
         }
-        vEl.textContent = 'Quran Display v10.17';
+        vEl.textContent = 'Quran Display v10.18';
         body.appendChild(vEl);
     }
 

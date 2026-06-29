@@ -3495,7 +3495,17 @@ function buildSheetSettings(body, title) {
     displayGroup.className = 'settings-display-group';
     var displayGroupLbl = document.createElement('div');
     displayGroupLbl.className = 'mob-settings-lbl';
-    displayGroupLbl.textContent = '🖋 Language & Display';
+    var displayLblSpan = document.createElement('span');
+    displayLblSpan.textContent = '🖋 Language & Display';
+    displayGroupLbl.appendChild(displayLblSpan);
+    if (typeof HELP_VIDEOS !== 'undefined' && HELP_VIDEOS.display) {
+        var displayHelpBtn = document.createElement('button');
+        displayHelpBtn.className = 'section-help-btn';
+        displayHelpBtn.title = 'Watch tutorial on YouTube';
+        displayHelpBtn.textContent = 'ℹ️';
+        displayHelpBtn.addEventListener('click', function(e) { e.stopPropagation(); window.open(HELP_VIDEOS.display, '_blank'); });
+        displayGroupLbl.appendChild(displayHelpBtn);
+    }
     displayGroup.appendChild(displayGroupLbl);
     var displayGroupInner = document.createElement('div');
     displayGroupInner.className = 'settings-display-group-inner';
@@ -3508,7 +3518,7 @@ function buildSheetSettings(body, title) {
     // Version footer
     var verEl = document.createElement('div');
     verEl.className = 'mob-settings-version';
-    verEl.textContent = 'Quran Display v10.17';
+    verEl.textContent = 'Quran Display v10.18';
     body.appendChild(verEl);
 }
 
@@ -3677,7 +3687,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.17.0%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.18.0%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

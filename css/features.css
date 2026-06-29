@@ -113,6 +113,21 @@
     padding-top: 6px;
 }
 
+/* ── Section help button (ℹ️ next to group title → opens YouTube tutorial) ── */
+.section-help-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0 3px;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.65;
+    flex-shrink: 0;
+    touch-action: manipulation;
+    transition: opacity 0.15s;
+}
+.section-help-btn:hover { opacity: 1; }
+
 /* ── App version footer (bottom of Features panel) ── */
 .app-version-footer {
     text-align: center;

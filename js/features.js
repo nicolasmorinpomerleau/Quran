@@ -1,7 +1,7 @@
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════════
-// QURAN APP v9.9 — Phase 1 Features Module
+// QURAN APP v11.0 — Phase 1 Features Module
 // ═══════════════════════════════════════════════════════════════════
 // All features can be toggled in Settings → Features
 // Defaults are conservative — power features are opt-in
@@ -19,6 +19,103 @@ const HELP_VIDEOS = {
     advanced: 'https://www.youtube.com/@islampaixducoeur',
     privacy:  'https://www.youtube.com/@islampaixducoeur',
 };
+
+// Localized UI labels for features that previously had hardcoded English strings
+var UI_LABELS = {
+    arabic: {
+        continueReading: 'تابع من حيث توقفت',
+        verse: 'آية',
+        todayVerse: 'آية اليوم',
+        close: 'إغلاق',
+        readVerse: '← اقرأ هذه الآية',
+        maybeLater: 'ربما لاحقاً',
+        resumeAudio: '▶ متابعة',
+        khatmTracker: 'متابع الختم',
+        khatmFirstHint: '📖 اقرأ سورتك الأولى لترى نشاطك هنا.',
+        currentStreak: 'الرقة الحالية',
+        day: 'يوم',  days: 'أيام',
+        markKhatm: '🎉 تسجيل الختم',
+        resetTracker: '🗑 إعادة تعيين',
+        readingPlan: 'خطة القراءة',
+        planHint: 'اختر وتيرتك لإنهاء القرآن الكريم. كل يوم يُظهر ما يجب قراءته.',
+        showWindow: '📌 إظهار النافذة',
+        cancelPlan: '🗑 إلغاء الخطة',
+        readingTime: 'وقت القراءة',
+        thisWeek: 'هذا الأسبوع',
+        weekAvg: 'متوسط 4 أسابيع'
+    },
+    french: {
+        continueReading: 'Reprendre la lecture',
+        verse: 'Verset',
+        todayVerse: 'Verset du jour',
+        close: 'Fermer',
+        readVerse: 'Lire ce verset →',
+        maybeLater: 'Plus tard',
+        resumeAudio: '▶ Reprendre',
+        khatmTracker: 'Suivi du Khatm',
+        khatmFirstHint: '📖 Lisez votre première sourate pour voir votre activité ici.',
+        currentStreak: 'Série actuelle',
+        day: 'jour',  days: 'jours',
+        markKhatm: '🎉 Marquer Khatm accompli',
+        resetTracker: '🗑 Réinitialiser',
+        readingPlan: 'Plan de lecture',
+        planHint: "Choisissez votre rythme pour terminer le Coran. Chaque jour montre ce qu'il faut lire.",
+        showWindow: '📌 Afficher la fenêtre',
+        cancelPlan: '🗑 Annuler le plan',
+        readingTime: 'Temps de lecture',
+        thisWeek: 'Cette semaine',
+        weekAvg: 'Moyenne 4 semaines'
+    },
+    english: {
+        continueReading: 'Continue where you left off',
+        verse: 'Verse',
+        todayVerse: "Today's verse",
+        close: 'Close',
+        readVerse: 'Read this verse →',
+        maybeLater: 'Maybe later',
+        resumeAudio: '▶ Resume',
+        khatmTracker: 'Khatm tracker',
+        khatmFirstHint: '📖 Read your first surah to see activity here.',
+        currentStreak: 'Current streak',
+        day: 'day',  days: 'days',
+        markKhatm: '🎉 Mark Khatm as completed',
+        resetTracker: '🗑 Reset tracker',
+        readingPlan: 'Reading plan',
+        planHint: 'Pick how fast you want to finish the Quran. Each day shows what to read; mark days complete to track progress.',
+        showWindow: '📌 Show window',
+        cancelPlan: '🗑 Cancel plan',
+        readingTime: 'Reading time',
+        thisWeek: 'This week',
+        weekAvg: '4-week average'
+    },
+    spanish: {
+        continueReading: 'Continuar donde lo dejaste',
+        verse: 'Verso',
+        todayVerse: 'Versículo de hoy',
+        close: 'Cerrar',
+        readVerse: 'Leer este verso →',
+        maybeLater: 'Quizás después',
+        resumeAudio: '▶ Reanudar',
+        khatmTracker: 'Seguimiento del Khatm',
+        khatmFirstHint: '📖 Lee tu primera sura para ver tu actividad aquí.',
+        currentStreak: 'Racha actual',
+        day: 'día',  days: 'días',
+        markKhatm: '🎉 Marcar Khatm completado',
+        resetTracker: '🗑 Restablecer',
+        readingPlan: 'Plan de lectura',
+        planHint: 'Elige tu ritmo para terminar el Corán. Cada día muestra qué leer; marca los días completados.',
+        showWindow: '📌 Mostrar ventana',
+        cancelPlan: '🗑 Cancelar plan',
+        readingTime: 'Tiempo de lectura',
+        thisWeek: 'Esta semana',
+        weekAvg: 'Promedio 4 semanas'
+    }
+};
+
+function getL() {
+    var lang = (typeof currentLanguage !== 'undefined' && UI_LABELS[currentLanguage]) ? currentLanguage : 'english';
+    return UI_LABELS[lang];
+}
 
 // Default feature flags (user can toggle in settings)
 const DEFAULT_FEATURES = {
@@ -39,7 +136,6 @@ const DEFAULT_FEATURES = {
     hapticFeedback:    true,         // #22 (mobile)
     verseNavigation:   true,         // #1
     notesExportImport: true,         // #7
-    betterErrorStates: true,         // #16
     audioRecitation:   true,         // v10.2 — Phase 2b
     tafsir:            true,         // v10.2 — Phase 2b
     // v10.7 — eight features
@@ -270,13 +366,14 @@ function buildContinueCard() {
     if (!info) return null;
     var card = document.createElement('div');
     card.className = 'continue-reading-card';
+    var l = getL();
     var verseLine = info.verseIdx != null
-        ? '<div class="crc-verse">Verse ' + (info.verseIdx + 1) + ' · ' + info.ago + '</div>'
+        ? '<div class="crc-verse">' + l.verse + ' ' + (info.verseIdx + 1) + ' · ' + info.ago + '</div>'
         : '<div class="crc-verse">' + info.ago + '</div>';
     card.innerHTML =
         '<span class="crc-icon">📍</span>' +
         '<div class="crc-text">' +
-            '<div class="crc-label">Continue where you left off</div>' +
+            '<div class="crc-label">' + l.continueReading + '</div>' +
             '<div class="crc-name">' + info.suraName + '</div>' +
             verseLine +
         '</div>' +
@@ -714,6 +811,14 @@ function buildVerseNav() {
         if (window.innerWidth > 900) return;
         if (!e.target.closest('#quranContainer')) return;
         if (e.touches.length !== 1) { startX = null; tracking = false; return; }
+        // Don't activate when any overlay / modal / sheet is open
+        var mSheet = document.getElementById('mobileSheet');
+        if (mSheet && mSheet.classList.contains('open')) { startX = null; return; }
+        var fModal = document.getElementById('featuresModal');
+        if (fModal && fModal.classList.contains('show')) { startX = null; return; }
+        if (document.getElementById('dailyVerseModal') || document.getElementById('reflectionModal') ||
+            document.getElementById('topicsModal') || document.getElementById('readingPlanModal') ||
+            document.getElementById('tafsirModal')) { startX = null; return; }
         // Don't track if user is interacting with verse-action-btns or scroll
         if (e.target.closest('.verse-action-btn')) return;
         startX = e.touches[0].clientX;
@@ -844,6 +949,10 @@ function buildVerseNav() {
         if (window.innerWidth > 900) return;
         // Don't activate when any modal/settings overlay is open
         if (document.querySelector('.mob-info-overlay.show')) return;
+        var fModal = document.getElementById('featuresModal');
+        if (fModal && fModal.classList.contains('show')) return;
+        var mSheet = document.getElementById('mobileSheet');
+        if (mSheet && mSheet.classList.contains('open')) return;
         var container = document.getElementById('quranContainer');
         if (!container) return;
         if (container.scrollTop > 0) return;
@@ -1240,7 +1349,7 @@ function loadArabicFontChoice() {
         orig(body, title);
         appendFeaturesUI(body);
         appendFocusModeButton(body);
-        if (window.innerWidth > 767) appendKhatmUI(body);
+        appendKhatmUI(body);
         // v10.10: appendDataUI moved to a final injection layer (always last)
     };
 }());
@@ -1288,6 +1397,14 @@ function appendFeaturesUI(body) {
                 if (existing) existing.remove();
                 if (this.checked && typeof appendHijriBadge === 'function') {
                     setTimeout(appendHijriBadge, 100);
+                }
+            }
+            if (key === 'khatmTracker') {
+                if (this.checked) {
+                    appendKhatmUI(body);
+                } else {
+                    var kSec = body.querySelector('[data-khatm-section]');
+                    if (kSec) kSec.remove();
                 }
             }
             if (key === 'voiceSearch') {
@@ -1354,9 +1471,10 @@ function appendFeaturesUI(body) {
     readSec.appendChild(notifLabel);
 
     var isNotifOn = !!f['dailyVerseNotification'];
-    var savedHour = 8;
+    var savedHour = 8, savedMinute = 0;
     try { var _sh = localStorage.getItem(PUSH_NOTIF_HOUR_KEY); if (_sh !== null) savedHour = parseInt(_sh); } catch(e) {}
-    function _fmtHour(h) { var p = h >= 12 ? 'PM' : 'AM'; return (h % 12 || 12) + ':00 ' + p; }
+    try { var _sm = localStorage.getItem(PUSH_NOTIF_MIN_KEY);  if (_sm !== null) savedMinute = parseInt(_sm); } catch(e) {}
+    var _fmtTime = fmtNotifTime;
 
     var notifCard = document.createElement('div');
     notifCard.className = 'notif-settings-card' + (isNotifOn ? '' : ' notif-off');
@@ -1366,7 +1484,7 @@ function appendFeaturesUI(body) {
     var notifTitle = document.createElement('div');
     notifTitle.className = 'notif-settings-card-title';
     notifTitle.textContent = '🔔 Daily verse notification';
-    var notifSwWrap = document.createElement('span');
+    var notifSwWrap = document.createElement('label');
     notifSwWrap.className = 'feature-toggle-sw';
     var notifInp = document.createElement('input');
     notifInp.type = 'checkbox';
@@ -1388,13 +1506,14 @@ function appendFeaturesUI(body) {
     var notifTimeChip = document.createElement('div');
     notifTimeChip.className = 'notif-settings-time-chip';
     var notifTimeVal = document.createElement('span');
-    notifTimeVal.textContent = _fmtHour(savedHour);
+    notifTimeVal.className = 'notif-time-val';
+    notifTimeVal.textContent = _fmtTime(savedHour, savedMinute);
     notifTimeChip.appendChild(notifTimeVal);
     notifTimeChip.insertAdjacentHTML('beforeend', ' <span style="font-size:10px;opacity:0.6">✏️</span>');
     notifTimeChip.addEventListener('click', function() {
-        showNotifTimePicker(function(newHour) {
-            notifTimeVal.textContent = _fmtHour(newHour);
-            if (typeof doSubscribe === 'function') doSubscribe(newHour);
+        showNotifTimePicker(function(newHour, newMinute) {
+            notifTimeVal.textContent = _fmtTime(newHour, newMinute);
+            if (typeof doSubscribe === 'function') doSubscribe(newHour, newMinute);
             showToast('✓ Notification time updated');
         });
     });
@@ -1656,11 +1775,13 @@ function appendFocusModeButton(body) {
 
 function appendKhatmUI(body) {
     if (!isFeatureOn('khatmTracker')) return;
+    if (body.querySelector('[data-khatm-section]')) return;
     var sec = document.createElement('div');
     sec.className = 'mob-settings-section';
+    sec.setAttribute('data-khatm-section', '1');
     var lbl = document.createElement('div');
     lbl.className = 'mob-settings-lbl';
-    lbl.textContent = 'Khatm tracker';
+    lbl.textContent = getL().khatmTracker;
     sec.appendChild(lbl);
 
     // v10.3: Explanatory hint so users understand what this is
@@ -1678,7 +1799,7 @@ function appendKhatmUI(body) {
     if (dailyKeys.length === 0) {
         var emptyState = document.createElement('div');
         emptyState.style.cssText = 'padding:18px 14px;text-align:center;background:var(--accent-trace);border-radius:8px;font-size:12px;color:var(--text-primary);opacity:0.7;font-style:italic;margin-bottom:10px;';
-        emptyState.textContent = '📖 Read your first surah to see activity here.';
+        emptyState.textContent = getL().khatmFirstHint;
         sec.appendChild(emptyState);
     } else {
         var heatmap = buildKhatmHeatmap();
@@ -1691,7 +1812,8 @@ function appendKhatmUI(body) {
         if (streak > 0) {
             var streakLine = document.createElement('div');
             streakLine.style.cssText = 'font-size:12px;color:var(--accent);margin:8px 0 12px;text-align:center;font-weight:600;';
-            streakLine.innerHTML = '🔥 Current streak: ' + streak + ' day' + (streak === 1 ? '' : 's');
+            var l = getL();
+            streakLine.innerHTML = '🔥 ' + l.currentStreak + ': ' + streak + ' ' + (streak === 1 ? l.day : l.days);
             sec.appendChild(streakLine);
         }
     }
@@ -1699,15 +1821,12 @@ function appendKhatmUI(body) {
     // Mark Khatm button
     var btn = document.createElement('button');
     btn.className = 'mob-settings-btn';
-    btn.textContent = '🎉 Mark Khatm as completed';
+    btn.textContent = getL().markKhatm;
     btn.addEventListener('click', function() {
         if (typeof showConfirm === 'function') {
             showConfirm('Mark Khatm complete?', 'Log that you have finished a full reading of the Quran. This will be recorded with today\'s date.', function() {
                 recordKhatmCompletion();
-                // Refresh the settings UI to show new completion count
-                if (document.getElementById('featuresModal') && document.getElementById('featuresModal').classList.contains('show')) {
-                    if (typeof openFeaturesModal === 'function') openFeaturesModal();
-                }
+                if (typeof refreshSettingsUI === 'function') refreshSettingsUI();
             });
         } else {
             recordKhatmCompletion();
@@ -1719,7 +1838,7 @@ function appendKhatmUI(body) {
     var resetBtn = document.createElement('button');
     resetBtn.className = 'mob-settings-btn';
     resetBtn.style.cssText = 'margin-top:8px;background:#d9707018;border-color:#d9707040;color:#e08585;';
-    resetBtn.textContent = '🗑 Reset tracker';
+    resetBtn.textContent = getL().resetTracker;
     resetBtn.addEventListener('click', function() {
         var data = getKhatmData();
         var dCount = Object.keys(data.daily || {}).length;
@@ -1730,9 +1849,7 @@ function appendKhatmUI(body) {
             showConfirm('Reset Khatm tracker?', msg, function() {
                 try { localStorage.removeItem('quranKhatm'); } catch(e) {}
                 showToast('Tracker reset');
-                if (document.getElementById('featuresModal') && document.getElementById('featuresModal').classList.contains('show')) {
-                    if (typeof openFeaturesModal === 'function') openFeaturesModal();
-                }
+                if (typeof refreshSettingsUI === 'function') refreshSettingsUI();
             });
         } else if (confirm(msg)) {
             try { localStorage.removeItem('quranKhatm'); } catch(e) {}
@@ -2217,14 +2334,15 @@ function openReadingPlanModal() {
 function appendReadingPlanUI(body) {
     var sec = document.createElement('div');
     sec.className = 'mob-settings-section';
+    var l = getL();
     var lbl = document.createElement('div');
     lbl.className = 'mob-settings-lbl';
-    lbl.textContent = 'Reading plan';
+    lbl.textContent = l.readingPlan;
     sec.appendChild(lbl);
 
     var hint = document.createElement('div');
     hint.style.cssText = 'font-size:12px;color:var(--text-primary);margin-bottom:10px;opacity:0.78;line-height:1.4;';
-    hint.textContent = 'Pick how fast you want to finish the Quran. Each day shows what to read; mark days complete to track progress.';
+    hint.textContent = l.planHint;
     sec.appendChild(hint);
 
     var current = getReadingPlan();
@@ -2250,19 +2368,23 @@ function appendReadingPlanUI(body) {
         var showPillBtn = document.createElement('button');
         showPillBtn.className = 'mob-settings-btn';
         showPillBtn.style.cssText = 'flex:1;min-width:0;';
-        showPillBtn.textContent = '📌 Show window';
+        showPillBtn.textContent = l.showWindow;
         showPillBtn.title = 'Bring back the floating reading-plan window';
         showPillBtn.addEventListener('click', function() {
             try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
             if (typeof renderReadingPlanCard === 'function') renderReadingPlanCard();
             if (typeof showToast === 'function') showToast('Window restored');
+            var mSheet = document.getElementById('mobileSheet');
+            if (mSheet && mSheet.classList.contains('open') && typeof closeMobileSheet === 'function') {
+                setTimeout(closeMobileSheet, 150);
+            }
         });
         btnRow.appendChild(showPillBtn);
 
         var cancelBtn = document.createElement('button');
         cancelBtn.className = 'mob-settings-btn';
         cancelBtn.style.cssText = 'flex:1;min-width:0;background:#d9707018;border-color:#d9707040;color:#e08585;';
-        cancelBtn.textContent = '🗑 Cancel plan';
+        cancelBtn.textContent = l.cancelPlan;
         cancelBtn.addEventListener('click', function() {
             if (typeof showConfirm === 'function') {
                 showConfirm('Cancel reading plan?', 'Your progress (' + doneCount + ' days) will be lost.', function() {
@@ -2271,12 +2393,9 @@ function appendReadingPlanUI(body) {
                     if (pill) pill.remove();
                     var modal = document.getElementById('readingPlanModal');
                     if (modal) modal.remove();
-                    // Clear session-dismissed flag so a future plan shows the pill again
                     try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
                     showToast('Plan cancelled');
-                    if (typeof openFeaturesModal === 'function' && document.getElementById('featuresModal').classList.contains('show')) {
-                        openFeaturesModal();
-                    }
+                    refreshSettingsUI();
                 });
             } else if (confirm('Cancel reading plan? Your progress will be lost.')) {
                 clearReadingPlan();
@@ -2327,16 +2446,17 @@ function appendReadingPlanUI(body) {
     // Reading-time summary — always shown
     var rtSec = document.createElement('div');
     rtSec.className = 'mob-settings-section';
+    var rtL = getL();
     var rtLbl = document.createElement('div');
     rtLbl.className = 'mob-settings-lbl';
-    rtLbl.textContent = 'Reading time';
+    rtLbl.textContent = rtL.readingTime;
     rtSec.appendChild(rtLbl);
     var s = getReadingTimeSummary();
     var rtBox = document.createElement('div');
     rtBox.className = 'reading-time-box';
     rtBox.innerHTML =
-        '<div class="rt-row"><span class="rt-key">This week</span><span class="rt-val">' + fmtTime(s.thisWeek) + '</span></div>' +
-        '<div class="rt-row"><span class="rt-key">4-week average</span><span class="rt-val">' + fmtTime(s.avg4w) + '/week</span></div>' +
+        '<div class="rt-row"><span class="rt-key">' + rtL.thisWeek + '</span><span class="rt-val">' + fmtTime(s.thisWeek) + '</span></div>' +
+        '<div class="rt-row"><span class="rt-key">' + rtL.weekAvg + '</span><span class="rt-val">' + fmtTime(s.avg4w) + '/week</span></div>' +
         '<div class="rt-footer"><button class="rt-reset-link" type="button">🗑 Reset</button></div>';
     rtSec.appendChild(rtBox);
     var rtReset = rtBox.querySelector('.rt-reset-link');
@@ -2352,10 +2472,7 @@ function appendReadingPlanUI(body) {
                 _readingTimeStart = Date.now();
                 if (typeof refreshTopReadingTime === 'function') refreshTopReadingTime();
                 if (typeof showToast === 'function') showToast('Reading time reset');
-                var feat = document.getElementById('featuresModal');
-                if (feat && feat.classList.contains('show') && typeof openFeaturesModal === 'function') {
-                    openFeaturesModal();
-                }
+                refreshSettingsUI();
             });
         } else if (confirm(msg)) {
             try { localStorage.removeItem(READING_TIME_KEY); } catch(e) {}
@@ -2407,11 +2524,7 @@ function startPlan(planType, customDays) {
     saveReadingPlan(plan);
     showToast('📖 Plan started!');
     renderReadingPlanCard();
-    // Refresh the settings UI if open
-    if (typeof openFeaturesModal === 'function') {
-        var modal = document.getElementById('featuresModal');
-        if (modal && modal.classList.contains('show')) openFeaturesModal();
-    }
+    refreshSettingsUI();
     hapticTap(20);
 }
 
@@ -2716,8 +2829,10 @@ function appendInstallUI(body) {
     // Detect install state
     var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
+    var wasInstalled = false;
+    try { wasInstalled = localStorage.getItem('quranPWAInstalled') === '1'; } catch(e) {}
 
-    if (isStandalone) {
+    if (isStandalone || wasInstalled) {
         hint.style.cssText = 'font-size:24px;font-weight:700;color:#4caf50;text-align:center;padding:14px 0 4px;line-height:1.3;';
         hint.textContent = '✅ Installed — works offline';
         sec.appendChild(hint);
@@ -3343,7 +3458,7 @@ function showResumeBanner(saved) {
     banner.innerHTML =
         '<div class="arb-info">🎵 ' + suraName + ' · v.' + verseNum + '</div>' +
         '<div class="arb-actions">' +
-            '<button class="arb-btn arb-play">▶ Reprendre</button>' +
+            '<button class="arb-btn arb-play">' + getL().resumeAudio + '</button>' +
             '<button class="arb-btn arb-dismiss">✕</button>' +
         '</div>';
     document.body.appendChild(banner);
@@ -4070,6 +4185,7 @@ function showDailyVerseNow() {
     var existing = document.getElementById('dailyVerseModal');
     if (existing) existing.remove();
 
+    var l = getL();
     var overlay = document.createElement('div');
     overlay.id = 'dailyVerseModal';
     overlay.className = 'daily-verse-overlay';
@@ -4077,14 +4193,14 @@ function showDailyVerseNow() {
         '<div class="daily-verse-box">' +
             '<div class="daily-verse-header">' +
                 '<span class="dv-ornament">✦</span>' +
-                '<span class="dv-label">Today\'s verse</span>' +
+                '<span class="dv-label">' + l.todayVerse + '</span>' +
                 '<span class="dv-ornament">✦</span>' +
             '</div>' +
             '<div class="daily-verse-text" dir="rtl">' + verse.text + '</div>' +
             '<div class="daily-verse-ref">' + sura.name + ' · ' + sNum + ':' + vNum + '</div>' +
             '<div class="daily-verse-actions">' +
-                '<button class="dv-btn-secondary" id="dvDismiss2">Close</button>' +
-                '<button class="dv-btn-primary" id="dvGoToVerse2">Read this verse →</button>' +
+                '<button class="dv-btn-secondary" id="dvDismiss2">' + l.close + '</button>' +
+                '<button class="dv-btn-primary" id="dvGoToVerse2">' + l.readVerse + '</button>' +
             '</div>' +
         '</div>';
     document.body.appendChild(overlay);
@@ -4133,6 +4249,7 @@ function maybeShowDailyVerse() {
     try { localStorage.setItem(DAILY_VERSE_LAST_KEY, todayKey); } catch(e) {}
     track('daily_verse_shown', { ref: verseRef, trigger: 'auto' });
 
+    var l = getL();
     var overlay = document.createElement('div');
     overlay.id = 'dailyVerseModal';
     overlay.className = 'daily-verse-overlay';
@@ -4140,14 +4257,14 @@ function maybeShowDailyVerse() {
         '<div class="daily-verse-box">' +
             '<div class="daily-verse-header">' +
                 '<span class="dv-ornament">✦</span>' +
-                '<span class="dv-label">Today\'s verse</span>' +
+                '<span class="dv-label">' + l.todayVerse + '</span>' +
                 '<span class="dv-ornament">✦</span>' +
             '</div>' +
             '<div class="daily-verse-text" dir="rtl">' + verse.text + '</div>' +
             '<div class="daily-verse-ref">' + sura.name + ' · ' + sNum + ':' + vNum + '</div>' +
             '<div class="daily-verse-actions">' +
-                '<button class="dv-btn-secondary" id="dvDismiss">Maybe later</button>' +
-                '<button class="dv-btn-primary" id="dvGoToVerse">Read this verse →</button>' +
+                '<button class="dv-btn-secondary" id="dvDismiss">' + l.maybeLater + '</button>' +
+                '<button class="dv-btn-primary" id="dvGoToVerse">' + l.readVerse + '</button>' +
             '</div>' +
         '</div>';
     document.body.appendChild(overlay);
@@ -4213,13 +4330,13 @@ function maybeShowReflectionPrompt(suraId) {
     if (_reflectionShownThisSession[suraId]) return;
     _reflectionShownThisSession[suraId] = true;
     // v10.11: Don't trigger if any other modal/sheet is currently open
-    if (document.getElementById('mobileSheet') && document.getElementById('mobileSheet').classList.contains('show')) return;
+    if (document.getElementById('mobileSheet') && document.getElementById('mobileSheet').classList.contains('open')) return;
     if (document.getElementById('featuresModal') && document.getElementById('featuresModal').classList.contains('show')) return;
     if (document.getElementById('tafsirModal')) return;
     if (document.getElementById('tafsirCompareModal')) return;
     if (document.getElementById('topicsModal')) return;
     if (document.getElementById('readingPlanModal')) return;
-    if (document.getElementById('noteModal') && document.getElementById('noteModal').classList.contains('show')) return;
+    if (document.getElementById('noteModal') && document.getElementById('noteModal').style.display === 'flex') return;
     openReflectionModal(suraId);
 }
 
@@ -5099,12 +5216,34 @@ function refreshTopReadingTime() {
     }
 }());
 
+// Rebuild whichever settings container is currently open (desktop modal or mobile sheet)
+function refreshSettingsUI() {
+    var modal = document.getElementById('featuresModal');
+    if (modal && modal.classList.contains('show') && typeof openFeaturesModal === 'function') {
+        openFeaturesModal(); return;
+    }
+    if (typeof _sheetCurrentAction !== 'undefined' && _sheetCurrentAction === 'settings') {
+        var body  = document.getElementById('mobileSheetBody');
+        var title = document.getElementById('mobileSheetTitle');
+        if (body && title && typeof buildSheetSettings === 'function') {
+            body.innerHTML = '';
+            buildSheetSettings(body, title);
+        }
+    }
+}
+
 // ════════════════════════════════════════════════════════════════════
 // v10.13 — Daily verse notification via Web Push
 // ════════════════════════════════════════════════════════════════════
 var PUSH_SERVER_URL  = 'https://quran-push-server-production.up.railway.app';
 var VAPID_PUBLIC_KEY = 'BFZJh92I-qypfw2ZKsJoBbD0IwN7O13EBvFWE_GIVGbtQSfMrnxNR5Re3DP-Ex1uQdF-xtiKXD-ijbocrYzTleE';
 var PUSH_NOTIF_HOUR_KEY = 'quranNotifHour';
+var PUSH_NOTIF_MIN_KEY  = 'quranNotifMinute';
+
+function fmtNotifTime(h, m) {
+    var p = function(n) { return n < 10 ? '0' + n : '' + n; };
+    return (h % 12 || 12) + ':' + p(m) + ' ' + (h >= 12 ? 'PM' : 'AM');
+}
 
 function urlBase64ToUint8Array(base64String) {
     var padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -5116,49 +5255,138 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function showNotifTimePicker(onConfirm, onCancel) {
-    var savedHour = 8;
+    var savedHour = 8, savedMin = 0;
     try { savedHour = parseInt(localStorage.getItem(PUSH_NOTIF_HOUR_KEY) || '8'); } catch(e) {}
+    try { var _m = localStorage.getItem(PUSH_NOTIF_MIN_KEY); if (_m !== null) savedMin = parseInt(_m); } catch(e) {}
     var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-    var defaultVal = pad(savedHour) + ':00';
     var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
 
+    // Convert saved 24h time to 12h + period
+    var hour12 = savedHour % 12 || 12;
+    var period  = savedHour >= 12 ? 'PM' : 'AM';
+    var min5    = Math.min(55, Math.round(savedMin / 5) * 5);
+
+    // Build overlay
     var overlay = document.createElement('div');
     overlay.className = 'notif-time-overlay';
-    overlay.innerHTML =
-        '<div class="notif-time-card">' +
-            '<h3>🔔 Daily notification time</h3>' +
-            '<p>Choose when you\'d like to receive your daily Quran verse.' +
-            (tz ? '<br><small>Your timezone: ' + tz + '</small>' : '') + '</p>' +
-            '<input class="notif-time-input" type="time" value="' + defaultVal + '" />' +
-            '<div class="notif-time-actions">' +
-                '<button class="btn-cancel">Cancel</button>' +
-                '<button class="btn-confirm">Confirm</button>' +
-            '</div>' +
-        '</div>';
 
+    var card = document.createElement('div');
+    card.className = 'notif-time-card';
+
+    var h3 = document.createElement('h3');
+    h3.textContent = '🔔 Daily notification time';
+    card.appendChild(h3);
+
+    var desc = document.createElement('p');
+    desc.textContent = "Choose when you'd like to receive your daily Quran verse.";
+    if (tz) { var sm = document.createElement('small'); sm.textContent = 'Timezone: ' + tz; desc.appendChild(document.createElement('br')); desc.appendChild(sm); }
+    card.appendChild(desc);
+
+    // ── Custom picker row ──
+    var pickerRow = document.createElement('div');
+    pickerRow.className = 'notif-time-picker-row';
+
+    // Hour select (1–12)
+    var hourSel = document.createElement('select');
+    hourSel.className = 'notif-time-sel';
+    for (var h = 1; h <= 12; h++) {
+        var hOpt = document.createElement('option');
+        hOpt.value = h;
+        hOpt.textContent = h;
+        if (h === hour12) hOpt.selected = true;
+        hourSel.appendChild(hOpt);
+    }
+
+    var sep = document.createElement('span');
+    sep.className = 'notif-time-sep';
+    sep.textContent = ':';
+
+    // Minute select (5-min steps)
+    var minSel = document.createElement('select');
+    minSel.className = 'notif-time-sel';
+    for (var mn = 0; mn < 60; mn += 5) {
+        var mOpt = document.createElement('option');
+        mOpt.value = mn;
+        mOpt.textContent = pad(mn);
+        if (mn === min5) mOpt.selected = true;
+        minSel.appendChild(mOpt);
+    }
+
+    // AM / PM pill buttons
+    var ampmGroup = document.createElement('div');
+    ampmGroup.className = 'notif-ampm-group';
+
+    var amBtn = document.createElement('button');
+    amBtn.type = 'button';
+    amBtn.className = 'notif-ampm-btn' + (period === 'AM' ? ' active' : '');
+    amBtn.textContent = 'AM';
+
+    var pmBtn = document.createElement('button');
+    pmBtn.type = 'button';
+    pmBtn.className = 'notif-ampm-btn' + (period === 'PM' ? ' active' : '');
+    pmBtn.textContent = 'PM';
+
+    amBtn.addEventListener('click', function() {
+        period = 'AM';
+        amBtn.classList.add('active');
+        pmBtn.classList.remove('active');
+    });
+    pmBtn.addEventListener('click', function() {
+        period = 'PM';
+        pmBtn.classList.add('active');
+        amBtn.classList.remove('active');
+    });
+
+    ampmGroup.appendChild(amBtn);
+    ampmGroup.appendChild(pmBtn);
+    pickerRow.appendChild(hourSel);
+    pickerRow.appendChild(sep);
+    pickerRow.appendChild(minSel);
+    pickerRow.appendChild(ampmGroup);
+    card.appendChild(pickerRow);
+
+    // Action buttons
+    var actions = document.createElement('div');
+    actions.className = 'notif-time-actions';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+    var confirmBtn = document.createElement('button');
+    confirmBtn.className = 'btn-confirm';
+    confirmBtn.textContent = 'Confirm';
+    actions.appendChild(cancelBtn);
+    actions.appendChild(confirmBtn);
+    card.appendChild(actions);
+
+    overlay.appendChild(card);
     document.body.appendChild(overlay);
 
-    overlay.querySelector('.btn-cancel').addEventListener('click', function() {
+    cancelBtn.addEventListener('click', function() {
         document.body.removeChild(overlay);
         if (onCancel) onCancel();
     });
 
-    overlay.querySelector('.btn-confirm').addEventListener('click', function() {
-        var val = overlay.querySelector('.notif-time-input').value || '08:00';
-        var hour = parseInt(val.split(':')[0]);
-        try { localStorage.setItem(PUSH_NOTIF_HOUR_KEY, String(hour)); } catch(e) {}
+    confirmBtn.addEventListener('click', function() {
+        var h12val = parseInt(hourSel.value);
+        var minVal = parseInt(minSel.value);
+        // Convert 12h + period back to 24h
+        var hour24 = period === 'PM'
+            ? (h12val === 12 ? 12 : h12val + 12)
+            : (h12val === 12 ? 0  : h12val);
+        try { localStorage.setItem(PUSH_NOTIF_HOUR_KEY, String(hour24)); } catch(e) {}
+        try { localStorage.setItem(PUSH_NOTIF_MIN_KEY,  String(minVal));  } catch(e) {}
         document.body.removeChild(overlay);
-        if (onConfirm) onConfirm(hour);
+        if (onConfirm) onConfirm(hour24, minVal);
     });
 }
 
-async function doSubscribe(notifHour) {
+async function doSubscribe(notifHour, notifMinute) {
+    if (notifMinute === undefined) notifMinute = 0;
     var tzOffset = new Date().getTimezoneOffset();
     var reg = await navigator.serviceWorker.ready;
     var existing = await reg.pushManager.getSubscription();
     if (existing) {
-        // Update hour on server even if already subscribed
-        var payload = Object.assign(JSON.parse(JSON.stringify(existing)), { notifHour: notifHour, tzOffset: tzOffset });
+        var payload = Object.assign(JSON.parse(JSON.stringify(existing)), { notifHour: notifHour, notifMinute: notifMinute, tzOffset: tzOffset });
         await fetch(PUSH_SERVER_URL + '/subscribe', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -5170,7 +5398,7 @@ async function doSubscribe(notifHour) {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
     });
-    var payload = Object.assign(JSON.parse(JSON.stringify(subscription)), { notifHour: notifHour, tzOffset: tzOffset });
+    var payload = Object.assign(JSON.parse(JSON.stringify(subscription)), { notifHour: notifHour, notifMinute: notifMinute, tzOffset: tzOffset });
     await fetch(PUSH_SERVER_URL + '/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5199,30 +5427,41 @@ async function setupDailyVerseNotification(skipPicker) {
         } catch(e) { return false; }
     }
 
-    var savedHour = null;
+    var savedHour = null, savedMinute = 0;
     try { var s = localStorage.getItem(PUSH_NOTIF_HOUR_KEY); if (s !== null) savedHour = parseInt(s); } catch(e) {}
+    try { var sm = localStorage.getItem(PUSH_NOTIF_MIN_KEY); if (sm !== null) savedMinute = parseInt(sm); } catch(e) {}
+
+    var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
 
     if (!skipPicker && savedHour === null) {
-        showNotifTimePicker(async function(hour) {
+        showNotifTimePicker(async function(hour, minute) {
             try {
-                await doSubscribe(hour);
-                var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-                if (typeof showToast === 'function') showToast('Notifications set for ' + pad(hour) + ':00 every day');
+                await doSubscribe(hour, minute);
+                document.querySelectorAll('.notif-time-val').forEach(function(chip) {
+                    chip.textContent = fmtNotifTime(hour, minute);
+                });
+                if (typeof showToast === 'function') showToast('Notifications set for ' + pad(hour) + ':' + pad(minute) + ' every day');
             } catch(err) {
                 console.warn('[Notif] subscription failed', err);
                 if (typeof showToast === 'function') showToast('Could not enable notifications');
             }
         }, function() {
-            // User cancelled — turn the feature back off
+            // User cancelled — revert feature flag and toggle UI
             var f = getFeatures(); f.dailyVerseNotification = false; saveFeatures(f);
+            var chk = document.querySelector('.notif-settings-card input[type="checkbox"]');
+            if (chk) chk.checked = false;
+            var card = document.querySelector('.notif-settings-card');
+            if (card) card.classList.add('notif-off');
+            var tRow = document.querySelector('.notif-settings-time-row');
+            if (tRow) tRow.style.display = 'none';
         });
     } else {
         var hour = savedHour !== null ? savedHour : 8;
+        var minute = savedMinute;
         try {
-            await doSubscribe(hour);
+            await doSubscribe(hour, minute);
             if (!skipPicker) {
-                var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
-                if (typeof showToast === 'function') showToast('Notifications set for ' + pad(hour) + ':00 every day');
+                if (typeof showToast === 'function') showToast('Notifications set for ' + pad(hour) + ':' + pad(minute) + ' every day');
             }
         } catch(e) {
             console.warn('[Notif] subscription failed', e);
@@ -5245,6 +5484,7 @@ async function teardownDailyVerseNotification() {
         });
         await subscription.unsubscribe();
         try { localStorage.removeItem(PUSH_NOTIF_HOUR_KEY); } catch(e) {}
+        try { localStorage.removeItem(PUSH_NOTIF_MIN_KEY);  } catch(e) {}
     } catch(e) {
         console.warn('[Notif] unsubscribe failed', e);
     }
@@ -5980,7 +6220,7 @@ function appendYtChannelUI(body) {
             vEl = document.createElement('div');
             vEl.className = 'app-version-footer';
         }
-        vEl.textContent = 'Quran Display v10.18';
+        vEl.textContent = 'Quran Display v11.0';
         body.appendChild(vEl);
     }
 

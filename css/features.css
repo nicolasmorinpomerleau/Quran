@@ -176,18 +176,64 @@
     color: var(--text-secondary);
     font-family: var(--font-ui);
 }
-.notif-time-input {
-    width: 100%;
-    padding: 10px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--bg-main);
-    color: var(--text-primary);
-    font-size: 20px;
-    font-family: var(--font-ui);
-    text-align: center;
-    box-sizing: border-box;
+/* kept for any legacy references */
+.notif-time-input { display: none; }
+
+/* ── Custom time picker ── */
+.notif-time-picker-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
+.notif-time-sel {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--bg-main);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 64px;
+    font-family: var(--font-ui);
+}
+.notif-time-sep {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-primary);
+    opacity: 0.45;
+    line-height: 1;
+}
+.notif-ampm-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.notif-ampm-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    min-width: 52px;
+    text-align: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.notif-ampm-btn.active {
+    background: var(--accent);
+    color: #1a1208;
+    border-color: var(--accent);
+}
+
 .notif-time-card .notif-time-actions {
     display: flex;
     gap: 10px;

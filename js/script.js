@@ -139,7 +139,7 @@ async function getHijriCalendarForMonth() {
         now.toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
     try {
         const resp = await fetch('https://api.aladhan.com/v1/gToH/'+day+'-'+month+'-'+now.getFullYear());
-        if (!resp.ok) return;
+        if (!resp.ok) throw new Error('API error ' + resp.status);
         const data = await resp.json();
         if (data.code === 200) {
             const h = data.data.hijri;
@@ -154,7 +154,22 @@ async function getHijriCalendarForMonth() {
                 monthName: monthName
             };
         }
-    } catch(e) {}
+    } catch(e) {
+        // Offline or API unavailable — features.js is already loaded by now (async boundary)
+        if (typeof gregorianToHijri === 'function') {
+            var hLocal = gregorianToHijri(now);
+            if (hLocal && hLocal.day) {
+                var mnIdx = hLocal.month - 1;
+                var mnAr  = (HijriMonthsAr && HijriMonthsAr[mnIdx]) ? HijriMonthsAr[mnIdx] : '';
+                el.querySelector('.date-hijri').textContent =
+                    hLocal.day + ' ' + mnAr + ' ' + hLocal.year + ' هـ';
+                window._hijriToday = {
+                    day: hLocal.day, month: hLocal.month,
+                    year: hLocal.year, monthName: mnAr
+                };
+            }
+        }
+    }
 }
 
 // ─── UI label translations ─────────────────────────────────────────
@@ -1718,6 +1733,7 @@ function displaySingleRevelationSura(suraNum) {
             }
         });
     }
+    if (typeof attachAudioButtons === 'function') attachAudioButtons();
     saveState();
 }
 
@@ -3518,7 +3534,7 @@ function buildSheetSettings(body, title) {
     // Version footer
     var verEl = document.createElement('div');
     verEl.className = 'mob-settings-version';
-    verEl.textContent = 'Quran Display v10.18';
+    verEl.textContent = 'Quran Display v11.0';
     body.appendChild(verEl);
 }
 
@@ -3687,7 +3703,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v10.18.0%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v11.0.0%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

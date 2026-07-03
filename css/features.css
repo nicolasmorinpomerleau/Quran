@@ -1650,6 +1650,76 @@ body.focus-mode::after {
     .pwa-update-btn { padding: 6px 14px; font-size: 13px; }
 }
 
+/* ── v11.7 — Install prompt card ── */
+.pwa-install-card {
+    position: fixed;
+    bottom: 88px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 4000;
+    background: var(--bg-secondary);
+    border: 1.5px solid var(--accent-dim);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.38);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    min-width: min(340px, 90vw);
+    max-width: 440px;
+    animation: slideUpFade 0.35s ease;
+}
+.pwa-install-icon { font-size: 30px; flex-shrink: 0; }
+.pwa-install-text { flex: 1; min-width: 0; }
+.pwa-install-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+.pwa-install-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    opacity: 0.8;
+}
+.pwa-install-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.pwa-install-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+.pwa-install-btn:hover { opacity: 0.88; }
+.pwa-install-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 17px;
+    padding: 4px 8px;
+    opacity: 0.55;
+    flex-shrink: 0;
+    transition: opacity 0.15s;
+}
+.pwa-install-close:hover { opacity: 1; }
+@media (max-width: 600px) {
+    .pwa-install-card {
+        left: 12px;
+        right: 12px;
+        bottom: 80px;
+        transform: none;
+        min-width: 0;
+        max-width: none;
+    }
+}
+
 /* ════════════════════════════════════════════════════════════════════
    v10.2 — AUDIO MINI-PLAYER
    ════════════════════════════════════════════════════════════════════ */
@@ -5093,3 +5163,29 @@ body.feature-off-khatm .khatm-calendar { display: none; }
 }
 .mob-help-item:last-child { border-bottom: none; }
 .mob-help-ico { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Pinch-to-zoom indicator ── */
+.pinch-zoom-indicator {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.75);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 12px 22px;
+    border-radius: 14px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    z-index: 99999;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.pinch-zoom-indicator.show {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+}

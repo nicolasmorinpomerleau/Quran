@@ -1,7 +1,7 @@
 'use strict';
 
 // ═══════════════════════════════════════════════════════════════════
-// QURAN DISPLAY v9
+// QURAN DISPLAY v11.8
 // Features: Juz nav · Search history · Bookmarks · Reading history
 //           Verse highlighting · Personal notes · Font size slider
 // ═══════════════════════════════════════════════════════════════════
@@ -330,6 +330,93 @@ document.getElementById('transFontSlider').addEventListener('input', function() 
 document.getElementById('transFontSlider').addEventListener('change', function() {
     if (typeof track === 'function') track('font_size_changed', { type: 'translation', value: parseFloat(this.value) });
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// PINCH-TO-ZOOM — content only (header + footer are never affected)
+// Native browser zoom is disabled in <meta viewport> (user-scalable=no).
+// This handler intercepts 2-finger pinches on #quranContainer and
+// adjusts font sizes via the existing applyFontSizes() system so the
+// layout reflows naturally and scroll always works correctly.
+// Double-tap anywhere in the content area resets to default sizes.
+// ═══════════════════════════════════════════════════════════════════
+(function initPinchZoom() {
+    var container = document.getElementById('quranContainer');
+    if (!container) return;
+
+    var _pinchActive    = false;
+    var _pinchStartDist = 0;
+    var _pinchStartAr   = 0;
+    var _pinchStartTr   = 0;
+    var _lastTap        = 0;
+    var _indicator      = null;
+    var _hideTimer      = null;
+    var _defaultAr      = _isPhone ? 1.6 : 2.8;
+    var _defaultTr      = _isPhone ? 1.0 : 1.87;
+
+    function _pinchDist(touches) {
+        var dx = touches[0].clientX - touches[1].clientX;
+        var dy = touches[0].clientY - touches[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function _showIndicator(pct) {
+        if (!_indicator) {
+            _indicator = document.createElement('div');
+            _indicator.className = 'pinch-zoom-indicator';
+            document.body.appendChild(_indicator);
+        }
+        _indicator.textContent = Math.round(pct) + '%';
+        _indicator.classList.add('show');
+        clearTimeout(_hideTimer);
+        _hideTimer = setTimeout(function() {
+            if (_indicator) _indicator.classList.remove('show');
+        }, 1000);
+    }
+
+    container.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 2) {
+            _pinchActive    = true;
+            _pinchStartDist = _pinchDist(e.touches);
+            _pinchStartAr   = fontSizes.arabic;
+            _pinchStartTr   = fontSizes.trans;
+            e.preventDefault();
+            return;
+        }
+        // Double-tap to reset font size
+        if (e.touches.length === 1) {
+            var now = Date.now();
+            if (now - _lastTap < 280) {
+                fontSizes.arabic = _defaultAr;
+                fontSizes.trans  = _defaultTr;
+                lsSet(FONT_KEY, fontSizes);
+                applyFontSizes();
+                _showIndicator(100);
+                e.preventDefault();
+            }
+            _lastTap = now;
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchmove', function(e) {
+        if (!_pinchActive || e.touches.length !== 2) return;
+        e.preventDefault();
+        var ratio     = _pinchDist(e.touches) / _pinchStartDist;
+        var newAr     = Math.min(5,   Math.max(1.2, _pinchStartAr * ratio));
+        var newTr     = Math.min(3,   Math.max(0.7, _pinchStartTr * ratio));
+        fontSizes.arabic = Math.round(newAr * 10) / 10;
+        fontSizes.trans  = Math.round(newTr * 20) / 20;
+        applyFontSizes();
+        _showIndicator((fontSizes.arabic / _defaultAr) * 100);
+    }, { passive: false });
+
+    container.addEventListener('touchend', function(e) {
+        if (!_pinchActive) return;
+        if (e.touches.length < 2) {
+            _pinchActive = false;
+            lsSet(FONT_KEY, fontSizes);
+        }
+    }, { passive: true });
+}());
 
 // ═══════════════════════════════════════════════════════════════════
 // SEARCH HISTORY
@@ -1129,13 +1216,13 @@ function buildTocItem(name, city, displayIndex, clickHandler, suraId) {
     // Reading history dot
     if (suraId !== undefined && hasSuraBeenRead(suraId)) {
         const dot = document.createElement('span');
-        dot.className = 'history-dot'; dot.title = 'Previously read';
+        dot.className = 'history-dot'; dot.title = (typeof getL === 'function' ? getL().previouslyRead : 'Previously read');
         nameSpan.appendChild(dot);
     }
     // v10.12: Golden dot if this surah has any saved item (bookmark/note/highlight/reflection)
     if (suraId !== undefined && suraHasSavedItems(suraId)) {
         const sdot = document.createElement('span');
-        sdot.className = 'saved-dot'; sdot.title = 'Has saved items';
+        sdot.className = 'saved-dot'; sdot.title = (typeof getL === 'function' ? getL().hasSavedItems : 'Has saved items');
         nameSpan.appendChild(sdot);
     }
     left.appendChild(nameSpan);
@@ -1231,7 +1318,7 @@ function generateJuzTOC() {
         const nameEl = document.createElement('span');
         nameEl.classList.add('juz-name'); nameEl.textContent = juzAr;
         const subEl = document.createElement('span');
-        subEl.classList.add('juz-sub'); subEl.textContent = 'Starts: ' + startName + (ayahNum > 1 ? ' v.' + ayahNum : '');
+        subEl.classList.add('juz-sub'); subEl.textContent = (typeof getL === 'function' ? getL().juzStarts : 'Starts:') + ' ' + startName + (ayahNum > 1 ? ' v.' + ayahNum : '');
         info.appendChild(nameEl); info.appendChild(subEl);
         item.appendChild(numEl); item.appendChild(info);
         item.addEventListener('click', function() {
@@ -1268,7 +1355,7 @@ function setTocTabActive(tab) {
 function applyTocWidth() {
     try {
         const sw = parseInt(localStorage.getItem('quranTocWidth'), 10);
-        if (sw && sw >= 140) scaleTocFont(sw);
+        if (sw && sw >= 320) scaleTocFont(sw);
     } catch(e) {}
 }
 
@@ -1553,7 +1640,7 @@ function buildSuraDOM(sura) {
     printPill.title = 'Print / Export this surah as PDF';
     printPill.innerHTML =
         '<svg class="spp-svg" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" xmlns="http://www.w3.org/2000/svg">' +
-            '<path d="M12 3v11.59l-3.3-3.3a1 1 0 0 0-1.4 1.42l5 5a1 1 0 0 0 1.4 0l5-5a1 1 0 0 0-1.4-1.42L13 14.59V3a1 1 0 0 0-2 0z"/>' +
+            '<path d="M12 3v11.69l-3.3-3.3a1 1 0 0 0-1.4 1.42l5 5a1 1 0 0 0 1.4 0l5-5a1 1 0 0 0-1.4-1.42L13 14.59V3a1 1 0 0 0-2 0z"/>' +
             '<path d="M5 19a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2H5z"/>' +
         '</svg>' +
         '<span class="spp-lbl">PDF</span>';
@@ -1867,6 +1954,7 @@ function highlightAndScrollToVerse(suraId, verseNumber) {
     });
     const target = verseEls[verseNumber - 1];
     if (target) target.scrollIntoView({ behavior:'smooth' });
+    if (typeof attachAudioButtons === 'function') setTimeout(attachAudioButtons, 80);
     clearSuraContext();
 }
 
@@ -2132,7 +2220,7 @@ document.getElementById('quranContainer').addEventListener('scroll', function(){
     let dragging = false, startX = 0, startW = 0;
 
     function applyWidth(w) {
-        const clamped = Math.max(140, Math.min(700, w));
+        const clamped = Math.max(320, Math.min(700, w));
         toc.style.width = clamped + 'px'; toc.style.minWidth = clamped + 'px'; toc.style.flex = 'none';
         scaleTocFont(clamped); return clamped;
     }
@@ -2162,7 +2250,9 @@ document.getElementById('quranContainer').addEventListener('scroll', function(){
     });
     try {
         const sw = parseInt(localStorage.getItem('quranTocWidth'), 10);
-        if (sw && sw >= 140 && sw <= 700) applyWidth(sw);
+        // Saved widths below 320 pre-date the 4-tab minimum — reset them to default.
+        if (sw && sw >= 320 && sw <= 700) applyWidth(sw);
+        else applyWidth(360); // Default: 360px ensures all 4 tabs are always visible
     } catch(e) {}
 }());
 
@@ -2494,7 +2584,7 @@ function buildSheetJuzInBody(body) {
         var ar = document.createElement('div');
         ar.className = 'mob-juz-ar'; ar.textContent = juz[1];
         var sub = document.createElement('div');
-        sub.className = 'mob-juz-sub'; sub.textContent = 'Starts: ' + juz[4] + (juz[3] > 1 ? ' v.' + juz[3] : '');
+        sub.className = 'mob-juz-sub'; sub.textContent = (typeof getL === 'function' ? getL().juzStarts : 'Starts:') + ' ' + juz[4] + (juz[3] > 1 ? ' v.' + juz[3] : '');
         info.appendChild(ar); info.appendChild(sub);
         item.appendChild(num); item.appendChild(info);
         item.addEventListener('click', function() {
@@ -2580,7 +2670,7 @@ function buildSheetJuz(body, title) {
         var ar = document.createElement('div');
         ar.className = 'mob-juz-ar'; ar.textContent = juz[1];
         var sub = document.createElement('div');
-        sub.className = 'mob-juz-sub'; sub.textContent = 'Starts: ' + juz[4] + (juz[3] > 1 ? ' v.' + juz[3] : '');
+        sub.className = 'mob-juz-sub'; sub.textContent = (typeof getL === 'function' ? getL().juzStarts : 'Starts:') + ' ' + juz[4] + (juz[3] > 1 ? ' v.' + juz[3] : '');
         info.appendChild(ar); info.appendChild(sub);
         item.appendChild(num); item.appendChild(info);
         item.addEventListener('click', function() {
@@ -3534,7 +3624,7 @@ function buildSheetSettings(body, title) {
     // Version footer
     var verEl = document.createElement('div');
     verEl.className = 'mob-settings-version';
-    verEl.textContent = 'Quran Display v11.0';
+    verEl.textContent = 'Quran Display v11.6';
     body.appendChild(verEl);
 }
 
@@ -3703,7 +3793,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(btn) {
     var feedbackBtn = document.getElementById('mdFeedbackBtn');
     if (feedbackBtn) feedbackBtn.addEventListener('click', function() {
         closeMobileDrawer();
-        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v11.0.0%0A%0A', '_blank');
+        window.open('mailto:contact@amcreatives.ca?subject=Quran%20App%20Feedback&body=Version%3A%20v11.6.0%0A%0A', '_blank');
         // Reopen drawer after mail client is opened (slight delay for UX)
         setTimeout(openMobileDrawer, 600);
     });

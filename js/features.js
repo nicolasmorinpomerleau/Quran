@@ -32,17 +32,46 @@ var UI_LABELS = {
         resumeAudio: '▶ متابعة',
         khatmTracker: 'متابع الختم',
         khatmFirstHint: '📖 اقرأ سورتك الأولى لترى نشاطك هنا.',
-        currentStreak: 'الرقة الحالية',
+        khatmHint: '<strong>ختم</strong> يعني إتمام قراءة القرآن الكريم كاملاً. يُظهر المخطط نشاطك اليومي — المربعات الداكنة تعني سوراً أكثر في ذلك اليوم. عند إتمام القرآن، اضغط "تسجيل الختم".',
+        currentStreak: 'المتابعة الحالية',
         day: 'يوم',  days: 'أيام',
         markKhatm: '🎉 تسجيل الختم',
         resetTracker: '🗑 إعادة تعيين',
+        upcoming: 'قادم',
+        noReading: 'لا قراءة',
+        surahsOpened: 'سور مفتوحة',
+        surahOpened: 'سورة مفتوحة',
+        justNow: 'الآن',
+        minAgo: 'د مضت',
+        hrAgo: 'س مضت',
+        dAgo: 'ي مضى',
+        previouslyRead: 'قُرئت سابقاً',
+        hasSavedItems: 'توجد عناصر محفوظة',
+        juzStarts: 'تبدأ:',
+        installAsApp: 'تثبيت كتطبيق',
+        topicsSubtitle: 'تصفح الآيات حسب الموضوع. اضغط على موضوع لعرض آياته.',
+        allTopics: '← كل المواضيع',
+        verses: 'آيات',
+        planLabel: 'الخطة:',
+        planStarted: 'بدأت:',
+        planProgress: 'التقدم:',
+        planDays: 'أيام',
+        planFooter: 'لإلغاء الخطة، انظر الإعدادات ← خطة القراءة.',
+        plan30Label: '🌙 30 يوماً',
+        plan30Desc: 'جزء يومياً · وتيرة رمضان',
+        plan60Label: '📅 60 يوماً',
+        plan60Desc: 'نصف جزء يومياً',
+        plan90Label: '📚 90 يوماً',
+        plan90Desc: 'وتيرة هادئة · ~3 سور يومياً',
         readingPlan: 'خطة القراءة',
         planHint: 'اختر وتيرتك لإنهاء القرآن الكريم. كل يوم يُظهر ما يجب قراءته.',
         showWindow: '📌 إظهار النافذة',
         cancelPlan: '🗑 إلغاء الخطة',
         readingTime: 'وقت القراءة',
         thisWeek: 'هذا الأسبوع',
-        weekAvg: 'متوسط 4 أسابيع'
+        weekAvg: 'متوسط 4 أسابيع',
+        monthNames: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+        dayLabels:  ['ن','ث','ر','خ','ج','س','ح']
     },
     french: {
         continueReading: 'Reprendre la lecture',
@@ -54,17 +83,46 @@ var UI_LABELS = {
         resumeAudio: '▶ Reprendre',
         khatmTracker: 'Suivi du Khatm',
         khatmFirstHint: '📖 Lisez votre première sourate pour voir votre activité ici.',
+        khatmHint: '<strong>Khatm</strong> (ختم) signifie terminer une lecture complète du Coran. La carte montre votre activité quotidienne — les cases plus foncées indiquent plus de sourates ouvertes ce jour-là. Quand vous terminez le Coran entier, appuyez sur "Marquer Khatm".',
         currentStreak: 'Série actuelle',
         day: 'jour',  days: 'jours',
         markKhatm: '🎉 Marquer Khatm accompli',
         resetTracker: '🗑 Réinitialiser',
+        upcoming: 'à venir',
+        noReading: 'aucune lecture',
+        surahsOpened: 'sourates ouvertes',
+        surahOpened: 'sourate ouverte',
+        justNow: 'à l\'instant',
+        minAgo: 'min',
+        hrAgo: 'h',
+        dAgo: 'j',
+        previouslyRead: 'Déjà lu',
+        hasSavedItems: 'Éléments sauvegardés',
+        juzStarts: 'Commence :',
+        installAsApp: 'Installer comme appli',
+        topicsSubtitle: 'Parcourez les versets par thème. Appuyez sur un thème pour voir ses versets.',
+        allTopics: '← Tous les thèmes',
+        verses: 'versets',
+        planLabel: 'Plan :',
+        planStarted: 'Commencé :',
+        planProgress: 'Progression :',
+        planDays: 'jours',
+        planFooter: 'Pour annuler le plan, voir Paramètres → Plan de lecture.',
+        plan30Label: '🌙 30 jours',
+        plan30Desc: '1 juz/jour · Rythme Ramadan',
+        plan60Label: '📅 60 jours',
+        plan60Desc: 'Un demi-juz par jour',
+        plan90Label: '📚 90 jours',
+        plan90Desc: 'Rythme doux · ~3 sourates/jour',
         readingPlan: 'Plan de lecture',
         planHint: "Choisissez votre rythme pour terminer le Coran. Chaque jour montre ce qu'il faut lire.",
         showWindow: '📌 Afficher la fenêtre',
         cancelPlan: '🗑 Annuler le plan',
         readingTime: 'Temps de lecture',
         thisWeek: 'Cette semaine',
-        weekAvg: 'Moyenne 4 semaines'
+        weekAvg: 'Moyenne 4 semaines',
+        monthNames: ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'],
+        dayLabels:  ['L','M','M','J','V','S','D']
     },
     english: {
         continueReading: 'Continue where you left off',
@@ -76,17 +134,46 @@ var UI_LABELS = {
         resumeAudio: '▶ Resume',
         khatmTracker: 'Khatm tracker',
         khatmFirstHint: '📖 Read your first surah to see activity here.',
+        khatmHint: '<strong>Khatm</strong> (ختم) means completing a full reading of the Quran. The heatmap shows your daily reading activity — darker squares mean more surahs opened that day. When you finish the entire Quran, tap "Mark Khatm" to log a completion.',
         currentStreak: 'Current streak',
         day: 'day',  days: 'days',
         markKhatm: '🎉 Mark Khatm as completed',
         resetTracker: '🗑 Reset tracker',
+        upcoming: 'upcoming',
+        noReading: 'no reading',
+        surahsOpened: 'surahs opened',
+        surahOpened: 'surah opened',
+        justNow: 'just now',
+        minAgo: 'min ago',
+        hrAgo: 'hr ago',
+        dAgo: 'd ago',
+        previouslyRead: 'Previously read',
+        hasSavedItems: 'Has saved items',
+        juzStarts: 'Starts:',
+        installAsApp: 'Install as app',
+        topicsSubtitle: 'Browse verses by theme. Tap a topic to see its verses.',
+        allTopics: '← All topics',
+        verses: 'verses',
+        planLabel: 'Plan:',
+        planStarted: 'Started:',
+        planProgress: 'Progress:',
+        planDays: 'days',
+        planFooter: 'To cancel the plan, see Settings → Reading plan.',
+        plan30Label: '🌙 30 days',
+        plan30Desc: '1 juz/day · Ramadan pace',
+        plan60Label: '📅 60 days',
+        plan60Desc: 'Half a juz per day',
+        plan90Label: '📚 90 days',
+        plan90Desc: 'Gentle pace · ~3 surahs/day',
         readingPlan: 'Reading plan',
         planHint: 'Pick how fast you want to finish the Quran. Each day shows what to read; mark days complete to track progress.',
         showWindow: '📌 Show window',
         cancelPlan: '🗑 Cancel plan',
         readingTime: 'Reading time',
         thisWeek: 'This week',
-        weekAvg: '4-week average'
+        weekAvg: '4-week average',
+        monthNames: ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],
+        dayLabels:  ['M','T','W','T','F','S','S']
     },
     spanish: {
         continueReading: 'Continuar donde lo dejaste',
@@ -98,17 +185,46 @@ var UI_LABELS = {
         resumeAudio: '▶ Reanudar',
         khatmTracker: 'Seguimiento del Khatm',
         khatmFirstHint: '📖 Lee tu primera sura para ver tu actividad aquí.',
+        khatmHint: '<strong>Khatm</strong> (ختم) significa completar una lectura completa del Corán. El mapa muestra tu actividad diaria — los cuadros más oscuros indican más suras abiertas ese día. Cuando termines el Corán completo, toca "Marcar Khatm".',
         currentStreak: 'Racha actual',
         day: 'día',  days: 'días',
         markKhatm: '🎉 Marcar Khatm completado',
         resetTracker: '🗑 Restablecer',
+        upcoming: 'próximo',
+        noReading: 'sin lectura',
+        surahsOpened: 'suras abiertas',
+        surahOpened: 'sura abierta',
+        justNow: 'ahora mismo',
+        minAgo: 'min',
+        hrAgo: 'h',
+        dAgo: 'd',
+        previouslyRead: 'Ya leído',
+        hasSavedItems: 'Tiene elementos guardados',
+        juzStarts: 'Empieza:',
+        installAsApp: 'Instalar como app',
+        topicsSubtitle: 'Explora versículos por tema. Toca un tema para ver sus versículos.',
+        allTopics: '← Todos los temas',
+        verses: 'versículos',
+        planLabel: 'Plan:',
+        planStarted: 'Iniciado:',
+        planProgress: 'Progreso:',
+        planDays: 'días',
+        planFooter: 'Para cancelar el plan, ve a Ajustes → Plan de lectura.',
+        plan30Label: '🌙 30 días',
+        plan30Desc: '1 yuz/día · Ritmo Ramadán',
+        plan60Label: '📅 60 días',
+        plan60Desc: 'Medio yuz por día',
+        plan90Label: '📚 90 días',
+        plan90Desc: 'Ritmo suave · ~3 suras/día',
         readingPlan: 'Plan de lectura',
         planHint: 'Elige tu ritmo para terminar el Corán. Cada día muestra qué leer; marca los días completados.',
         showWindow: '📌 Mostrar ventana',
         cancelPlan: '🗑 Cancelar plan',
         readingTime: 'Tiempo de lectura',
         thisWeek: 'Esta semana',
-        weekAvg: 'Promedio 4 semanas'
+        weekAvg: 'Promedio 4 semanas',
+        monthNames: ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'],
+        dayLabels:  ['L','M','X','J','V','S','D']
     }
 };
 
@@ -263,12 +379,26 @@ function applyBrowserLangDefault() {
 // ═══════════════════════════════════════════════════════════════════
 function applyAutoTheme() {
     if (!isFeatureOn('autoDarkTheme')) return;
-    var hour = new Date().getHours();
+    var now   = new Date();
+    var hour  = now.getHours();
+    var min   = now.getMinutes();
     var theme = (hour >= 19 || hour < 6) ? 'scholar' : 'manuscript';
     document.documentElement.setAttribute('data-theme', theme);
     document.querySelectorAll('.theme-btn').forEach(function(b) {
         b.classList.toggle('active', b.getAttribute('data-theme') === theme);
     });
+    // Schedule re-evaluation at the next 7pm or 6am boundary
+    var nextSwitch;
+    if (hour < 6) {
+        nextSwitch = new Date(now); nextSwitch.setHours(6, 0, 0, 0);
+    } else if (hour < 19) {
+        nextSwitch = new Date(now); nextSwitch.setHours(19, 0, 0, 0);
+    } else {
+        nextSwitch = new Date(now); nextSwitch.setDate(now.getDate() + 1); nextSwitch.setHours(6, 0, 0, 0);
+    }
+    var msUntil = nextSwitch - now + 1000; // +1s buffer
+    clearTimeout(window._autoDarkTimer);
+    window._autoDarkTimer = setTimeout(applyAutoTheme, msUntil);
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -339,11 +469,12 @@ function getLastReadInfo() {
                 } catch(e) {}
                 // Calculate "X ago" timestamp
                 var elapsed = Date.now() - hx[sorted[i]];
+                var _lt = getL();
                 var ago;
-                if (elapsed < 60000) ago = 'just now';
-                else if (elapsed < 3600000) ago = Math.round(elapsed/60000) + ' min ago';
-                else if (elapsed < 86400000) ago = Math.round(elapsed/3600000) + ' hr ago';
-                else ago = Math.round(elapsed/86400000) + 'd ago';
+                if (elapsed < 60000) ago = _lt.justNow;
+                else if (elapsed < 3600000) ago = Math.round(elapsed/60000) + ' ' + _lt.minAgo;
+                else if (elapsed < 86400000) ago = Math.round(elapsed/3600000) + ' ' + _lt.hrAgo;
+                else ago = Math.round(elapsed/86400000) + ' ' + _lt.dAgo;
                 return {
                     suraId: sorted[i],
                     suraName: data.name,
@@ -780,15 +911,35 @@ function buildVerseNav() {
         var sura = quranData.find(function(x) { return x.id === s.id; });
         if (!sura) return;
         var max = sura.verses.length;
-        var v = prompt('Jump to verse (1–' + max + '):');
-        var n = parseInt(v, 10);
-        if (!isNaN(n) && n >= 1 && n <= max) {
-            var verses = document.querySelectorAll('.verse');
-            if (verses[n-1]) {
-                verses[n-1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                hapticTap(15);
+        // Custom inline modal — avoids native prompt() which blocks all browser events
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:99990;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML =
+            '<div style="background:var(--sidebar-bg,#1a1408);border:1px solid rgba(201,168,76,0.3);border-radius:14px;padding:24px 22px;min-width:240px;max-width:88vw;text-align:center;">' +
+            '<div style="font-size:14px;color:var(--text-secondary,#a89070);margin-bottom:14px;">Jump to verse (1–' + max + ')</div>' +
+            '<input id="_vnavJumpInp" type="number" min="1" max="' + max + '" inputmode="numeric" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid rgba(201,168,76,0.35);background:rgba(255,255,255,0.06);color:var(--text-primary,#e8dfc8);font-size:18px;text-align:center;outline:none;" />' +
+            '<div style="display:flex;gap:10px;margin-top:16px;justify-content:center;">' +
+            '<button id="_vnavJumpCancel" style="padding:8px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--text-secondary,#a89070);cursor:pointer;">Cancel</button>' +
+            '<button id="_vnavJumpOk" style="padding:8px 20px;border-radius:8px;border:none;background:rgba(201,168,76,0.25);color:#c9a84c;font-weight:700;cursor:pointer;">Go</button>' +
+            '</div></div>';
+        document.body.appendChild(overlay);
+        var inp = overlay.querySelector('#_vnavJumpInp');
+        setTimeout(function(){ inp.focus(); }, 60);
+        function doJump() {
+            var n = parseInt(inp.value, 10);
+            overlay.remove();
+            if (!isNaN(n) && n >= 1 && n <= max) {
+                var verses = document.querySelectorAll('.verse');
+                if (verses[n-1]) {
+                    verses[n-1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    hapticTap(15);
+                }
             }
         }
+        overlay.querySelector('#_vnavJumpOk').addEventListener('click', doJump);
+        overlay.querySelector('#_vnavJumpCancel').addEventListener('click', function(){ overlay.remove(); });
+        inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') doJump(); if (e.key === 'Escape') overlay.remove(); });
+        overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.remove(); });
     });
 }
 
@@ -1003,7 +1154,7 @@ function buildVerseNav() {
 // ═══════════════════════════════════════════════════════════════════
 function exportAllData() {
     var data = {
-        version:      'v9.9',
+        version:      (typeof vEl !== 'undefined' && vEl.textContent) ? vEl.textContent.replace('Quran Display ', '') : 'v11.8',
         exportedAt:   new Date().toISOString(),
         bookmarks:    JSON.parse(localStorage.getItem('quranBookmarks') || '[]'),
         notes:        JSON.parse(localStorage.getItem('quranNotes') || '{}'),
@@ -1132,8 +1283,9 @@ function buildKhatmHeatmap() {
         }
     }
 
-    var MONTH_NAMES = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-    var DAY_LABELS = ['M','T','W','T','F','S','S'];
+    var _l = getL();
+    var MONTH_NAMES = _l.monthNames;
+    var DAY_LABELS  = _l.dayLabels;
 
     monthsToShow.forEach(function(monthStart) {
         var monthBox = document.createElement('div');
@@ -1223,13 +1375,14 @@ function showKhatmCellDetail(cell) {
     var formatted = d.toLocaleDateString(undefined, {
         weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
     });
+    var _lc = getL();
     var msg;
     if (cell.classList.contains('khatm-future')) {
-        msg = formatted + ' · upcoming';
+        msg = formatted + ' · ' + _lc.upcoming;
     } else if (count === 0) {
-        msg = formatted + ' · no reading';
+        msg = formatted + ' · ' + _lc.noReading;
     } else {
-        msg = formatted + ' · ' + count + ' surah' + (count === 1 ? '' : 's') + ' opened';
+        msg = formatted + ' · ' + count + ' ' + (count === 1 ? _lc.surahOpened : _lc.surahsOpened);
     }
     banner.innerHTML = '<span class="khatm-detail-icon">📅</span><span class="khatm-detail-text">' + msg + '</span>';
     // Highlight selected cell — scope to this heatmap instance
@@ -1551,6 +1704,7 @@ function appendFeaturesUI(body) {
     // 🔍 Search
     var searchSec = makeSection('🔍 Search', 'search');
     if (window.innerWidth > 900) {
+        // Search-as-you-type is a desktop-only setting — on mobile the keyboard dismisses between taps
         searchSec.appendChild(makeToggleRow('searchAsYouType', '⚡ Search as you type', 'Auto-runs search 350ms after you stop typing'));
     }
     searchSec.appendChild(makeToggleRow('voiceSearch',     '🎤 Voice search',       'Tap the mic to speak a search query'));
@@ -1787,10 +1941,7 @@ function appendKhatmUI(body) {
     // v10.3: Explanatory hint so users understand what this is
     var hint = document.createElement('div');
     hint.style.cssText = 'font-size:12px;color:var(--text-primary);margin-bottom:10px;opacity:0.78;line-height:1.5;';
-    hint.innerHTML =
-        '<strong>Khatm</strong> (ختم) means completing a full reading of the Quran. ' +
-        'The heatmap shows your daily reading activity — darker squares mean more surahs opened that day. ' +
-        'When you finish the entire Quran, tap "Mark Khatm" to log a completion.';
+    hint.innerHTML = getL().khatmHint;
     sec.appendChild(hint);
 
     // Heatmap — or empty-state hint if no activity yet
@@ -2301,7 +2452,7 @@ function openReadingPlanModal() {
                 '<button class="rpm-close" id="rpmClose">✕</button>' +
             '</div>' +
             '<div class="rpm-body">' + contentHtml + '</div>' +
-            '<div class="rpm-footer">To cancel the plan, see Settings → Reading plan.</div>' +
+            '<div class="rpm-footer">' + getL().planFooter + '</div>' +
         '</div>';
     document.body.appendChild(overlay);
     requestAnimationFrame(function(){ overlay.classList.add('show'); });
@@ -2352,13 +2503,14 @@ function appendReadingPlanUI(body) {
         var cfg = getPlanConfig(current.planType, current.customDays);
         var doneCount = Object.keys(current.completedDays).length;
         var info = document.createElement('div');
+        var _lp = getL();
         info.className = 'reading-plan-active';
         info.innerHTML =
-            '<div class="rpa-row"><span class="rpa-key">Plan:</span><span class="rpa-val">' +
-                (current.planType === 'custom' ? current.customDays + ' days' : current.planType.replace('day', ' days')) +
+            '<div class="rpa-row"><span class="rpa-key">' + _lp.planLabel + '</span><span class="rpa-val">' +
+                (current.planType === 'custom' ? current.customDays + ' ' + _lp.planDays : current.planType.replace('day', ' ' + _lp.planDays)) +
             '</span></div>' +
-            '<div class="rpa-row"><span class="rpa-key">Started:</span><span class="rpa-val">' + new Date(current.startDate).toLocaleDateString() + '</span></div>' +
-            '<div class="rpa-row"><span class="rpa-key">Progress:</span><span class="rpa-val">' + doneCount + ' / ' + cfg.totalDays + ' days</span></div>';
+            '<div class="rpa-row"><span class="rpa-key">' + _lp.planStarted + '</span><span class="rpa-val">' + new Date(current.startDate).toLocaleDateString() + '</span></div>' +
+            '<div class="rpa-row"><span class="rpa-key">' + _lp.planProgress + '</span><span class="rpa-val">' + doneCount + ' / ' + cfg.totalDays + ' ' + _lp.planDays + '</span></div>';
         sec.appendChild(info);
 
         // v10.11: Restore-pill button — shows the floating pill again if user dismissed it
@@ -2374,10 +2526,6 @@ function appendReadingPlanUI(body) {
             try { sessionStorage.removeItem('readingPlanPillDismissed'); } catch(e) {}
             if (typeof renderReadingPlanCard === 'function') renderReadingPlanCard();
             if (typeof showToast === 'function') showToast('Window restored');
-            var mSheet = document.getElementById('mobileSheet');
-            if (mSheet && mSheet.classList.contains('open') && typeof closeMobileSheet === 'function') {
-                setTimeout(closeMobileSheet, 150);
-            }
         });
         btnRow.appendChild(showPillBtn);
 
@@ -2408,10 +2556,11 @@ function appendReadingPlanUI(body) {
         sec.appendChild(btnRow);
     } else {
         // No active plan — show plan picker
+        var _lpr = getL();
         var presets = [
-            { id: '30day', label: '🌙 30 days', desc: '1 juz/day · Ramadan pace' },
-            { id: '60day', label: '📅 60 days', desc: 'Half a juz per day' },
-            { id: '90day', label: '📚 90 days', desc: 'Gentle pace · ~3 surahs/day' }
+            { id: '30day', label: _lpr.plan30Label, desc: _lpr.plan30Desc },
+            { id: '60day', label: _lpr.plan60Label, desc: _lpr.plan60Desc },
+            { id: '90day', label: _lpr.plan90Label, desc: _lpr.plan90Desc }
         ];
         presets.forEach(function(p) {
             var btn = document.createElement('button');
@@ -2606,57 +2755,41 @@ function startPlan(planType, customDays) {
                 console.info('[PWA] Skipping service worker — file:// not supported. Use Live Server or HTTPS.');
                 return;
             }
+            // Track whether this page already had a SW controller on load.
+            // Used to skip showing the update pill on very first install (no previous version).
+            var _hadController = !!navigator.serviceWorker.controller;
+
             navigator.serviceWorker.register('service-worker.js').then(function(reg) {
                 console.info('[PWA] Service worker registered, scope:', reg.scope);
-
-                // v10.11: Helper to show the update pill (extracted for reuse)
-                function showUpdatePill(workerToActivate) {
-                    if (document.querySelector('.pwa-update-bar')) return; // already showing
-                    var bar = document.createElement('div');
-                    bar.className = 'pwa-update-bar';
-                    bar.innerHTML = '<span>📦 New version available</span><button class="pwa-update-btn">Reload</button><button class="pwa-update-dismiss">✕</button>';
-                    document.body.appendChild(bar);
-                    bar.querySelector('.pwa-update-btn').addEventListener('click', function() {
-                        if (workerToActivate && workerToActivate.postMessage) {
-                            workerToActivate.postMessage({ type: 'SKIP_WAITING' });
-                        }
-                        location.reload();
-                    });
-                    bar.querySelector('.pwa-update-dismiss').addEventListener('click', function() {
-                        bar.remove();
-                    });
-                }
-
-                // v10.11: If a SW is ALREADY waiting (installed before this page loaded), show pill now
-                if (reg.waiting && navigator.serviceWorker.controller) {
-                    showUpdatePill(reg.waiting);
-                }
-
-                // Check for updates periodically (every hour)
+                // Check for updates once per hour. Focus-based polling was removed —
+                // it fired reg.update() on every alt-tab, and some dev/CDN servers
+                // return different ETags per request, causing repeated false installs.
                 setInterval(function() { reg.update(); }, 60 * 60 * 1000);
-                // Also check on focus (catches updates that landed while app was closed)
-                window.addEventListener('focus', function() { reg.update(); });
-
-                // Listen for updates discovered during this session
-                reg.addEventListener('updatefound', function() {
-                    var newWorker = reg.installing;
-                    if (!newWorker) return;
-                    newWorker.addEventListener('statechange', function() {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            showUpdatePill(newWorker);
-                        }
-                    });
-                });
             }).catch(function(err) {
                 console.warn('[PWA] Service worker registration failed:', err);
             });
 
-            // Reload page when SW takes over (for skip-waiting flow)
-            var refreshing = false;
+            // The service worker calls self.skipWaiting() in its install event, so the new SW
+            // takes control immediately after installing. When that happens, controllerchange fires.
+            // At that point the new SW IS the controller — a simple reload serves the new files.
             navigator.serviceWorker.addEventListener('controllerchange', function() {
-                if (refreshing) return;
-                refreshing = true;
-                // Don't auto-reload here — let the explicit Reload button handle it
+                if (!_hadController) {
+                    // First-ever install: SW just took control for the first time. No update to announce.
+                    _hadController = true;
+                    return;
+                }
+                // An update was applied. Show the pill so the user can reload at their convenience.
+                if (document.querySelector('.pwa-update-bar')) return;
+                var bar = document.createElement('div');
+                bar.className = 'pwa-update-bar';
+                bar.innerHTML = '<span>📦 New version available</span><button class="pwa-update-btn">Reload</button><button class="pwa-update-dismiss">✕</button>';
+                document.body.appendChild(bar);
+                bar.querySelector('.pwa-update-btn').addEventListener('click', function() {
+                    location.reload(); // new SW is already in control — reload serves new files
+                });
+                bar.querySelector('.pwa-update-dismiss').addEventListener('click', function() {
+                    bar.remove();
+                });
             });
         });
     }
@@ -2666,10 +2799,13 @@ function startPlan(planType, customDays) {
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         deferredPrompt = e;
-        // Mark as available — install button in features modal will pick this up
         window._pwaInstallable = true;
-        // v10.3: Update the pill in sticky title
+        // Chrome only fires this when the app is NOT installed.
+        // Clear any stale "installed" flag so Settings shows the install button
+        // instead of the green "✅ Installed" after the user uninstalls the app.
+        try { localStorage.removeItem('quranPWAInstalled'); } catch(e) {}
         if (typeof updateInstallPill === 'function') updateInstallPill();
+        if (typeof showInstallPromptCard === 'function') showInstallPromptCard();
     });
 
     window.addEventListener('appinstalled', function() {
@@ -2677,8 +2813,35 @@ function startPlan(planType, customDays) {
         window._pwaInstallable = false;
         deferredPrompt = null;
         try { localStorage.setItem('quranPWAInstalled', '1'); } catch(e) {}
+        var card = document.querySelector('.pwa-install-card');
+        if (card) card.remove();
         if (typeof updateInstallPill === 'function') updateInstallPill();
+        // Rebuild open install section in settings to show green text
+        document.querySelectorAll('[data-install-section]').forEach(function(s) {
+            var body = s.closest('.mob-settings-body, .settings-body');
+            if (body) { s.remove(); if (typeof appendInstallUI === 'function') appendInstallUI(body); }
+        });
     });
+
+    // After 3s: if Chrome hasn't fired beforeinstallprompt, the app is already installed
+    setTimeout(function() {
+        var _isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+        var _wasInstalled = false;
+        try { _wasInstalled = localStorage.getItem('quranPWAInstalled') === '1'; } catch(e) {}
+        if (!_isStandalone && !_wasInstalled && !window._pwaInstallable) {
+            // Chrome/Edge on Android fires beforeinstallprompt when the app is installable.
+            // If it hasn't fired after 3s, the app is already installed on this device.
+            var ua = navigator.userAgent;
+            if (/Chrome|CriOS|EdgA|Chromium/.test(ua) && !/Firefox/.test(ua)) {
+                try { localStorage.setItem('quranPWAInstalled', '1'); } catch(e) {}
+                if (typeof updateInstallPill === 'function') updateInstallPill();
+                document.querySelectorAll('[data-install-section]').forEach(function(s) {
+                    var body = s.closest('.mob-settings-body, .settings-body');
+                    if (body) { s.remove(); if (typeof appendInstallUI === 'function') appendInstallUI(body); }
+                });
+            }
+        }
+    }, 3000);
 
     // Expose install trigger
     window.triggerPWAInstall = function() {
@@ -2690,14 +2853,50 @@ function startPlan(planType, customDays) {
                 }
                 deferredPrompt = null;
                 window._pwaInstallable = false;
+                var card = document.querySelector('.pwa-install-card');
+                if (card) card.remove();
                 if (typeof updateInstallPill === 'function') updateInstallPill();
             });
             return;
         }
-        // v10.5: No native prompt available — show OS-specific instructions modal
+        // No native prompt — show OS-specific instructions modal
         showInstallInstructions();
     };
 }());
+
+// Prominent install prompt card floating above the bottom nav
+window.showInstallPromptCard = function showInstallPromptCard() {
+    if (document.querySelector('.pwa-install-card')) return;
+    var dismissed = false, wasInstalled = false;
+    try { dismissed    = localStorage.getItem('installBannerDismissed') === '1'; } catch(e) {}
+    try { wasInstalled = localStorage.getItem('quranPWAInstalled')      === '1'; } catch(e) {}
+    if (dismissed || wasInstalled) return;
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (isStandalone) return;
+
+    var card = document.createElement('div');
+    card.className = 'pwa-install-card';
+    card.innerHTML =
+        '<div class="pwa-install-icon">📲</div>' +
+        '<div class="pwa-install-text">' +
+            '<div class="pwa-install-title">Install Quran App</div>' +
+            '<div class="pwa-install-sub">Home screen · Offline · Faster</div>' +
+        '</div>' +
+        '<div class="pwa-install-actions">' +
+            '<button class="pwa-install-btn">Install</button>' +
+            '<button class="pwa-install-close" aria-label="Dismiss">✕</button>' +
+        '</div>';
+    document.body.appendChild(card);
+
+    card.querySelector('.pwa-install-btn').addEventListener('click', function() {
+        card.remove();
+        if (typeof triggerPWAInstall === 'function') triggerPWAInstall();
+    });
+    card.querySelector('.pwa-install-close').addEventListener('click', function() {
+        card.remove();
+        try { localStorage.setItem('installBannerDismissed', '1'); } catch(e) {}
+    });
+};
 
 // v10.5: Step-by-step install instructions when native prompt isn't available
 function showInstallInstructions() {
@@ -2820,7 +3019,7 @@ function appendInstallUI(body) {
     sec.setAttribute('data-install-section', '1');
     var lbl = document.createElement('div');
     lbl.className = 'mob-settings-lbl';
-    lbl.textContent = 'Install as app';
+    lbl.textContent = getL().installAsApp;
     sec.appendChild(lbl);
 
     var hint = document.createElement('div');
@@ -4041,7 +4240,7 @@ function openTopicsModal() {
                 '</div>' +
                 '<button class="topics-modal-close" id="topicsClose">✕</button>' +
             '</div>' +
-            '<div class="topics-modal-subtitle">Browse verses by theme. Tap a topic to see its verses.</div>' +
+            '<div class="topics-modal-subtitle">' + getL().topicsSubtitle + '</div>' +
             '<div class="topics-list" id="topicsList"></div>' +
         '</div>';
     document.body.appendChild(overlay);
@@ -4059,7 +4258,7 @@ function openTopicsModal() {
         item.innerHTML =
             '<span class="topic-icon">' + t.icon + '</span>' +
             '<span class="topic-name">' + getTopicName(t.name) + '</span>' +
-            '<span class="topic-count">' + t.verses.length + ' verses</span>';
+            '<span class="topic-count">' + t.verses.length + ' ' + getL().verses + '</span>';
         item.addEventListener('click', function() { openTopicVerses(idx); });
         list.appendChild(item);
     });
@@ -4084,7 +4283,7 @@ function openTopicVerses(topicIdx) {
         return;
     }
     var list = document.getElementById('topicsList');
-    list.innerHTML = '<button class="topic-back" id="topicBackBtn">← All topics</button>' +
+    list.innerHTML = '<button class="topic-back" id="topicBackBtn">' + getL().allTopics + '</button>' +
                      '<div class="topic-detail-title">' + topic.icon + ' ' + getTopicName(topic.name) + '</div>';
     topic.verses.forEach(function(ref) {
         var parts = ref.split(':');
@@ -4134,7 +4333,7 @@ function openTopicVerses(topicIdx) {
 // ──────────────────────────────────────────────────────────────────
 const DAILY_VERSES = [
     '2:255',  // Ayat al-Kursi
-    '2:286',  // Last verse of Al-Baqarah
+    '55:13',  // Which of your Lord's favours will you deny?
     '13:28',  // Hearts find rest in remembrance of Allah
     '94:5',   // With hardship comes ease
     '39:53',  // Don't despair of Allah's mercy
@@ -4170,7 +4369,7 @@ function showDailyVerseNow() {
     // Force-shows the daily verse regardless of feature-flag state (used from hamburger)
     var todayKey;
     try { todayKey = new Date().toISOString().slice(0, 10); } catch(e) { return; }
-    var dayNum = parseInt(todayKey.replace(/-/g, ''), 10);
+    var dayNum = Math.floor(Date.now() / 86400000); // days since Unix epoch — advances by exactly 1 per day
     var verseRef = DAILY_VERSES[dayNum % DAILY_VERSES.length];
     track('daily_verse_shown', { ref: verseRef, trigger: 'manual' });
     var parts = verseRef.split(':');
@@ -4236,8 +4435,8 @@ function maybeShowDailyVerse() {
     try { last = localStorage.getItem(DAILY_VERSE_LAST_KEY); } catch(e) {}
     if (last === todayKey) return; // already shown today
 
-    // Deterministic verse per day
-    var dayNum = parseInt(todayKey.replace(/-/g, ''), 10);
+    // Deterministic verse per day — use days-since-epoch so it advances exactly 1/day
+    var dayNum = Math.floor(Date.now() / 86400000);
     var verseRef = DAILY_VERSES[dayNum % DAILY_VERSES.length];
     var parts = verseRef.split(':');
     var sNum = parseInt(parts[0]);
@@ -5121,54 +5320,6 @@ function refreshTopReadingTime() {
     }
 }());
 
-// ════════════════════════════════════════════════════════════════════
-// v10.13 — New version available notification
-// Shows a pill banner when the service worker detects an update
-// ════════════════════════════════════════════════════════════════════
-(function initUpdateNotification() {
-    if (!('serviceWorker' in navigator)) return;
-
-    function showUpdateBanner() {
-        if (document.getElementById('updateBanner')) return;
-        var banner = document.createElement('div');
-        banner.id = 'updateBanner';
-        banner.className = 'update-banner';
-        banner.innerHTML =
-            '<span class="update-banner-text">✨ New version available</span>' +
-            '<button class="update-banner-btn" id="updateBannerBtn">Reload</button>' +
-            '<button class="update-banner-close" id="updateBannerClose">✕</button>';
-        document.body.appendChild(banner);
-        setTimeout(function() { banner.classList.add('show'); }, 50);
-        document.getElementById('updateBannerBtn').addEventListener('click', function() {
-            window.location.reload();
-        });
-        document.getElementById('updateBannerClose').addEventListener('click', function() {
-            banner.classList.remove('show');
-            setTimeout(function() { if (banner.parentNode) banner.remove(); }, 300);
-        });
-    }
-
-    // React when new SW takes control
-    navigator.serviceWorker.addEventListener('controllerchange', function() {
-        showUpdateBanner();
-    });
-
-    // Also check on load if there's a waiting SW (user had the page open during update)
-    navigator.serviceWorker.ready.then(function(reg) {
-        if (reg.waiting) {
-            showUpdateBanner();
-        }
-        reg.addEventListener('updatefound', function() {
-            var installing = reg.installing;
-            if (!installing) return;
-            installing.addEventListener('statechange', function() {
-                if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                    showUpdateBanner();
-                }
-            });
-        });
-    }).catch(function() {});
-}());
 
 // ════════════════════════════════════════════════════════════════════
 // v10.10 — Final injection layer: Export & Data section always at the
@@ -5448,12 +5599,9 @@ async function setupDailyVerseNotification(skipPicker) {
         }, function() {
             // User cancelled — revert feature flag and toggle UI
             var f = getFeatures(); f.dailyVerseNotification = false; saveFeatures(f);
-            var chk = document.querySelector('.notif-settings-card input[type="checkbox"]');
-            if (chk) chk.checked = false;
-            var card = document.querySelector('.notif-settings-card');
-            if (card) card.classList.add('notif-off');
-            var tRow = document.querySelector('.notif-settings-time-row');
-            if (tRow) tRow.style.display = 'none';
+            document.querySelectorAll('.notif-settings-card input[type="checkbox"]').forEach(function(chk) { chk.checked = false; });
+            document.querySelectorAll('.notif-settings-card').forEach(function(card) { card.classList.add('notif-off'); });
+            document.querySelectorAll('.notif-settings-time-row').forEach(function(tRow) { tRow.style.display = 'none'; });
         });
     } else {
         var hour = savedHour !== null ? savedHour : 8;
@@ -6220,7 +6368,7 @@ function appendYtChannelUI(body) {
             vEl = document.createElement('div');
             vEl.className = 'app-version-footer';
         }
-        vEl.textContent = 'Quran Display v11.0';
+        vEl.textContent = 'Quran Display v11.8';
         body.appendChild(vEl);
     }
 

@@ -4920,6 +4920,17 @@ body.feature-off-khatm .khatm-calendar { display: none; }
     font-size: 14px;
 }
 .help-mock-verse-info { flex: 1; color: var(--text-secondary); }
+
+/* ════════════════════════════════════════════════════════════════════
+   Phone settings sheet — larger section titles and descriptions
+   Scoped to .mob-sheet-body so desktop modal is unaffected.
+   ════════════════════════════════════════════════════════════════════ */
+.mob-sheet-body .mob-settings-lbl {
+    font-size: 22px;
+}
+.mob-sheet-body .feature-toggle-sub {
+    font-size: 20px !important;
+}
 .help-mock-kbd {
     display: inline-block;
     background: var(--bg-page);

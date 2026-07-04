@@ -416,6 +416,16 @@ document.getElementById('transFontSlider').addEventListener('change', function()
             lsSet(FONT_KEY, fontSizes);
         }
     }, { passive: true });
+
+    // Chrome Android ignores user-scalable=no since v56. Block native browser
+    // zoom at the document level so a pinch anywhere on the page never causes
+    // the visual-viewport jump that shifts the reading position.
+    document.addEventListener('touchstart', function(e) {
+        if (e.touches.length >= 2) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchmove', function(e) {
+        if (e.touches.length >= 2) e.preventDefault();
+    }, { passive: false });
 }());
 
 // ═══════════════════════════════════════════════════════════════════

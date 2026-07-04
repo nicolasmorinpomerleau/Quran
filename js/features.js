@@ -2761,10 +2761,17 @@ function startPlan(planType, customDays) {
 
             navigator.serviceWorker.register('service-worker.js').then(function(reg) {
                 console.info('[PWA] Service worker registered, scope:', reg.scope);
-                // Check for updates once per hour. Focus-based polling was removed —
-                // it fired reg.update() on every alt-tab, and some dev/CDN servers
-                // return different ETags per request, causing repeated false installs.
+                // Hourly background check
                 setInterval(function() { reg.update(); }, 60 * 60 * 1000);
+                // Focus check — catches updates when user returns to the app after a deployment.
+                // Rate-limited to once per 10 minutes to prevent false installs on local dev servers.
+                var _lastFocusCheck = 0;
+                window.addEventListener('focus', function() {
+                    var now = Date.now();
+                    if (now - _lastFocusCheck < 10 * 60 * 1000) return;
+                    _lastFocusCheck = now;
+                    reg.update();
+                });
             }).catch(function(err) {
                 console.warn('[PWA] Service worker registration failed:', err);
             });

@@ -2722,6 +2722,31 @@ input[type="range"] {
 }
 .zoom-indicator.show { opacity: 1; }
 
+/* v11.9 — Pinch redirect toast (replaces pinch-to-zoom) */
+.pinch-redirect-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 11, 5, 0.88);
+    color: #e8dfc8;
+    padding: 10px 22px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: var(--font-ui);
+    z-index: 2100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    white-space: nowrap;
+    border: 1px solid rgba(201, 168, 76, 0.35);
+    max-width: 90vw;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.pinch-redirect-toast.show { opacity: 1; }
+
 /* ════════════════════════════════════════════════════════════════════
    v10.13 — Share panel (inside mobile sheet, hidden on desktop)
    ════════════════════════════════════════════════════════════════════ */

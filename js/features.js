@@ -71,7 +71,9 @@ var UI_LABELS = {
         thisWeek: 'هذا الأسبوع',
         weekAvg: 'متوسط 4 أسابيع',
         monthNames: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
-        dayLabels:  ['ن','ث','ر','خ','ج','س','ح']
+        dayLabels:  ['ن','ث','ر','خ','ج','س','ح'],
+        readingActivity: 'نشاط القراءة',
+        tapAnyDay: 'اضغط على يوم لعرض التفاصيل'
     },
     french: {
         continueReading: 'Reprendre la lecture',
@@ -122,7 +124,9 @@ var UI_LABELS = {
         thisWeek: 'Cette semaine',
         weekAvg: 'Moyenne 4 semaines',
         monthNames: ['JAN','FÉV','MAR','AVR','MAI','JUN','JUL','AOÛ','SEP','OCT','NOV','DÉC'],
-        dayLabels:  ['L','M','M','J','V','S','D']
+        dayLabels:  ['L','M','M','J','V','S','D'],
+        readingActivity: 'Activité de lecture',
+        tapAnyDay: 'Appuyez sur un jour pour voir les détails'
     },
     english: {
         continueReading: 'Continue where you left off',
@@ -173,7 +177,9 @@ var UI_LABELS = {
         thisWeek: 'This week',
         weekAvg: '4-week average',
         monthNames: ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'],
-        dayLabels:  ['M','T','W','T','F','S','S']
+        dayLabels:  ['M','T','W','T','F','S','S'],
+        readingActivity: 'Reading activity',
+        tapAnyDay: 'Tap any day to see details'
     },
     spanish: {
         continueReading: 'Continuar donde lo dejaste',
@@ -224,7 +230,9 @@ var UI_LABELS = {
         thisWeek: 'Esta semana',
         weekAvg: 'Promedio 4 semanas',
         monthNames: ['ENE','FEB','MAR','ABR','MAY','JUN','JUL','AGO','SEP','OCT','NOV','DIC'],
-        dayLabels:  ['L','M','X','J','V','S','D']
+        dayLabels:  ['L','M','X','J','V','S','D'],
+        readingActivity: 'Actividad de lectura',
+        tapAnyDay: 'Toca un día para ver los detalles'
     }
 };
 
@@ -1154,7 +1162,7 @@ function buildVerseNav() {
 // ═══════════════════════════════════════════════════════════════════
 function exportAllData() {
     var data = {
-        version:      (typeof vEl !== 'undefined' && vEl.textContent) ? vEl.textContent.replace('Quran Display ', '') : 'v11.8',
+        version:      (function() { var el = document.getElementById('sidebarVersionEl'); if (el && el.textContent) return el.textContent.trim(); el = document.querySelector('.app-version-footer'); return (el && el.textContent) ? el.textContent.replace('Quran Display ', '').trim() : 'v11.10'; }()),
         exportedAt:   new Date().toISOString(),
         bookmarks:    JSON.parse(localStorage.getItem('quranBookmarks') || '[]'),
         notes:        JSON.parse(localStorage.getItem('quranNotes') || '{}'),
@@ -1254,7 +1262,8 @@ function buildKhatmHeatmap() {
 
     var title = document.createElement('div');
     title.className = 'khatm-title';
-    title.innerHTML = '<span>Reading activity</span><span class="khatm-completions">' + k.completions.length + ' khatm</span>';
+    var _lt = getL();
+    title.innerHTML = '<span>' + _lt.readingActivity + '</span><span class="khatm-completions">' + k.completions.length + ' khatm</span>';
     wrap.appendChild(title);
 
     // Build last 3 months as calendar grids
@@ -1344,7 +1353,7 @@ function buildKhatmHeatmap() {
     var detail = document.createElement('div');
     detail.className = 'khatm-detail';
     detail.id = 'khatmDetailBanner';
-    detail.innerHTML = '<span class="khatm-detail-icon">📅</span><span class="khatm-detail-text">Tap any day to see details</span>';
+    detail.innerHTML = '<span class="khatm-detail-icon">📅</span><span class="khatm-detail-text">' + _lt.tapAnyDay + '</span>';
     wrap.appendChild(detail);
 
     // Legend with contrasting boxes
@@ -6375,7 +6384,7 @@ function appendYtChannelUI(body) {
             vEl = document.createElement('div');
             vEl.className = 'app-version-footer';
         }
-        vEl.textContent = 'Quran Display v11.8';
+        vEl.textContent = 'Quran Display v11.10';
         body.appendChild(vEl);
     }
 

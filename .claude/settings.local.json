@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"monthNames\\\\|UI_LABELS\\\\|//\\\\|Arabic\\\\|French\\\\|Spanish\\\\|English\")",
+      "Bash(grep -v \"^[0-9]*:\\\\s*//\")"
+    ]
+  }
+}

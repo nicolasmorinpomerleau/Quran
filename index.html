@@ -142,6 +142,14 @@
                                 <input type="range" id="transFontSlider" min="0.7" max="3" step="0.05" value="1.87">
                                 <span class="font-slider-val" id="transFontVal">1.87</span>
                             </div>
+                            <!-- v11.9: Page scale slider (80–150%) replaces pinch-to-zoom -->
+                            <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+                                <div class="font-slider-row">
+                                    <span class="font-slider-label font-slider-label-text" data-i18n="settingsScale">Scale</span>
+                                    <input type="range" id="pageScaleSlider" min="0.8" max="1.5" step="0.05" value="1">
+                                    <span class="font-slider-val" id="pageScaleVal">100%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -212,7 +220,7 @@
 
             </div>
             <!-- Version shown at bottom of desktop sidebar -->
-            <div id="sidebarVersionEl" class="sidebar-version">v11.8</div>
+            <div id="sidebarVersionEl" class="sidebar-version">v11.10</div>
         </aside>
 
         <article class="main">
